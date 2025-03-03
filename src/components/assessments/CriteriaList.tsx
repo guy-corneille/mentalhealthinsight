@@ -1,217 +1,257 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
 import { 
-  ListChecksIcon, 
-  SearchIcon,
-  PlusIcon,
-  FilterIcon,
-  InfoIcon,
-  EditIcon,
-  Trash2Icon
+  ChevronDown, 
+  ChevronRight, 
+  Plus, 
+  Edit, 
+  Trash, 
+  Search 
 } from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
+  CardDescription 
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+
+interface Indicator {
+  id: number;
+  name: string;
+  weight: number;
+}
+
+interface Criterion {
+  id: number;
+  name: string;
+  description: string;
+  standard: string;
+  weight: number;
+  indicators: Indicator[];
+}
 
 const CriteriaList: React.FC = () => {
-  const criteria = [
-    { 
-      id: 'C-001', 
-      name: 'Staffing Adequacy', 
-      description: 'Adequate number of qualified mental health professionals relative to patient population',
-      weight: 15,
-      standard: 'WHO-AIMS 2.0',
-      type: 'core'
-    },
-    { 
-      id: 'C-002', 
-      name: 'Medication Availability', 
-      description: 'Essential psychotropic medications are available and accessible to patients',
-      weight: 20,
-      standard: 'WHO-AIMS 2.0',
-      type: 'core'
-    },
-    { 
-      id: 'C-003', 
-      name: 'Physical Environment', 
-      description: 'Safe, clean, and therapeutic physical environment for patient care',
-      weight: 15,
-      standard: 'ISO 9001',
-      type: 'core'
-    },
-    { 
-      id: 'C-004', 
-      name: 'Treatment Planning', 
-      description: 'Individualized treatment plans for each patient based on comprehensive assessment',
-      weight: 10,
-      standard: 'WHO-AIMS 2.0',
-      type: 'core'
-    },
-    { 
-      id: 'C-005', 
-      name: 'Crisis Intervention', 
-      description: 'Protocols and resources for managing psychiatric emergencies and crises',
-      weight: 15,
-      standard: 'WHO-AIMS 2.0',
-      type: 'core'
-    },
-    { 
-      id: 'C-006', 
-      name: 'Documentation Quality', 
-      description: 'Accurate, complete, and timely documentation of patient care',
-      weight: 10,
-      standard: 'ISO 9001',
-      type: 'core'
-    },
-    { 
-      id: 'C-007', 
-      name: 'Community Integration', 
-      description: 'Programs and services to facilitate patient reintegration into the community',
-      weight: 10,
-      standard: 'Custom',
-      type: 'optional'
-    },
-    { 
-      id: 'C-008', 
-      name: 'Cultural Competence', 
-      description: 'Services delivered in a culturally sensitive and appropriate manner',
-      weight: 5,
-      standard: 'Custom',
-      type: 'optional'
-    },
-  ];
+  const [criteria, setCriteria] = useState<Criterion[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedCriteria, setExpandedCriteria] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:8000/api/criteria/', {
+          params: { search: searchTerm },
+        });
+        console.log('API Response:', response.data);
+        setCriteria(response.data || []);
+      } catch (error) {
+        console.error('Error fetching criteria:', error);
+        setCriteria([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // For now, let's use mock data for development
+    const mockData: Criterion[] = [
+      {
+        id: 1,
+        name: 'Facility Infrastructure',
+        description: 'Physical structure and resources available at the facility',
+        standard: 'WHO-AIMS 2.0',
+        weight: 25,
+        indicators: [
+          { id: 1, name: 'Building Condition', weight: 40 },
+          { id: 2, name: 'Equipment Availability', weight: 30 },
+          { id: 3, name: 'Medication Supply', weight: 30 }
+        ]
+      },
+      {
+        id: 2,
+        name: 'Staff Competency',
+        description: 'Skills and qualifications of the mental health professionals',
+        standard: 'ISO 9001',
+        weight: 35,
+        indicators: [
+          { id: 4, name: 'Education Level', weight: 25 },
+          { id: 5, name: 'Years of Experience', weight: 25 },
+          { id: 6, name: 'Continued Education', weight: 25 },
+          { id: 7, name: 'Patient Feedback', weight: 25 }
+        ]
+      },
+      {
+        id: 3,
+        name: 'Treatment Outcomes',
+        description: 'Effectiveness of mental health interventions provided',
+        standard: 'Custom',
+        weight: 40,
+        indicators: [
+          { id: 8, name: 'Symptom Reduction', weight: 50 },
+          { id: 9, name: 'Functional Improvement', weight: 30 },
+          { id: 10, name: 'Readmission Rate', weight: 20 }
+        ]
+      }
+    ];
+    
+    // Instead of calling the API, we'll use the mock data for now
+    setTimeout(() => {
+      setCriteria(mockData);
+      setLoading(false);
+    }, 500);
+    
+    // Uncomment this to use the actual API
+    // fetchData();
+  }, [searchTerm]);
+
+  const toggleExpand = (id: number) => {
+    setExpandedCriteria(expandedCriteria === id ? null : id);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this criterion?')) {
+      try {
+        // Mock deletion
+        setCriteria(criteria.filter(c => c.id !== id));
+        
+        // Uncomment for actual API call
+        // await axios.delete(`http://localhost:8000/api/criteria/${id}/`);
+        // setCriteria(criteria.filter(c => c.id !== id));
+      } catch (error) {
+        console.error('Error deleting criterion:', error);
+        alert('Failed to delete criterion. Please try again.');
+      }
+    }
+  };
+
+  const getStandardBadgeColor = (standard: string) => {
+    switch (standard) {
+      case 'WHO-AIMS 2.0':
+        return 'bg-blue-500';
+      case 'ISO 9001':
+        return 'bg-green-500';
+      case 'Custom':
+        return 'bg-purple-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div className="flex items-center relative w-full sm:w-64">
-          <SearchIcon className="h-4 w-4 absolute left-3 text-muted-foreground" />
-          <Input 
-            placeholder="Search criteria..." 
-            className="pl-9 bg-muted/50 border-none focus-visible:ring-1" 
-          />
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          <Select defaultValue="all">
-            <SelectTrigger className="w-32 bg-muted/50 border-none focus:ring-1">
-              <SelectValue placeholder="Standard" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Standards</SelectItem>
-              <SelectItem value="who">WHO-AIMS 2.0</SelectItem>
-              <SelectItem value="iso">ISO 9001</SelectItem>
-              <SelectItem value="custom">Custom</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select defaultValue="all">
-            <SelectTrigger className="w-32 bg-muted/50 border-none focus:ring-1">
-              <SelectValue placeholder="Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="core">Core</SelectItem>
-              <SelectItem value="optional">Optional</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Button className="bg-healthiq-600 hover:bg-healthiq-700">
-            <PlusIcon className="h-4 w-4 mr-2" />
-            New Criteria
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Evaluation Criteria</CardTitle>
+            <CardDescription>
+              Define and manage assessment criteria for mental health evaluations
+            </CardDescription>
+          </div>
+          <Button asChild>
+            <Link to="/criteria/add" className="flex items-center gap-1">
+              <Plus size={16} />
+              Add New
+            </Link>
           </Button>
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {criteria.map((criterion, index) => (
-          <Card key={criterion.id} className="transition-all duration-200 hover:shadow-md animate-scale-in" style={{ animationDelay: `${index * 50}ms` }}>
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{criterion.name}</CardTitle>
-                  <CardDescription>{criterion.description}</CardDescription>
-                </div>
-                <Badge variant={criterion.type === 'core' ? 'default' : 'outline'} className={
-                  criterion.type === 'core' 
-                    ? 'bg-healthiq-100 text-healthiq-800 hover:bg-healthiq-200 border-none' 
-                    : 'border-healthiq-200 text-healthiq-800'
-                }>
-                  {criterion.type}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 mt-1">
-                <div>
-                  <p className="text-xs text-muted-foreground">Standard</p>
-                  <div className="flex items-center mt-1">
-                    <p className="font-medium">{criterion.standard}</p>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <InfoIcon className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">Reference standard for this criteria</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+        <div className="pt-4">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search criteria..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="text-center py-8">Loading criteria...</div>
+        ) : criteria.length > 0 ? (
+          <div className="space-y-4">
+            {criteria.map((criterion) => (
+              <div key={criterion.id} className="border rounded-lg overflow-hidden">
+                <div 
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted"
+                  onClick={() => toggleExpand(criterion.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    {expandedCriteria === criterion.id ? 
+                      <ChevronDown className="h-5 w-5 text-muted-foreground" /> : 
+                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                    }
+                    <div>
+                      <h3 className="font-medium">{criterion.name}</h3>
+                      <p className="text-sm text-muted-foreground">{criterion.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Badge className={getStandardBadgeColor(criterion.standard)}>
+                      {criterion.standard}
+                    </Badge>
+                    <div className="text-sm text-muted-foreground font-medium w-16 text-right">
+                      {criterion.weight}%
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link to={`/criteria/edit/${criterion.id}`}>
+                          <Edit className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(criterion.id);
+                      }}>
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Weight</p>
-                  <div className="flex items-center mt-1">
-                    <p className="font-medium">{criterion.weight}%</p>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <InfoIcon className="h-3.5 w-3.5 ml-1 text-muted-foreground" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">Contribution to overall assessment score</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                
+                {expandedCriteria === criterion.id && (
+                  <div className="p-4 pt-0 border-t bg-muted/30">
+                    <h4 className="font-medium mb-3 pl-8 text-sm">Indicators</h4>
+                    <div className="space-y-3 pl-8">
+                      {criterion.indicators.map((indicator) => (
+                        <div key={indicator.id} className="flex items-center gap-4">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{indicator.name}</p>
+                          </div>
+                          <div className="w-24 pr-2 text-right text-sm">
+                            Weight: {indicator.weight}%
+                          </div>
+                          <div className="w-32">
+                            <Progress 
+                              value={indicator.weight} 
+                              className="h-2"
+                              indicatorClassName="bg-healthiq-500"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
-              
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button variant="ghost" size="sm" className="h-8 px-2">
-                  <EditIcon className="h-3.5 w-3.5 mr-1" />
-                  Edit
-                </Button>
-                <Button variant="ghost" size="sm" className="h-8 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50">
-                  <Trash2Icon className="h-3.5 w-3.5 mr-1" />
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            No criteria found. Create a new criterion to get started.
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
