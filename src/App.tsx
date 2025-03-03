@@ -16,41 +16,34 @@ import Patients from "./pages/Patients";
 import Assessments from "./pages/Assessments";
 import Criteria from "./pages/Criteria";
 import Reports from "./pages/Reports";
-import Audits from "./pages/Audits";
 import NotFound from "./pages/NotFound";
 
-// Create a new query client instance
 const queryClient = new QueryClient();
 
-const App = () => {
-  console.log("App component rendering");
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/facilities" element={<Facilities />} />
-            <Route path="/facilities/:id" element={<FacilityDetails />} />
-            <Route path="/facilities/add" element={<FacilityAdd />} />
-            <Route path="/facilities/edit/:id" element={<FacilityEdit />} />
-            <Route path="/facilities/audit/:id" element={<FacilityAudit />} />
-            <Route path="/staff" element={<Staff />} />
-            <Route path="/patients" element={<Patients />} />
-            <Route path="/assessments" element={<Assessments />} />
-            <Route path="/criteria/*" element={<Criteria />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/audits/*" element={<Audits />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-        <Toaster />
-        <Sonner />
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/facilities" element={<Facilities />} />
+          <Route path="/facilities/:id" element={<FacilityDetails />} />
+          <Route path="/facilities/add" element={<FacilityAdd />} />
+          <Route path="/facilities/edit/:id" element={<FacilityEdit />} />
+          <Route path="/facilities/audit/:id" element={<FacilityAudit />} />
+          <Route path="/staff" element={<Staff />} />
+          <Route path="/patients" element={<Patients />} />
+          <Route path="/assessments" element={<Assessments />} />
+          <Route path="/criteria/*" element={<Criteria />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PanelLeftIcon, PanelLeftCloseIcon } from 'lucide-react';
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -12,17 +12,9 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
-  useEffect(() => {
-    console.log("Layout component mounted");
-    document.title = "Mental Health IQ Dashboard";
-  }, []);
-
-  console.log("Layout component rendering", { children });
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
-    console.log("Sidebar toggled:", !sidebarCollapsed);
   };
 
   return (

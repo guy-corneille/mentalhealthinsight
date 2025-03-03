@@ -1,29 +1,39 @@
 
 import React, { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { ActivityIcon, BrainIcon, HeartPulseIcon } from 'lucide-react';
 
 const Index: React.FC = () => {
-  useEffect(() => {
-    console.log("Index component mounted");
-  }, []);
+  const navigate = useNavigate();
 
-  console.log("Index component rendering");
-  
-  // Instead of immediately redirecting, let's show a simple landing page
+  useEffect(() => {
+    // Redirect to the dashboard page after a short delay
+    const redirectTimer = setTimeout(() => {
+      navigate('/dashboard');
+    }, 2000);
+    
+    return () => clearTimeout(redirectTimer);
+  }, [navigate]);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">
       <div className="text-center space-y-6">
-        <h1 className="text-4xl font-bold">Mental Health IQ</h1>
-        <p className="text-muted-foreground max-w-md mx-auto">
+        <div className="flex items-center justify-center space-x-3 mb-2">
+          <BrainIcon className="h-10 w-10 text-healthiq-600" />
+          <HeartPulseIcon className="h-10 w-10 text-healthiq-700" />
+        </div>
+        
+        <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-healthiq-600 to-healthiq-800">
+          MentalHealthIQ
+        </h1>
+        
+        <p className="text-muted-foreground max-w-md">
           Comprehensive mental health facility management and assessment platform
         </p>
-        <div className="mt-4">
-          <a 
-            href="/dashboard" 
-            className="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
-          >
-            Go to Dashboard
-          </a>
+        
+        <div className="mt-8 flex items-center">
+          <ActivityIcon className="h-5 w-5 mr-3 text-healthiq-500 animate-pulse" />
+          <span className="text-sm text-muted-foreground">Redirecting to dashboard...</span>
         </div>
       </div>
     </div>

@@ -13,9 +13,9 @@ import {
   DatabaseIcon,
   ListChecksIcon,
   FileTextIcon,
+  FolderIcon,
   ChevronDownIcon,
-  ChevronRightIcon,
-  ClipboardCheckIcon
+  ChevronRightIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -42,7 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   };
 
   const isActiveParent = (children: MenuItem[]) => {
-    return children.some(child => location.pathname.startsWith(child.path));
+    return children.some(child => location.pathname === child.path);
   };
   
   const toggleDropdown = (key: string) => {
@@ -63,8 +63,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       children: [
         { icon: BuildingIcon, label: 'Facilities', path: '/facilities' },
         { icon: UserIcon, label: 'Staff', path: '/staff' },
-        { icon: UsersIcon, label: 'Patients', path: '/patients' },
-        { icon: BarChartIcon, label: 'Criteria', path: '/criteria' }
+        { icon: UsersIcon, label: 'Patients', path: '/patients' }
       ]
     },
     { 
@@ -73,7 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       path: '#', 
       children: [
         { icon: ClipboardIcon, label: 'Assessments', path: '/assessments' },
-        { icon: ClipboardCheckIcon, label: 'Audits', path: '/audits' }
+        { icon: BarChartIcon, label: 'Criteria', path: '/criteria' }
       ]
     },
     { icon: FileTextIcon, label: 'Reports', path: '/reports' }
@@ -87,14 +86,13 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
 
   const renderMenuItem = (item: MenuItem, index: number) => {
     if (item.children && !collapsed) {
-      const dropdownKey = item.label.toLowerCase().replace(/\s/g, '');
-      const isOpen = openDropdowns[dropdownKey];
+      const isOpen = openDropdowns[item.label.toLowerCase().replace(/\s/g, '')];
       const isParentActive = isActiveParent(item.children);
       
       return (
         <div key={index} className="space-y-1">
           <button
-            onClick={() => toggleDropdown(dropdownKey)}
+            onClick={() => toggleDropdown(item.label.toLowerCase().replace(/\s/g, ''))}
             className={cn(
               "flex items-center w-full py-3 px-4 rounded-lg transition-all",
               isParentActive 
@@ -119,14 +117,14 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
                   to={child.path}
                   className={cn(
                     "flex items-center py-2 px-4 rounded-lg transition-all",
-                    isActive(child.path) || location.pathname.startsWith(child.path)
+                    isActive(child.path) 
                       ? "bg-healthiq-50 text-healthiq-600" 
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >
-                  <child.icon className={cn("h-4 w-4", isActive(child.path) || location.pathname.startsWith(child.path) ? "text-healthiq-600" : "text-muted-foreground")} />
+                  <child.icon className={cn("h-4 w-4", isActive(child.path) ? "text-healthiq-600" : "text-muted-foreground")} />
                   <span className="ml-3 font-medium text-sm">{child.label}</span>
-                  {(isActive(child.path) || location.pathname.startsWith(child.path)) && (
+                  {isActive(child.path) && (
                     <div className="ml-auto w-1.5 h-1.5 rounded-full bg-healthiq-500"></div>
                   )}
                 </Link>
@@ -140,17 +138,16 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
     return (
       <Link
         key={index}
-        to={item.path !== '#' ? item.path : '#'}
+        to={item.path}
         className={cn(
           "flex items-center py-3 px-4 rounded-lg transition-all",
-          isActive(item.path) || (item.children && isActiveParent(item.children))
+          isActive(item.path) 
             ? "bg-healthiq-50 text-healthiq-600" 
             : "text-muted-foreground hover:bg-muted hover:text-foreground",
           collapsed && "justify-center px-2"
         )}
-        onClick={item.path === '#' && collapsed ? () => toggleDropdown(item.label.toLowerCase().replace(/\s/g, '')) : undefined}
       >
-        <item.icon className={cn("h-5 w-5", isActive(item.path) || (item.children && isActiveParent(item.children)) ? "text-healthiq-600" : "text-muted-foreground")} />
+        <item.icon className={cn("h-5 w-5", isActive(item.path) ? "text-healthiq-600" : "text-muted-foreground")} />
         {!collapsed && (
           <span className={cn("ml-3 font-medium text-sm", { 
             'opacity-0 w-0': collapsed,
@@ -158,7 +155,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
             {item.label}
           </span>
         )}
-        {isActive(item.path) && !collapsed && !item.children && (
+        {isActive(item.path) && !collapsed && (
           <div className="ml-auto w-1.5 h-1.5 rounded-full bg-healthiq-500"></div>
         )}
       </Link>
@@ -202,90 +199,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
         </nav>
       </div>
     </aside>
-  );
-};
-
-// Add the renderMenuItem function that was skipped above
-Sidebar.prototype.renderMenuItem = function(item: MenuItem, index: number) {
-  const { collapsed } = this.props;
-  const { location, isActive, isActiveParent, toggleDropdown, openDropdowns } = this;
-
-  if (item.children && !collapsed) {
-    const dropdownKey = item.label.toLowerCase().replace(/\s/g, '');
-    const isOpen = openDropdowns[dropdownKey];
-    const isParentActive = isActiveParent(item.children);
-    
-    return (
-      <div key={index} className="space-y-1">
-        <button
-          onClick={() => toggleDropdown(dropdownKey)}
-          className={cn(
-            "flex items-center w-full py-3 px-4 rounded-lg transition-all",
-            isParentActive 
-              ? "bg-healthiq-50 text-healthiq-600" 
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          )}
-        >
-          <item.icon className={cn("h-5 w-5", isParentActive ? "text-healthiq-600" : "text-muted-foreground")} />
-          <span className="ml-3 font-medium text-sm flex-1 text-left">{item.label}</span>
-          {isOpen ? (
-            <ChevronDownIcon className="h-4 w-4" />
-          ) : (
-            <ChevronRightIcon className="h-4 w-4" />
-          )}
-        </button>
-        
-        {isOpen && (
-          <div className="pl-10 space-y-1">
-            {item.children.map((child, childIndex) => (
-              <Link
-                key={childIndex}
-                to={child.path}
-                className={cn(
-                  "flex items-center py-2 px-4 rounded-lg transition-all",
-                  isActive(child.path) || location.pathname.startsWith(child.path)
-                    ? "bg-healthiq-50 text-healthiq-600" 
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <child.icon className={cn("h-4 w-4", isActive(child.path) || location.pathname.startsWith(child.path) ? "text-healthiq-600" : "text-muted-foreground")} />
-                <span className="ml-3 font-medium text-sm">{child.label}</span>
-                {(isActive(child.path) || location.pathname.startsWith(child.path)) && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-healthiq-500"></div>
-                )}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-  
-  return (
-    <Link
-      key={index}
-      to={item.path !== '#' ? item.path : '#'}
-      className={cn(
-        "flex items-center py-3 px-4 rounded-lg transition-all",
-        isActive(item.path) || (item.children && isActiveParent(item.children))
-          ? "bg-healthiq-50 text-healthiq-600" 
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
-        collapsed && "justify-center px-2"
-      )}
-      onClick={item.path === '#' && collapsed ? () => toggleDropdown(item.label.toLowerCase().replace(/\s/g, '')) : undefined}
-    >
-      <item.icon className={cn("h-5 w-5", isActive(item.path) || (item.children && isActiveParent(item.children)) ? "text-healthiq-600" : "text-muted-foreground")} />
-      {!collapsed && (
-        <span className={cn("ml-3 font-medium text-sm", { 
-          'opacity-0 w-0': collapsed,
-        })}>
-          {item.label}
-        </span>
-      )}
-      {isActive(item.path) && !collapsed && !item.children && (
-        <div className="ml-auto w-1.5 h-1.5 rounded-full bg-healthiq-500"></div>
-      )}
-    </Link>
   );
 };
 
