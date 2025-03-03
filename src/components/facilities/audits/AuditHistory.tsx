@@ -1,31 +1,8 @@
+
 import React, { useState } from 'react';
-import { 
-  CalendarIcon, 
-  UserIcon, 
-  ArrowUpDownIcon, 
-  BarChart3Icon,
-  TrendingUpIcon,
-  TrendingDownIcon,
-  MinusIcon
-} from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { 
-  ChartContainer, 
-  ChartTooltipContent, 
-  ChartTooltip,
-  type ChartConfig
-} from '@/components/ui/chart';
-import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar } from 'recharts';
+import AuditScoreChart from './AuditScoreChart';
+import AuditHistoryTable from './AuditHistoryTable';
+import EmptyAuditState from './EmptyAuditState';
 
 interface AuditHistoryProps {
   facilityId: number;
@@ -116,162 +93,19 @@ const AuditHistory: React.FC<AuditHistoryProps> = ({ facilityId }) => {
     score: audit.score
   }));
 
-  const getScoreTrend = (current: number, previous: number | null): React.ReactNode => {
-    if (previous === null) return <MinusIcon className="h-4 w-4 text-gray-400" />;
-    
-    const diff = current - previous;
-    const percentChange = previous > 0 ? (diff / previous) * 100 : 0;
-    
-    if (diff > 0) {
-      return (
-        <div className="flex items-center text-emerald-600">
-          <TrendingUpIcon className="h-4 w-4 mr-1" />
-          +{diff} pts ({percentChange.toFixed(1)}%)
-        </div>
-      );
-    } else if (diff < 0) {
-      return (
-        <div className="flex items-center text-rose-600">
-          <TrendingDownIcon className="h-4 w-4 mr-1" />
-          {diff} pts ({percentChange.toFixed(1)}%)
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex items-center text-gray-500">
-          <MinusIcon className="h-4 w-4 mr-1" />
-          No change
-        </div>
-      );
-    }
-  };
-
-  const chartConfig: ChartConfig = {
-    score: {
-      label: "Audit Score",
-      color: "#4f46e5"
-    }
-  };
-
   return (
     <div className="space-y-6">
       {auditHistory.length > 0 ? (
         <>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle>Audit Score Trends</CardTitle>
-              <CardDescription>Historical performance over time</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[300px]">
-              <ChartContainer config={chartConfig}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <XAxis 
-                      dataKey="name" 
-                      tickLine={false}
-                      axisLine={false}
-                      padding={{ left: 20, right: 20 }}
-                    />
-                    <YAxis 
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) => `${value}%`}
-                    />
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          return (
-                            <div className="rounded-lg border bg-background p-2 shadow-sm">
-                              <div className="font-medium">{payload[0].payload.name}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Score: {payload[0].value}%
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar 
-                      dataKey="score" 
-                      fill="#4f46e5" 
-                      radius={[4, 4, 0, 0]} 
-                      barSize={30}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead 
-                    className="w-[180px] cursor-pointer"
-                    onClick={toggleSortDirection}
-                  >
-                    <div className="flex items-center">
-                      <CalendarIcon className="h-4 w-4 mr-2" />
-                      Date {sortDirection === 'asc' ? '↑' : '↓'}
-                    </div>
-                  </TableHead>
-                  <TableHead className="w-[180px]">Auditor</TableHead>
-                  <TableHead>Score</TableHead>
-                  <TableHead>Change</TableHead>
-                  <TableHead className="text-right">Categories</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedAudits.map((audit) => (
-                  <TableRow key={audit.id}>
-                    <TableCell className="font-medium">
-                      {new Date(audit.date).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center">
-                        <UserIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                        {audit.auditor}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={
-                        audit.score >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-                        audit.score >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
-                        'bg-rose-50 text-rose-600 hover:bg-rose-100'
-                      }>
-                        {audit.score}%
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {getScoreTrend(audit.score, audit.previousScore)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end space-x-1">
-                        {audit.categories.map((category, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {category.name.substring(0, 3)}: {category.score}%
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <AuditScoreChart chartData={chartData} />
+          <AuditHistoryTable 
+            audits={sortedAudits}
+            sortDirection={sortDirection}
+            toggleSortDirection={toggleSortDirection}
+          />
         </>
       ) : (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center p-6">
-            <BarChart3Icon className="h-16 w-16 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">No audit history available</p>
-            <p className="text-sm text-center text-muted-foreground mb-6">
-              Start your first audit to track facility performance over time
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyAuditState />
       )}
     </div>
   );

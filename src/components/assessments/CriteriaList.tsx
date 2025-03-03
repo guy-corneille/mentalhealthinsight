@@ -2,14 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { 
-  ChevronDown, 
-  ChevronRight, 
-  Plus, 
-  Edit, 
-  Trash, 
-  Search 
-} from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -19,8 +12,7 @@ import {
   CardTitle, 
   CardDescription 
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import CriterionItem from './criteria/CriterionItem';
 
 interface Indicator {
   id: number;
@@ -120,27 +112,10 @@ const CriteriaList: React.FC = () => {
       try {
         // Mock deletion
         setCriteria(criteria.filter(c => c.id !== id));
-        
-        // Uncomment for actual API call
-        // await axios.delete(`http://localhost:8000/api/criteria/${id}/`);
-        // setCriteria(criteria.filter(c => c.id !== id));
       } catch (error) {
         console.error('Error deleting criterion:', error);
         alert('Failed to delete criterion. Please try again.');
       }
-    }
-  };
-
-  const getStandardBadgeColor = (standard: string) => {
-    switch (standard) {
-      case 'WHO-AIMS 2.0':
-        return 'bg-blue-500';
-      case 'ISO 9001':
-        return 'bg-green-500';
-      case 'Custom':
-        return 'bg-purple-500';
-      default:
-        return 'bg-gray-500';
     }
   };
 
@@ -180,69 +155,13 @@ const CriteriaList: React.FC = () => {
         ) : criteria.length > 0 ? (
           <div className="space-y-4">
             {criteria.map((criterion) => (
-              <div key={criterion.id} className="border rounded-lg overflow-hidden">
-                <div 
-                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted"
-                  onClick={() => toggleExpand(criterion.id)}
-                >
-                  <div className="flex items-center gap-3">
-                    {expandedCriteria === criterion.id ? 
-                      <ChevronDown className="h-5 w-5 text-muted-foreground" /> : 
-                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                    }
-                    <div>
-                      <h3 className="font-medium">{criterion.name}</h3>
-                      <p className="text-sm text-muted-foreground">{criterion.description}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <Badge className={getStandardBadgeColor(criterion.standard)}>
-                      {criterion.standard}
-                    </Badge>
-                    <div className="text-sm text-muted-foreground font-medium w-16 text-right">
-                      {criterion.weight}%
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link to={`/criteria/edit/${criterion.id}`}>
-                          <Edit className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(criterion.id);
-                      }}>
-                        <Trash className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                
-                {expandedCriteria === criterion.id && (
-                  <div className="p-4 pt-0 border-t bg-muted/30">
-                    <h4 className="font-medium mb-3 pl-8 text-sm">Indicators</h4>
-                    <div className="space-y-3 pl-8">
-                      {criterion.indicators.map((indicator) => (
-                        <div key={indicator.id} className="flex items-center gap-4">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{indicator.name}</p>
-                          </div>
-                          <div className="w-24 pr-2 text-right text-sm">
-                            Weight: {indicator.weight}%
-                          </div>
-                          <div className="w-32">
-                            <Progress 
-                              value={indicator.weight} 
-                              className="h-2"
-                              indicatorClassName="bg-healthiq-500"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <CriterionItem 
+                key={criterion.id}
+                criterion={criterion}
+                isExpanded={expandedCriteria === criterion.id}
+                onToggleExpand={() => toggleExpand(criterion.id)}
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         ) : (
