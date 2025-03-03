@@ -23,8 +23,8 @@ const Criteria: React.FC = () => {
         
         <Routes>
           <Route path="/" element={<CriteriaList />} />
-          <Route path="/add" element={<CriteriaForm />} />
-          <Route path="/edit/:id" element={<CriteriaForm />} />
+          <Route path="add" element={<CriteriaForm />} />
+          <Route path="edit/:id" element={<CriteriaForm />} />
         </Routes>
       </div>
     </Layout>
