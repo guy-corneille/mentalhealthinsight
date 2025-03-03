@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   CalendarIcon, 
@@ -23,7 +22,8 @@ import {
 import { 
   ChartContainer, 
   ChartTooltipContent, 
-  ChartTooltip
+  ChartTooltip,
+  type ChartConfig
 } from '@/components/ui/chart';
 import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar } from 'recharts';
 
@@ -46,7 +46,6 @@ interface AuditRecord {
 const AuditHistory: React.FC<AuditHistoryProps> = ({ facilityId }) => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
-  // This would normally be fetched from an API
   const auditHistory: AuditRecord[] = [
     {
       id: 1,
@@ -102,7 +101,6 @@ const AuditHistory: React.FC<AuditHistoryProps> = ({ facilityId }) => {
     }
   ];
 
-  // Sort audits
   const sortedAudits = [...auditHistory].sort((a, b) => {
     const dateA = new Date(a.date).getTime();
     const dateB = new Date(b.date).getTime();
@@ -113,7 +111,6 @@ const AuditHistory: React.FC<AuditHistoryProps> = ({ facilityId }) => {
     setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
   };
 
-  // Format chart data
   const chartData = sortedAudits.slice().reverse().map(audit => ({
     name: new Date(audit.date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
     score: audit.score
@@ -149,6 +146,13 @@ const AuditHistory: React.FC<AuditHistoryProps> = ({ facilityId }) => {
     }
   };
 
+  const chartConfig: ChartConfig = {
+    score: {
+      label: "Audit Score",
+      color: "#4f46e5"
+    }
+  };
+
   return (
     <div className="space-y-6">
       {auditHistory.length > 0 ? (
@@ -159,7 +163,7 @@ const AuditHistory: React.FC<AuditHistoryProps> = ({ facilityId }) => {
               <CardDescription>Historical performance over time</CardDescription>
             </CardHeader>
             <CardContent className="h-[300px]">
-              <ChartContainer>
+              <ChartContainer config={chartConfig}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
                     <XAxis 
