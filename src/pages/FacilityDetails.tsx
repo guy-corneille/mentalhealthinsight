@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
@@ -21,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import AuditHistory from "@/components/facilities/audits/AuditHistory";
 import NewAuditButton from "@/components/facilities/audits/NewAuditButton";
+import FacilityStaffList from "@/components/facilities/FacilityStaffList";
 
 const FacilityDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -198,7 +200,7 @@ const FacilityDetails: React.FC = () => {
                 <CardTitle>Staff Directory</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Staff directory information would be displayed here.</p>
+                <FacilityStaffList facilityId={facility.id} />
               </CardContent>
             </Card>
           </TabsContent>

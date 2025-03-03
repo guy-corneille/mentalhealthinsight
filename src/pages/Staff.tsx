@@ -14,7 +14,7 @@ const Staff: React.FC = () => {
           </p>
         </div>
         
-        <StaffList />
+        <StaffList showFacilityFilter={true} />
       </div>
     </Layout>
   );
