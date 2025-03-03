@@ -17,10 +17,10 @@ interface CriteriaFormData {
 
 export const validateCriteria = (
   criteria: CriteriaFormData,
-  toast: ReturnType<typeof useToast>
+  toastObj: ReturnType<typeof useToast>
 ): boolean => {
   if (!criteria.name || !criteria.description || criteria.weight <= 0 || criteria.weight > 100) {
-    toast({
+    toastObj.toast({
       variant: "destructive",
       title: "Validation error",
       description: "Please fill all fields and ensure the weight is between 0 and 100."
@@ -30,7 +30,7 @@ export const validateCriteria = (
   
   for (const indicator of criteria.indicators) {
     if (!indicator.name || indicator.weight <= 0 || indicator.weight > 100) {
-      toast({
+      toastObj.toast({
         variant: "destructive",
         title: "Validation error",
         description: "All indicators must have a name and a weight between 0 and 100."

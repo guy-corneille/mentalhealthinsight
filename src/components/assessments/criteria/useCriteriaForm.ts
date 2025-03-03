@@ -21,7 +21,7 @@ interface CriteriaFormData {
 
 export const useCriteriaForm = (id?: string) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const toast = useToast();
   const [criteria, setCriteria] = useState<CriteriaFormData>({
     name: '',
     description: '',
