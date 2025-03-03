@@ -2,14 +2,13 @@
 import React from 'react';
 import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar } from 'recharts';
 import { 
-  ChartContainer, 
-  ChartTooltip, 
   Card, 
   CardContent, 
   CardDescription, 
   CardHeader, 
   CardTitle 
-} from '@/components/ui';
+} from '@/components/ui/card';
+import { ChartTooltip, ChartContainer } from '../../../components/ui/chart';
 
 interface AuditScoreChartProps {
   chartData: { name: string; score: number }[];
