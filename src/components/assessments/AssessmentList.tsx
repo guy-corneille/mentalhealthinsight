@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
-  ClipboardIcon, 
   SearchIcon,
   PlusIcon,
   FilterIcon,
@@ -28,8 +28,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
+import NewAssessmentDialog from './NewAssessmentDialog';
 
 const AssessmentList: React.FC = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const assessments = [
     { 
       id: 'A-5001', 
@@ -78,6 +84,20 @@ const AssessmentList: React.FC = () => {
     },
   ];
 
+  const handleCreateAssessment = (patientId: string, facilityId: string) => {
+    // In a real application, this would navigate to a new assessment form
+    // with the selected patient and facility
+    toast({
+      title: "Assessment started",
+      description: `New assessment for patient ${patientId} at facility ID: ${facilityId}`,
+    });
+    
+    setIsDialogOpen(false);
+    
+    // Mock navigation - in a real app, this would go to the assessment form
+    // navigate(`/assessments/new?patient=${patientId}&facility=${facilityId}`);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -95,7 +115,10 @@ const AssessmentList: React.FC = () => {
             Filter
           </Button>
           
-          <Button className="bg-healthiq-600 hover:bg-healthiq-700">
+          <Button 
+            className="bg-healthiq-600 hover:bg-healthiq-700"
+            onClick={() => setIsDialogOpen(true)}
+          >
             <PlusIcon className="h-4 w-4 mr-2" />
             New Assessment
           </Button>
@@ -177,6 +200,12 @@ const AssessmentList: React.FC = () => {
           </Table>
         </div>
       </div>
+
+      <NewAssessmentDialog 
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onCreateAssessment={handleCreateAssessment}
+      />
     </div>
   );
 };
