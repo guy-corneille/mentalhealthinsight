@@ -20,7 +20,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BarChart } from '@/components/ui/chart';
+import { 
+  ChartContainer, 
+  ChartTooltipContent, 
+  ChartTooltip
+} from '@/components/ui/chart';
+import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar } from 'recharts';
 
 interface AuditHistoryProps {
   facilityId: number;
@@ -154,44 +159,44 @@ const AuditHistory: React.FC<AuditHistoryProps> = ({ facilityId }) => {
               <CardDescription>Historical performance over time</CardDescription>
             </CardHeader>
             <CardContent className="h-[300px]">
-              <BarChart
-                data={chartData}
-                keys={["score"]}
-                indexBy="name"
-                colors={["#4f46e5"]}
-                axisBottom={{
-                  tickSize: 0,
-                  tickPadding: 16,
-                }}
-                padding={0.3}
-                margin={{ top: 20, right: 10, bottom: 40, left: 40 }}
-                borderRadius={4}
-                axisLeft={{
-                  tickSize: 0,
-                  tickValues: 5,
-                  tickPadding: 16,
-                }}
-                gridYValues={5}
-                theme={{
-                  tooltip: {
-                    chip: {
-                      borderRadius: "9999px",
-                    },
-                    container: {
-                      fontSize: "12px",
-                      textTransform: "capitalize",
-                      borderRadius: "6px",
-                    },
-                  },
-                  grid: {
-                    line: {
-                      stroke: "#f3f4f6",
-                    },
-                  },
-                }}
-                valueFormat={(value) => `${value}%`}
-                role="application"
-              />
+              <ChartContainer>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <XAxis 
+                      dataKey="name" 
+                      tickLine={false}
+                      axisLine={false}
+                      padding={{ left: 20, right: 20 }}
+                    />
+                    <YAxis 
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `${value}%`}
+                    />
+                    <Tooltip
+                      content={({ active, payload }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="rounded-lg border bg-background p-2 shadow-sm">
+                              <div className="font-medium">{payload[0].payload.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                Score: {payload[0].value}%
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Bar 
+                      dataKey="score" 
+                      fill="#4f46e5" 
+                      radius={[4, 4, 0, 0]} 
+                      barSize={30}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
 
