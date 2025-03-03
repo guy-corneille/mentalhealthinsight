@@ -19,8 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import AuditHistory from "@/components/facilities/audits/AuditHistory";
-import NewAuditButton from "@/components/facilities/audits/NewAuditButton";
+import FacilityStaffList from '@/components/facilities/FacilityStaffList';
 
 const FacilityDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -81,9 +80,6 @@ const FacilityDetails: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            {activeTab === "audits" && (
-              <NewAuditButton facilityId={facility.id} facilityName={facility.name} />
-            )}
             <Button 
               variant="outline"
               onClick={() => navigate(`/facilities/edit/${id}`)}
@@ -113,15 +109,11 @@ const FacilityDetails: React.FC = () => {
         </div>
         
         <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="grid w-full md:w-auto grid-cols-3 md:grid-cols-5">
+          <TabsList className="grid w-full md:w-auto grid-cols-4 md:grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="staff">Staff</TabsTrigger>
             <TabsTrigger value="services">Services</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="audits" className="relative">
-              Audits
-              <span className="absolute top-0 right-1 w-2 h-2 bg-healthiq-600 rounded-full"></span>
-            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="space-y-6 mt-6">
@@ -198,7 +190,7 @@ const FacilityDetails: React.FC = () => {
                 <CardTitle>Staff Directory</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Staff directory information would be displayed here.</p>
+                <FacilityStaffList facilityId={facility.id} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -224,19 +216,12 @@ const FacilityDetails: React.FC = () => {
           <TabsContent value="reports" className="space-y-6 mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Audit Reports</CardTitle>
+                <CardTitle>Facility Reports</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Audit history and reports would be displayed here.</p>
+                <p className="text-muted-foreground">Facility reports would be displayed here.</p>
               </CardContent>
             </Card>
-          </TabsContent>
-          
-          <TabsContent value="audits" className="space-y-6 mt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Facility Audit History</h2>
-            </div>
-            <AuditHistory facilityId={facility.id} />
           </TabsContent>
         </Tabs>
       </div>

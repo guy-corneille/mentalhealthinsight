@@ -9,7 +9,8 @@ import {
   UserPlusIcon,
   UserXIcon,
   UserCheckIcon,
-  PencilIcon
+  PencilIcon,
+  BuildingIcon
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import StaffModal from './StaffModal';
 import { useToast } from "@/hooks/use-toast";
 
@@ -54,6 +62,8 @@ const StaffList: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [facilityFilter, setFacilityFilter] = useState<string>('all');
   
   // Mock staff data
   const [staff, setStaff] = useState<StaffMember[]>([
@@ -102,7 +112,58 @@ const StaffList: React.FC = () => {
         phone: '+250 788 234 567'
       }
     },
+    { 
+      id: 'S-1004', 
+      name: 'Grace Ingabire', 
+      position: 'Clinical Psychologist', 
+      department: 'Psychiatry',
+      facilityId: 3,
+      facilityName: 'Northern Health Center',
+      joinDate: '2022-02-15',
+      status: 'Active',
+      qualifications: ['MA Clinical Psychology', 'Trauma Therapy Cert.'],
+      contact: {
+        email: 'g.ingabire@northern.rw',
+        phone: '+250 788 345 678'
+      }
+    },
+    { 
+      id: 'S-1005', 
+      name: 'Emmanuel Hakizimana', 
+      position: 'Psychiatric Nurse', 
+      department: 'Nursing',
+      facilityId: 4,
+      facilityName: 'Southern Community Clinic',
+      joinDate: '2021-05-10',
+      status: 'Active',
+      qualifications: ['BSN', 'Mental Health Nursing Diploma'],
+      contact: {
+        email: 'e.hakizimana@southern.rw',
+        phone: '+250 788 456 789'
+      }
+    },
   ]);
+
+  // Get unique facilities for filter dropdown
+  const facilities = [
+    { id: 1, name: 'Central Hospital' },
+    { id: 2, name: 'Eastern District Clinic' },
+    { id: 3, name: 'Northern Health Center' },
+    { id: 4, name: 'Southern Community Clinic' },
+    { id: 5, name: 'Western Regional Hospital' },
+  ];
+
+  // Filter staff by search term and facility
+  const filteredStaff = staff.filter(s => {
+    const matchesSearch = 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.department.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesFacility = facilityFilter === 'all' || s.facilityId.toString() === facilityFilter;
+    
+    return matchesSearch && matchesFacility;
+  });
 
   const handleAddStaff = () => {
     setCurrentStaff(null);
@@ -168,15 +229,30 @@ const StaffList: React.FC = () => {
           <SearchIcon className="h-4 w-4 absolute left-3 text-muted-foreground" />
           <Input 
             placeholder="Search staff..." 
-            className="pl-9 bg-muted/50 border-none focus-visible:ring-1" 
+            className="pl-9 bg-muted/50 border-none focus-visible:ring-1"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" className="border-none bg-muted/50">
-            <FilterIcon className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
+          <Select 
+            value={facilityFilter} 
+            onValueChange={setFacilityFilter}
+          >
+            <SelectTrigger className="w-[180px] bg-muted/50 border-none focus-visible:ring-1">
+              <BuildingIcon className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filter by facility" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Facilities</SelectItem>
+              {facilities.map(facility => (
+                <SelectItem key={facility.id} value={facility.id.toString()}>
+                  {facility.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           
           <Button 
             className="bg-healthiq-600 hover:bg-healthiq-700"
@@ -203,58 +279,66 @@ const StaffList: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {staff.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell className="font-medium">{member.name}</TableCell>
-                  <TableCell>{member.position}</TableCell>
-                  <TableCell>{member.department}</TableCell>
-                  <TableCell>{member.facilityName}</TableCell>
-                  <TableCell>{new Date(member.joinDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge className={
-                      member.status === 'Active' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-                      member.status === 'On Leave' ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
-                      'bg-rose-50 text-rose-600 hover:bg-rose-100'
-                    }>
-                      {member.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontalIcon className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>Staff Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleEditStaff(member)}>
-                          <PencilIcon className="h-4 w-4 mr-2" />
-                          Edit Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {
-                          const newStatus = member.status === 'Active' ? 'On Leave' : 'Active';
-                          setStaff(staff.map(s => 
-                            s.id === member.id ? { ...s, status: newStatus } as StaffMember : s
-                          ));
-                        }}>
-                          <UserCheckIcon className="h-4 w-4 mr-2" />
-                          Toggle Status
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => handleDeleteStaff(member.id)}
-                          className="text-rose-600"
-                        >
-                          <UserXIcon className="h-4 w-4 mr-2" />
-                          Remove
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {filteredStaff.length > 0 ? (
+                filteredStaff.map((member) => (
+                  <TableRow key={member.id}>
+                    <TableCell className="font-medium">{member.name}</TableCell>
+                    <TableCell>{member.position}</TableCell>
+                    <TableCell>{member.department}</TableCell>
+                    <TableCell>{member.facilityName}</TableCell>
+                    <TableCell>{new Date(member.joinDate).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge className={
+                        member.status === 'Active' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
+                        member.status === 'On Leave' ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
+                        'bg-rose-50 text-rose-600 hover:bg-rose-100'
+                      }>
+                        {member.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontalIcon className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Staff Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleEditStaff(member)}>
+                            <PencilIcon className="h-4 w-4 mr-2" />
+                            Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            const newStatus = member.status === 'Active' ? 'On Leave' : 'Active';
+                            setStaff(staff.map(s => 
+                              s.id === member.id ? { ...s, status: newStatus } as StaffMember : s
+                            ));
+                          }}>
+                            <UserCheckIcon className="h-4 w-4 mr-2" />
+                            Toggle Status
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteStaff(member.id)}
+                            className="text-rose-600"
+                          >
+                            <UserXIcon className="h-4 w-4 mr-2" />
+                            Remove
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                    No staff members found matching your criteria
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>

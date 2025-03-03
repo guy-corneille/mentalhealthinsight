@@ -1,43 +1,33 @@
 
 import React from 'react';
 import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar } from 'recharts';
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from '@/components/ui/card';
 
-interface AuditScoreChartProps {
+interface AuditCategoriesChartProps {
   chartData: { name: string; score: number }[];
 }
 
-const AuditScoreChart: React.FC<AuditScoreChartProps> = ({ chartData }) => {
-  const chartConfig = {
-    score: {
-      label: "Audit Score",
-      color: "#4f46e5"
-    }
-  };
-
+const AuditCategoriesChart: React.FC<AuditCategoriesChartProps> = ({ chartData }) => {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart 
           data={chartData}
-          margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+          layout="vertical"
+          margin={{ top: 10, right: 30, left: 100, bottom: 20 }}
         >
           <XAxis 
-            dataKey="name" 
+            type="number"
             tickLine={false}
             axisLine={false}
-            padding={{ left: 20, right: 20 }}
+            domain={[0, 100]}
+            tickFormatter={(value) => `${value}%`}
           />
           <YAxis 
+            dataKey="name" 
+            type="category"
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `${value}%`}
+            width={90}
           />
           <Tooltip
             content={({ active, payload }) => {
@@ -57,7 +47,7 @@ const AuditScoreChart: React.FC<AuditScoreChartProps> = ({ chartData }) => {
           <Bar 
             dataKey="score" 
             fill="#4f46e5" 
-            radius={[4, 4, 0, 0]} 
+            radius={[0, 4, 4, 0]} 
             barSize={30}
           />
         </BarChart>
@@ -66,4 +56,4 @@ const AuditScoreChart: React.FC<AuditScoreChartProps> = ({ chartData }) => {
   );
 };
 
-export default AuditScoreChart;
+export default AuditCategoriesChart;

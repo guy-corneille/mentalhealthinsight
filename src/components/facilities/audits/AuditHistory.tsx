@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import AuditScoreChart from './AuditScoreChart';
 import AuditHistoryTable from './AuditHistoryTable';
 import EmptyAuditState from './EmptyAuditState';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ArrowRightIcon } from 'lucide-react';
 
 interface AuditHistoryProps {
   facilityId: number;
@@ -97,7 +100,18 @@ const AuditHistory: React.FC<AuditHistoryProps> = ({ facilityId }) => {
     <div className="space-y-6">
       {auditHistory.length > 0 ? (
         <>
-          <AuditScoreChart chartData={chartData} />
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium">Audit Score Trends</h3>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/audits">
+                View All Audits
+                <ArrowRightIcon className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <div className="bg-white p-6 rounded-lg border">
+            <AuditScoreChart chartData={chartData} />
+          </div>
           <AuditHistoryTable 
             audits={sortedAudits}
             sortDirection={sortDirection}
