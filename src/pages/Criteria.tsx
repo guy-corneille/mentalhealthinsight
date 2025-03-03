@@ -8,13 +8,16 @@ import CriteriaForm from '@/components/assessments/CriteriaForm';
 const Criteria: React.FC = () => {
   const location = useLocation();
   
+  // Check if we're on the add or edit page
+  const isFormPage = location.pathname.includes('/add') || location.pathname.includes('/edit');
+  
   return (
     <Layout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Evaluation Criteria</h1>
           <p className="text-muted-foreground mt-1">
-            Define and manage evaluation criteria used across assessments and audits.
+            Define and manage the criteria used for facility and patient evaluations.
           </p>
         </div>
         
