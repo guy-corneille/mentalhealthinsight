@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { 
@@ -11,7 +10,8 @@ import {
   BarChart3Icon,
   ArrowLeftIcon,
   EditIcon,
-  Trash2Icon
+  Trash2Icon,
+  ClipboardIcon
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,13 +19,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import AuditHistory from "@/components/facilities/audits/AuditHistory";
+import NewAuditButton from "@/components/facilities/audits/NewAuditButton";
 
 const FacilityDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("overview");
   
-  // This would normally come from an API call
   const facility = {
     id: parseInt(id || '1'),
     name: 'Central Hospital',
@@ -47,9 +49,7 @@ const FacilityDetails: React.FC = () => {
   };
 
   const handleDelete = () => {
-    // Show confirmation dialog
     if (window.confirm('Are you sure you want to delete this facility?')) {
-      // Delete logic would normally be an API call
       toast({
         title: "Facility Deleted",
         description: `${facility.name} has been removed successfully.`,
@@ -81,6 +81,9 @@ const FacilityDetails: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2">
+            {activeTab === "audits" && (
+              <NewAuditButton facilityId={facility.id} facilityName={facility.name} />
+            )}
             <Button 
               variant="outline"
               onClick={() => navigate(`/facilities/edit/${id}`)}
@@ -109,12 +112,16 @@ const FacilityDetails: React.FC = () => {
           <span>Last audit: {new Date(facility.lastAudit).toLocaleDateString()}</span>
         </div>
         
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full md:w-auto grid-cols-3 md:grid-cols-4">
+        <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
+          <TabsList className="grid w-full md:w-auto grid-cols-3 md:grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="staff">Staff</TabsTrigger>
             <TabsTrigger value="services">Services</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="audits" className="relative">
+              Audits
+              <span className="absolute top-0 right-1 w-2 h-2 bg-healthiq-600 rounded-full"></span>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="space-y-6 mt-6">
@@ -223,6 +230,13 @@ const FacilityDetails: React.FC = () => {
                 <p className="text-muted-foreground">Audit history and reports would be displayed here.</p>
               </CardContent>
             </Card>
+          </TabsContent>
+          
+          <TabsContent value="audits" className="space-y-6 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Facility Audit History</h2>
+            </div>
+            <AuditHistory facilityId={facility.id} />
           </TabsContent>
         </Tabs>
       </div>
