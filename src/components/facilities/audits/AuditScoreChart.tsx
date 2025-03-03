@@ -3,18 +3,20 @@ import React from 'react';
 import { BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Bar } from 'recharts';
 import { 
   ChartContainer, 
-  ChartTooltipContent, 
-  ChartTooltip,
-  type ChartConfig
-} from '@/components/ui/chart';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+  ChartTooltip, 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui';
 
 interface AuditScoreChartProps {
   chartData: { name: string; score: number }[];
 }
 
 const AuditScoreChart: React.FC<AuditScoreChartProps> = ({ chartData }) => {
-  const chartConfig: ChartConfig = {
+  const chartConfig = {
     score: {
       label: "Audit Score",
       color: "#4f46e5"
@@ -27,10 +29,13 @@ const AuditScoreChart: React.FC<AuditScoreChartProps> = ({ chartData }) => {
         <CardTitle>Audit Score Trends</CardTitle>
         <CardDescription>Historical performance over time</CardDescription>
       </CardHeader>
-      <CardContent className="h-[300px]">
+      <CardContent className="h-[300px] w-full">
         <ChartContainer config={chartConfig}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
+            <BarChart 
+              data={chartData}
+              margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
+            >
               <XAxis 
                 dataKey="name" 
                 tickLine={false}

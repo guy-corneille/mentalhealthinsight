@@ -11,6 +11,7 @@ import FacilityDetails from "./pages/FacilityDetails";
 import FacilityAdd from "./pages/FacilityAdd";
 import FacilityEdit from "./pages/FacilityEdit";
 import FacilityAudit from "./pages/FacilityAudit";
+import Staff from "./pages/Staff";
 import Patients from "./pages/Patients";
 import Assessments from "./pages/Assessments";
 import Criteria from "./pages/Criteria";
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/facilities/add" element={<FacilityAdd />} />
           <Route path="/facilities/edit/:id" element={<FacilityEdit />} />
           <Route path="/facilities/audit/:id" element={<FacilityAudit />} />
+          <Route path="/staff" element={<Staff />} />
           <Route path="/patients" element={<Patients />} />
           <Route path="/assessments" element={<Assessments />} />
           <Route path="/criteria/*" element={<Criteria />} />

@@ -9,7 +9,8 @@ import {
   BarChartIcon, 
   BookOpenIcon, 
   SettingsIcon, 
-  HelpCircleIcon
+  HelpCircleIcon,
+  UserIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +28,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   const menuItems = [
     { icon: LayoutDashboardIcon, label: 'Dashboard', path: '/dashboard' },
     { icon: BuildingIcon, label: 'Facilities', path: '/facilities' },
+    { icon: UserIcon, label: 'Staff', path: '/staff' },
     { icon: UsersIcon, label: 'Patients', path: '/patients' },
     { icon: ClipboardIcon, label: 'Assessments', path: '/assessments' },
     { icon: BarChartIcon, label: 'Criteria', path: '/criteria' },

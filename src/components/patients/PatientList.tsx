@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   UserIcon, 
   SearchIcon,
@@ -27,8 +27,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import PatientDetails from "./PatientDetails";
 
 const PatientList: React.FC = () => {
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
   const patients = [
     { 
       id: 'P-1001', 
@@ -87,6 +91,11 @@ const PatientList: React.FC = () => {
       status: 'Transferred'
     },
   ];
+
+  const openPatientDetails = (patientId: string) => {
+    setSelectedPatientId(patientId);
+    setDetailsOpen(true);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -153,7 +162,7 @@ const PatientList: React.FC = () => {
                       <DropdownMenuContent align="end" className="w-48">
                         <DropdownMenuLabel>Patient Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openPatientDetails(patient.id)}>
                           <FileTextIcon className="h-4 w-4 mr-2" />
                           View Records
                         </DropdownMenuItem>
@@ -170,6 +179,12 @@ const PatientList: React.FC = () => {
           </Table>
         </div>
       </div>
+      
+      <PatientDetails 
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        patientId={selectedPatientId}
+      />
     </div>
   );
 };
