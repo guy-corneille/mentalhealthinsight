@@ -15,12 +15,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   
   useEffect(() => {
     console.log("Layout component mounted");
+    document.title = "Mental Health IQ Dashboard";
   }, []);
 
-  console.log("Layout component rendering");
+  console.log("Layout component rendering", { children });
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
+    console.log("Sidebar toggled:", !sidebarCollapsed);
   };
 
   return (

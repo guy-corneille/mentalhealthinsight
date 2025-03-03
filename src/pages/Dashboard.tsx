@@ -6,6 +6,14 @@ import DashboardContent from '@/components/dashboard/Dashboard';
 const Dashboard: React.FC = () => {
   useEffect(() => {
     console.log("Dashboard page mounted");
+    
+    // Add some debug information about rendered elements
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      console.log("Main element exists:", mainElement);
+    } else {
+      console.warn("Main element not found in the DOM");
+    }
   }, []);
 
   console.log("Dashboard page rendering");
