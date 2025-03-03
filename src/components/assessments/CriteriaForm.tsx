@@ -3,9 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash, Plus } from 'lucide-react';
+import CriteriaFormFields from './CriteriaFormFields';
+import IndicatorsList from './IndicatorsList';
 
 interface Indicator {
   id?: number;
@@ -55,9 +55,12 @@ const CriteriaForm: React.FC = () => {
     setCriteria({ ...criteria, [name]: value });
   };
 
+  const handleWeightChange = (value: number) => {
+    setCriteria({ ...criteria, weight: value });
+  };
+
   const handleIndicatorChange = (index: number, field: keyof Indicator, value: string | number) => {
     const newIndicators = [...criteria.indicators];
-    // Fix the type error by type assertion or conditional assignment
     if (field === 'name') {
       newIndicators[index][field] = value as string;
     } else if (field === 'weight') {
@@ -115,104 +118,21 @@ const CriteriaForm: React.FC = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="name" className="block text-sm font-medium">Name</label>
-            <Input
-              id="name"
-              name="name"
-              value={criteria.name}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
+          <CriteriaFormFields
+            name={criteria.name}
+            description={criteria.description}
+            standard={criteria.standard}
+            weight={criteria.weight}
+            onInputChange={handleInputChange}
+            onWeightChange={handleWeightChange}
+          />
 
-          <div className="space-y-2">
-            <label htmlFor="description" className="block text-sm font-medium">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              value={criteria.description}
-              onChange={handleInputChange}
-              required
-              className="w-full rounded-md border border-input px-3 py-2 text-sm"
-              rows={4}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="standard" className="block text-sm font-medium">Standard</label>
-            <select
-              id="standard"
-              name="standard"
-              value={criteria.standard}
-              onChange={handleInputChange}
-              className="w-full rounded-md border border-input px-3 py-2 text-sm"
-            >
-              <option value="WHO-AIMS 2.0">WHO-AIMS 2.0</option>
-              <option value="ISO 9001">ISO 9001</option>
-              <option value="Custom">Custom</option>
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="weight" className="block text-sm font-medium">Weight (0-100)</label>
-            <Input
-              id="weight"
-              name="weight"
-              type="number"
-              value={criteria.weight}
-              onChange={(e) => setCriteria({ ...criteria, weight: parseFloat(e.target.value) })}
-              min="0"
-              max="100"
-              step="0.1"
-              required
-            />
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-medium">Indicators</h3>
-              <Button type="button" onClick={handleAddIndicator} size="sm" className="flex items-center gap-1">
-                <Plus size={16} /> Add Indicator
-              </Button>
-            </div>
-            
-            {criteria.indicators.map((indicator, index) => (
-              <div key={index} className="p-4 border rounded-md space-y-4">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">Indicator Name</label>
-                  <Input
-                    value={indicator.name}
-                    onChange={(e) => handleIndicatorChange(index, 'name', e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">Weight (0-100)</label>
-                  <Input
-                    type="number"
-                    value={indicator.weight}
-                    onChange={(e) => handleIndicatorChange(index, 'weight', parseFloat(e.target.value))}
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    required
-                  />
-                </div>
-                {criteria.indicators.length > 1 && (
-                  <Button 
-                    type="button" 
-                    onClick={() => handleRemoveIndicator(index)} 
-                    variant="destructive"
-                    size="sm"
-                    className="mt-2"
-                  >
-                    <Trash size={16} className="mr-1" /> Remove
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
+          <IndicatorsList
+            indicators={criteria.indicators}
+            onIndicatorChange={handleIndicatorChange}
+            onAddIndicator={handleAddIndicator}
+            onRemoveIndicator={handleRemoveIndicator}
+          />
 
           <div className="flex justify-end gap-4">
             <Button 
