@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import ScoreTrendIndicator from '@/components/facilities/audits/ScoreTrendIndicator';
 import { format } from 'date-fns';
 import ScheduleAuditDialog from './ScheduleAuditDialog';
+import NewAuditDialog from './NewAuditDialog';
 
 interface AuditItem {
   id: number;
@@ -27,6 +29,7 @@ const AuditList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [facilityFilter, setFacilityFilter] = useState('all');
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [isNewAuditDialogOpen, setIsNewAuditDialogOpen] = useState(false);
   
   // Mock data - would be fetched from API in a real app
   const audits: AuditItem[] = [
@@ -99,6 +102,12 @@ const AuditList: React.FC = () => {
     return { id, name: facility?.facilityName || '' };
   });
 
+  // Handle starting a new audit when a facility is selected
+  const handleStartNewAudit = (facilityId: number) => {
+    navigate(`/facilities/audit/${facilityId}`);
+    setIsNewAuditDialogOpen(false);
+  };
+
   return (
     <>
       <Card>
@@ -118,7 +127,7 @@ const AuditList: React.FC = () => {
                 <Calendar className="mr-2 h-4 w-4" />
                 Schedule Audit
               </Button>
-              <Button onClick={() => navigate('/facilities')}>
+              <Button onClick={() => setIsNewAuditDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Start New Audit
               </Button>
@@ -242,6 +251,13 @@ const AuditList: React.FC = () => {
         open={isScheduleDialogOpen} 
         onOpenChange={setIsScheduleDialogOpen}
         facilities={facilities}
+      />
+
+      <NewAuditDialog
+        open={isNewAuditDialogOpen}
+        onOpenChange={setIsNewAuditDialogOpen}
+        facilities={facilities}
+        onFacilitySelect={handleStartNewAudit}
       />
     </>
   );
