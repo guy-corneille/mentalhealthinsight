@@ -7,6 +7,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Facilities from "./pages/Facilities";
+import FacilityDetails from "./pages/FacilityDetails";
+import FacilityAdd from "./pages/FacilityAdd";
+import FacilityEdit from "./pages/FacilityEdit";
 import Patients from "./pages/Patients";
 import Assessments from "./pages/Assessments";
 import Criteria from "./pages/Criteria";
@@ -24,6 +27,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/facilities" element={<Facilities />} />
+          <Route path="/facilities/:id" element={<FacilityDetails />} />
+          <Route path="/facilities/add" element={<FacilityAdd />} />
+          <Route path="/facilities/edit/:id" element={<FacilityEdit />} />
           <Route path="/patients" element={<Patients />} />
           <Route path="/assessments" element={<Assessments />} />
           <Route path="/criteria/*" element={<Criteria />} />
