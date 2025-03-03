@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PanelLeftIcon, PanelLeftCloseIcon } from 'lucide-react';
 import Header from './Header';
 import Sidebar from './Sidebar';
@@ -12,6 +12,12 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  useEffect(() => {
+    console.log("Layout component mounted");
+  }, []);
+
+  console.log("Layout component rendering");
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
