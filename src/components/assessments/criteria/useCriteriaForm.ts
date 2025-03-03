@@ -102,12 +102,12 @@ export const useCriteriaForm = (id?: string) => {
               weight: foundCriteria.weight,
               indicators: foundCriteria.indicators || [{ name: '', weight: 1.0 }],
             });
-            toast({
+            toast.toast({
               title: "Using mock data",
               description: "Connected to development environment with mock data.",
             });
           } else {
-            toast({
+            toast.toast({
               variant: "destructive",
               title: "Error loading criteria",
               description: "Could not find the requested criteria.",
@@ -166,7 +166,7 @@ export const useCriteriaForm = (id?: string) => {
         const method = id ? axios.put : axios.post;
         const url = id ? `http://localhost:8000/api/criteria/${id}/` : 'http://localhost:8000/api/criteria/';
         await method(url, criteria);
-        toast({
+        toast.toast({
           title: "Success",
           description: `Criteria ${id ? 'updated' : 'created'} successfully!`,
         });
@@ -174,7 +174,7 @@ export const useCriteriaForm = (id?: string) => {
         console.error("Error saving criteria:", error);
         
         // Mock successful save
-        toast({
+        toast.toast({
           title: "Success (Mock)",
           description: `Criteria ${id ? 'updated' : 'created'} successfully in development mode!`,
         });
@@ -183,7 +183,7 @@ export const useCriteriaForm = (id?: string) => {
       navigate('/criteria');
     } catch (error) {
       console.error("Error in form submission:", error);
-      toast({
+      toast.toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to save criteria. Please try again.",
