@@ -5,7 +5,6 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select } from '@/components/ui/select';
 import { Trash, Plus } from 'lucide-react';
 
 interface Indicator {
@@ -58,7 +57,12 @@ const CriteriaForm: React.FC = () => {
 
   const handleIndicatorChange = (index: number, field: keyof Indicator, value: string | number) => {
     const newIndicators = [...criteria.indicators];
-    newIndicators[index][field] = value;
+    // Fix the type error by type assertion or conditional assignment
+    if (field === 'name') {
+      newIndicators[index][field] = value as string;
+    } else if (field === 'weight') {
+      newIndicators[index][field] = Number(value);
+    }
     setCriteria({ ...criteria, indicators: newIndicators });
   };
 
