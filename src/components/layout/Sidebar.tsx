@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -13,9 +14,10 @@ import {
   DatabaseIcon,
   ListChecksIcon,
   FileTextIcon,
-  FolderIcon,
   ChevronDownIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ClipboardListIcon,
+  BarChart2Icon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -63,7 +65,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       children: [
         { icon: BuildingIcon, label: 'Facilities', path: '/facilities' },
         { icon: UserIcon, label: 'Staff', path: '/staff' },
-        { icon: UsersIcon, label: 'Patients', path: '/patients' }
+        { icon: UsersIcon, label: 'Patients', path: '/patients' },
+        { icon: BarChartIcon, label: 'Criteria', path: '/criteria' }
       ]
     },
     { 
@@ -72,7 +75,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       path: '#', 
       children: [
         { icon: ClipboardIcon, label: 'Assessments', path: '/assessments' },
-        { icon: BarChartIcon, label: 'Criteria', path: '/criteria' }
+        { icon: ClipboardListIcon, label: 'Audits', path: '/audits' }
       ]
     },
     { icon: FileTextIcon, label: 'Reports', path: '/reports' }

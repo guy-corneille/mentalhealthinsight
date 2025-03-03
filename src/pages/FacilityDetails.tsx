@@ -20,8 +20,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import AuditHistory from "@/components/facilities/audits/AuditHistory";
-import NewAuditButton from "@/components/facilities/audits/NewAuditButton";
 import FacilityStaffList from "@/components/facilities/FacilityStaffList";
 
 const FacilityDetails: React.FC = () => {
@@ -83,9 +81,6 @@ const FacilityDetails: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            {activeTab === "audits" && (
-              <NewAuditButton facilityId={facility.id} facilityName={facility.name} />
-            )}
             <Button 
               variant="outline"
               onClick={() => navigate(`/facilities/edit/${id}`)}
@@ -115,15 +110,11 @@ const FacilityDetails: React.FC = () => {
         </div>
         
         <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-          <TabsList className="grid w-full md:w-auto grid-cols-3 md:grid-cols-5">
+          <TabsList className="grid w-full md:w-auto grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="staff">Staff</TabsTrigger>
             <TabsTrigger value="services">Services</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="audits" className="relative">
-              Audits
-              <span className="absolute top-0 right-1 w-2 h-2 bg-healthiq-600 rounded-full"></span>
-            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview" className="space-y-6 mt-6">
@@ -229,16 +220,18 @@ const FacilityDetails: React.FC = () => {
                 <CardTitle>Audit Reports</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Audit history and reports would be displayed here.</p>
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <ClipboardIcon className="h-16 w-16 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Audit Reports Available</h3>
+                  <p className="text-muted-foreground max-w-md mb-6">
+                    View and manage audit reports for this facility in the Evaluation Framework section.
+                  </p>
+                  <Button onClick={() => navigate('/audits')}>
+                    Go to Audits
+                  </Button>
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
-          
-          <TabsContent value="audits" className="space-y-6 mt-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Facility Audit History</h2>
-            </div>
-            <AuditHistory facilityId={facility.id} />
           </TabsContent>
         </Tabs>
       </div>
