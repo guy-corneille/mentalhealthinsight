@@ -14,6 +14,7 @@ import FacilityAudit from "./pages/FacilityAudit";
 import Staff from "./pages/Staff";
 import Patients from "./pages/Patients";
 import Assessments from "./pages/Assessments";
+import Audits from "./pages/Audits";
 import Criteria from "./pages/Criteria";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/staff" element={<Staff />} />
           <Route path="/patients" element={<Patients />} />
           <Route path="/assessments" element={<Assessments />} />
+          <Route path="/audits" element={<Audits />} />
           <Route path="/criteria/*" element={<Criteria />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="*" element={<NotFound />} />
