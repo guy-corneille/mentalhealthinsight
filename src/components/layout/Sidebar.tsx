@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -17,7 +16,8 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   ClipboardListIcon,
-  BarChart2Icon
+  BarChart2Icon,
+  SlidersIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   const location = useLocation();
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
     'dataSetup': false,
+    'evaluationSetup': false,
     'evaluationFramework': false
   });
   
@@ -65,7 +66,14 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       children: [
         { icon: BuildingIcon, label: 'Facilities', path: '/facilities' },
         { icon: UserIcon, label: 'Staff', path: '/staff' },
-        { icon: UsersIcon, label: 'Patients', path: '/patients' },
+        { icon: UsersIcon, label: 'Patients', path: '/patients' }
+      ]
+    },
+    { 
+      icon: SlidersIcon, 
+      label: 'Evaluation Setup', 
+      path: '#', 
+      children: [
         { icon: BarChartIcon, label: 'Criteria', path: '/criteria' }
       ]
     },
