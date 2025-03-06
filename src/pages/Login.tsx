@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { BrainIcon, HeartPulseIcon, AlertCircleIcon } from 'lucide-react';
+import { BrainIcon, HeartPulseIcon, AlertCircleIcon, UserPlusIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Login: React.FC = () => {
@@ -96,9 +96,19 @@ const Login: React.FC = () => {
             </div>
           </CardContent>
           
-          <CardFooter>
+          <CardFooter className="flex flex-col space-y-3">
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Signing in...' : 'Sign in'}
+            </Button>
+            
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full" 
+              onClick={() => navigate('/register')}
+            >
+              <UserPlusIcon className="mr-2 h-4 w-4" />
+              New User? Register
             </Button>
           </CardFooter>
         </form>
@@ -112,8 +122,8 @@ const Login: React.FC = () => {
                 <p>Username: admin</p>
               </div>
               <div className="border rounded p-1">
-                <p className="font-semibold">Clinician</p>
-                <p>Username: clinician</p>
+                <p className="font-semibold">Evaluator</p>
+                <p>Username: evaluator</p>
               </div>
               <div className="border rounded p-1">
                 <p className="font-semibold">Viewer</p>

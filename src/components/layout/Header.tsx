@@ -1,5 +1,6 @@
-import React from 'react';
-import { BellIcon, SearchIcon, UserIcon, LogOutIcon } from 'lucide-react';
+
+import React, { useState } from 'react';
+import { BellIcon, SearchIcon, UserIcon, LogOutIcon, UsersIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,15 +14,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from 'react-router-dom';
+import UserManagementDialog from '../users/UserManagementDialog';
 
 const Header: React.FC = () => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, pendingUsers } = useAuth();
   const navigate = useNavigate();
+  const [userManagementOpen, setUserManagementOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
+
+  const hasManagementAccess = user?.role === 'admin' || user?.role === 'superuser';
+  const pendingCount = hasManagementAccess ? pendingUsers.length : 0;
 
   return (
     <header className="h-16 px-6 border-b border-border/40 bg-background/95 backdrop-blur flex items-center justify-between sticky top-0 z-30 transition-all duration-300">
@@ -72,6 +78,22 @@ const Header: React.FC = () => {
                 <DropdownMenuItem onClick={() => navigate('/account-settings')}>
                   Account settings
                 </DropdownMenuItem>
+                
+                {hasManagementAccess && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setUserManagementOpen(true)}>
+                      <UsersIcon className="h-4 w-4 mr-2" />
+                      User Management
+                      {pendingCount > 0 && (
+                        <Badge variant="destructive" className="ml-2 text-xs">
+                          {pendingCount}
+                        </Badge>
+                      )}
+                    </DropdownMenuItem>
+                  </>
+                )}
+                
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-500">
                   <LogOutIcon className="h-4 w-4 mr-2" />
@@ -86,6 +108,11 @@ const Header: React.FC = () => {
           </Button>
         )}
       </div>
+      
+      <UserManagementDialog 
+        open={userManagementOpen} 
+        onOpenChange={setUserManagementOpen} 
+      />
     </header>
   );
 };
