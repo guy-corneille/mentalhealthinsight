@@ -1,4 +1,6 @@
 
+import { UserRole } from '@/contexts/AuthContext';
+
 export type Rating = "pass" | "high-partial" | "partial" | "low-partial" | "fail" | "not-applicable" | "not-rated";
 
 export const getRatingValue = (rating: Rating): number => {
@@ -57,4 +59,36 @@ export const calculateWeightedScoreWithExclusions = (
   });
 
   return totalWeight > 0 ? Math.round((totalScore / totalWeight) * 100) : 0;
+};
+
+/**
+ * Returns whether a user role has access to a specific criteria type
+ */
+export const canAccessCriteriaType = (role: UserRole, criteriaType: 'assessment' | 'audit'): boolean => {
+  switch (role) {
+    case 'superuser':
+    case 'admin':
+      return true; // Can access all criteria types
+    case 'auditor':
+      return criteriaType === 'audit'; // Can only access audit criteria
+    case 'clinician':
+      return criteriaType === 'assessment'; // Can only access assessment criteria
+    case 'viewer':
+      return false; // Cannot modify any criteria
+    default:
+      return false;
+  }
+};
+
+/**
+ * Adjust the displayed score based on user role for reporting purposes
+ */
+export const getAdjustedScoreForRole = (
+  score: number, 
+  role: UserRole, 
+  criteriaType: 'assessment' | 'audit'
+): number => {
+  // Some organizations may want to adjust displayed scores based on role
+  // This is a placeholder for such logic
+  return score;
 };
