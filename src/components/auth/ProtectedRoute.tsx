@@ -22,8 +22,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         title: "Authentication required",
         description: "Please sign in to access this page.",
       });
+    } else if (!isLoading && isAuthenticated && !canAccessRoute(location.pathname)) {
+      toast({
+        variant: "destructive",
+        title: "Access denied",
+        description: "You don't have permission to access this page.",
+      });
     }
-  }, [isLoading, isAuthenticated, toast]);
+  }, [isLoading, isAuthenticated, location.pathname, canAccessRoute, toast]);
 
   // Still loading, don't redirect yet
   if (isLoading) {
@@ -37,11 +43,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   // Authenticated but not authorized for this route
   if (!canAccessRoute(location.pathname)) {
-    toast({
-      variant: "destructive",
-      title: "Access denied",
-      description: "You don't have permission to access this page.",
-    });
     return <Navigate to="/dashboard" replace />;
   }
 

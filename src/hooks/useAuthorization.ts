@@ -28,14 +28,16 @@ export const useAuthorization = () => {
     if (['/dashboard'].includes(route)) return true;
     
     // Route specific permissions
-    switch (route) {
+    const path = route.split('?')[0]; // Remove query parameters for route matching
+    
+    switch (path) {
       case '/facilities':
       case '/facilities/add':
       case '/facilities/edit':
         return hasPermission('manage:facilities') || hasPermission('view:facilities');
       
       case '/staff':
-        return hasPermission('manage:staff');
+        return hasPermission('manage:staff') || hasPermission('manage:all');
       
       case '/patients':
         return hasPermission('manage:patients') || hasPermission('view:patients');
@@ -53,6 +55,10 @@ export const useAuthorization = () => {
         return hasPermission('view:reports');
       
       default:
+        // For nested routes like /facilities/1, /staff/edit, etc.
+        if (path.startsWith('/facilities/')) return hasPermission('manage:facilities') || hasPermission('view:facilities');
+        if (path.startsWith('/staff/')) return hasPermission('manage:staff') || hasPermission('manage:all');
+        if (path.startsWith('/patients/')) return hasPermission('manage:patients') || hasPermission('view:patients');
         return false;
     }
   };
