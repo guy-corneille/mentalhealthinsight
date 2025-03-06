@@ -31,7 +31,11 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import NewAssessmentDialog from './NewAssessmentDialog';
 
-const AssessmentList: React.FC = () => {
+interface AssessmentListProps {
+  onStartAssessment: (patientId: string, facilityId: string) => void;
+}
+
+const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -93,9 +97,7 @@ const AssessmentList: React.FC = () => {
     });
     
     setIsDialogOpen(false);
-    
-    // Mock navigation - in a real app, this would go to the assessment form
-    // navigate(`/assessments/new?patient=${patientId}&facility=${facilityId}`);
+    onStartAssessment(patientId, facilityId);
   };
 
   return (
