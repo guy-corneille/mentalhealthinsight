@@ -7,9 +7,26 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, ArrowRight, Check, FileText, Save, CheckCircleIcon, XCircleIcon, AlertCircleIcon } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  ArrowRight, 
+  Check, 
+  FileText, 
+  Save, 
+  CheckCircleIcon, 
+  XCircleIcon, 
+  AlertCircleIcon,
+  MinusCircleIcon,
+  StarIcon,
+  StarHalfIcon,
+  BanIcon
+} from 'lucide-react';
 import axios from 'axios';
-import { type Rating, getRatingValue, calculateWeightedScore } from '@/utils/ratingUtils';
+import { 
+  type Rating, 
+  getRatingValue, 
+  calculateWeightedScoreWithExclusions 
+} from '@/utils/ratingUtils';
 
 interface AssessmentEvaluationProps {
   patientId: string;
@@ -50,7 +67,6 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
   const [overallScore, setOverallScore] = useState(0);
   const [loading, setLoading] = useState(true);
   
-  // Mock data for development - now only showing assessment-type criteria
   const mockCriteria: Criterion[] = [
     {
       id: 4,
@@ -115,17 +131,14 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   
   useEffect(() => {
-    // In a real app, fetch the assessment criteria from the API
     const fetchCriteria = async () => {
       try {
         setLoading(true);
-        // Attempt to fetch from API
         const response = await axios.get('http://localhost:8000/api/criteria/', {
           params: { type: 'assessment' }
         });
         
         if (response.data && response.data.length > 0) {
-          // Transform API data to include score property
           const criteriaWithScores = response.data.map((criterion: Criterion) => ({
             ...criterion,
             indicators: criterion.indicators.map(indicator => ({
@@ -136,12 +149,10 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
           }));
           setCriteria(criteriaWithScores);
         } else {
-          // Fallback to mock data
           setCriteria(mockCriteria);
         }
       } catch (error) {
         console.error('Error fetching criteria:', error);
-        // Fallback to mock data
         setCriteria(mockCriteria);
       } finally {
         setLoading(false);
@@ -153,18 +164,17 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
 
   const handleRatingChange = (criterionIndex: number, indicatorIndex: number, rating: Rating) => {
     const newCriteria = [...criteria];
-    const score = getRatingValue(rating) * 100;
+    const score = rating === "not-applicable" ? 0 : getRatingValue(rating) * 100;
     newCriteria[criterionIndex].indicators[indicatorIndex].rating = rating;
     newCriteria[criterionIndex].indicators[indicatorIndex].score = score;
     setCriteria(newCriteria);
     
-    // Calculate overall score based on weighted ratings
     let totalWeightedScore = 0;
     let totalWeight = 0;
     
     for (const criterion of newCriteria) {
-      const criterionScore = calculateWeightedScore(
-        criterion.indicators.map(i => ({ weight: i.weight, score: i.score }))
+      const criterionScore = calculateWeightedScoreWithExclusions(
+        criterion.indicators.map(i => ({ weight: i.weight, rating: i.rating }))
       );
       
       totalWeightedScore += (criterionScore * criterion.weight);
@@ -258,35 +268,65 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
                         <Label>{indicator.name}</Label>
                         <span className="text-sm text-muted-foreground">Weight: {indicator.weight}%</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex space-x-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             variant={indicator.rating === "pass" ? "default" : "outline"}
                             className={indicator.rating === "pass" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
                             onClick={() => handleRatingChange(currentStep, i, "pass")}
+                            size="sm"
                           >
-                            <CheckCircleIcon className="h-4 w-4 mr-2" />
-                            Pass
+                            <CheckCircleIcon className="h-4 w-4 mr-1" />
+                            Pass (100%)
+                          </Button>
+                          <Button
+                            variant={indicator.rating === "high-partial" ? "default" : "outline"}
+                            className={indicator.rating === "high-partial" ? "bg-emerald-500 hover:bg-emerald-600" : ""}
+                            onClick={() => handleRatingChange(currentStep, i, "high-partial")}
+                            size="sm"
+                          >
+                            <StarIcon className="h-4 w-4 mr-1" />
+                            Good (75%)
                           </Button>
                           <Button
                             variant={indicator.rating === "partial" ? "default" : "outline"}
                             className={indicator.rating === "partial" ? "bg-amber-600 hover:bg-amber-700" : ""}
                             onClick={() => handleRatingChange(currentStep, i, "partial")}
+                            size="sm"
                           >
-                            <AlertCircleIcon className="h-4 w-4 mr-2" />
-                            Partial
+                            <StarHalfIcon className="h-4 w-4 mr-1" />
+                            Partial (50%)
+                          </Button>
+                          <Button
+                            variant={indicator.rating === "low-partial" ? "default" : "outline"}
+                            className={indicator.rating === "low-partial" ? "bg-amber-500 hover:bg-amber-600" : ""}
+                            onClick={() => handleRatingChange(currentStep, i, "low-partial")}
+                            size="sm"
+                          >
+                            <MinusCircleIcon className="h-4 w-4 mr-1" />
+                            Limited (25%)
                           </Button>
                           <Button
                             variant={indicator.rating === "fail" ? "default" : "outline"}
                             className={indicator.rating === "fail" ? "bg-rose-600 hover:bg-rose-700" : ""}
                             onClick={() => handleRatingChange(currentStep, i, "fail")}
+                            size="sm"
                           >
-                            <XCircleIcon className="h-4 w-4 mr-2" />
-                            Fail
+                            <XCircleIcon className="h-4 w-4 mr-1" />
+                            Fail (0%)
+                          </Button>
+                          <Button
+                            variant={indicator.rating === "not-applicable" ? "default" : "outline"}
+                            className={indicator.rating === "not-applicable" ? "bg-gray-600 hover:bg-gray-700" : ""}
+                            onClick={() => handleRatingChange(currentStep, i, "not-applicable")}
+                            size="sm"
+                          >
+                            <BanIcon className="h-4 w-4 mr-1" />
+                            N/A
                           </Button>
                         </div>
                         <div className="w-16 text-center font-medium">
-                          {indicator.score}%
+                          {indicator.rating === "not-applicable" ? "N/A" : `${indicator.score}%`}
                         </div>
                       </div>
                     </div>
@@ -339,7 +379,9 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
                         <span>{indicator.name}</span>
                         <div className="flex items-center gap-2">
                           <span className="text-muted-foreground">Weight: {indicator.weight}%</span>
-                          <span className="font-medium">{indicator.score}%</span>
+                          <span className="font-medium">
+                            {indicator.rating === "not-applicable" ? "N/A" : `${indicator.score}%`}
+                          </span>
                         </div>
                       </div>
                     ))}
