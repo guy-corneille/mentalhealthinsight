@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -23,6 +23,7 @@ import { FileText } from 'lucide-react';
 interface Patient {
   id: string;
   name: string;
+  facilityId: string;
 }
 
 interface Facility {
@@ -46,11 +47,11 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
 
   // Mock data for development purposes
   const patients: Patient[] = [
-    { id: 'P-1001', name: 'John Doe' },
-    { id: 'P-1002', name: 'Jane Smith' },
-    { id: 'P-1003', name: 'Michael Johnson' },
-    { id: 'P-1005', name: 'Emily Davis' },
-    { id: 'P-1006', name: 'Robert Wilson' },
+    { id: 'P-1001', name: 'John Doe', facilityId: '1' },
+    { id: 'P-1002', name: 'Jane Smith', facilityId: '2' },
+    { id: 'P-1003', name: 'Michael Johnson', facilityId: '3' },
+    { id: 'P-1005', name: 'Emily Davis', facilityId: '4' },
+    { id: 'P-1006', name: 'Robert Wilson', facilityId: '5' },
   ];
 
   const facilities: Facility[] = [
@@ -60,6 +61,16 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
     { id: '4', name: 'Southern District Hospital' },
     { id: '5', name: 'Western Health Center' },
   ];
+
+  // Auto-select facility when patient is selected
+  useEffect(() => {
+    if (selectedPatientId) {
+      const patient = patients.find(p => p.id === selectedPatientId);
+      if (patient) {
+        setSelectedFacilityId(patient.facilityId);
+      }
+    }
+  }, [selectedPatientId]);
 
   const handleStartAssessment = () => {
     if (selectedPatientId && selectedFacilityId) {
@@ -74,13 +85,19 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
     onOpenChange(false);
   };
 
+  // Get facility name for display
+  const getFacilityName = (facilityId: string) => {
+    const facility = facilities.find(f => f.id === facilityId);
+    return facility ? facility.name : '';
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle>New Patient Assessment</DialogTitle>
           <DialogDescription>
-            Select a patient and facility to begin a new assessment.
+            Select a patient to begin a new assessment.
           </DialogDescription>
         </DialogHeader>
         
@@ -109,28 +126,16 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
               </Select>
             </div>
             
-            <div>
-              <Label className="text-sm font-medium mb-2 block">
-                Facility
-              </Label>
-              <Select
-                value={selectedFacilityId}
-                onValueChange={setSelectedFacilityId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a facility" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {facilities.map((facility) => (
-                      <SelectItem key={facility.id} value={facility.id}>
-                        {facility.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
+            {selectedPatientId && (
+              <div>
+                <Label className="text-sm font-medium mb-2 block">
+                  Facility
+                </Label>
+                <div className="px-3 py-2 border rounded-md bg-muted/50">
+                  {getFacilityName(selectedFacilityId)}
+                </div>
+              </div>
+            )}
           </div>
         </div>
         
@@ -140,7 +145,7 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
           </Button>
           <Button 
             onClick={handleStartAssessment} 
-            disabled={!selectedPatientId || !selectedFacilityId}
+            disabled={!selectedPatientId}
             className="bg-healthiq-600 hover:bg-healthiq-700"
           >
             <FileText className="mr-2 h-4 w-4" />
