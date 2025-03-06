@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { validateCriteria } from './CriteriaValidation';
@@ -17,29 +17,41 @@ interface CriteriaFormData {
   standard: string;
   weight: number;
   indicators: Indicator[];
+  type: 'assessment' | 'audit';
 }
 
-export const useCriteriaForm = (id?: string) => {
+export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit') => {
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
+  
+  // Extract type from URL query params if present
+  const urlParams = new URLSearchParams(location.search);
+  const typeFromUrl = urlParams.get('type') as 'assessment' | 'audit' | null;
+  
+  // Set initial type based on priority: defaultType, URL param, or default to 'assessment'
+  const initialType = defaultType || typeFromUrl || 'assessment';
+  
   const [criteria, setCriteria] = useState<CriteriaFormData>({
     name: '',
     description: '',
-    standard: 'WHO-AIMS 2.0',
+    standard: initialType === 'assessment' ? 'PHQ-9' : 'WHO-AIMS 2.0',
     weight: 1.0,
     indicators: [{ name: '', weight: 1.0 }],
+    type: initialType
   });
   
   const [isLoading, setIsLoading] = useState(false);
 
-  // Mock data for development
-  const mockCriteria = [
+  // Mock audit criteria data
+  const mockAuditCriteria = [
     {
       id: 1,
       name: 'Facility Infrastructure',
       description: 'Physical structure and resources available at the facility',
       standard: 'WHO-AIMS 2.0',
       weight: 25,
+      type: 'audit',
       indicators: [
         { id: 1, name: 'Building Condition', weight: 40 },
         { id: 2, name: 'Equipment Availability', weight: 30 },
@@ -52,6 +64,7 @@ export const useCriteriaForm = (id?: string) => {
       description: 'Skills and qualifications of the mental health professionals',
       standard: 'ISO 9001',
       weight: 35,
+      type: 'audit',
       indicators: [
         { id: 4, name: 'Education Level', weight: 25 },
         { id: 5, name: 'Years of Experience', weight: 25 },
@@ -65,6 +78,7 @@ export const useCriteriaForm = (id?: string) => {
       description: 'Effectiveness of mental health interventions provided',
       standard: 'Custom',
       weight: 40,
+      type: 'audit',
       indicators: [
         { id: 8, name: 'Symptom Reduction', weight: 50 },
         { id: 9, name: 'Functional Improvement', weight: 30 },
@@ -72,6 +86,71 @@ export const useCriteriaForm = (id?: string) => {
       ]
     }
   ];
+
+  // Mock assessment criteria data
+  const mockAssessmentCriteria = [
+    {
+      id: 4,
+      name: 'Depression Evaluation',
+      description: 'Assessment criteria for evaluating depression symptoms and severity',
+      standard: 'PHQ-9',
+      weight: 30,
+      type: 'assessment',
+      indicators: [
+        { id: 11, name: 'Depressed Mood', weight: 25 },
+        { id: 12, name: 'Loss of Interest', weight: 25 },
+        { id: 13, name: 'Sleep Disturbance', weight: 15 },
+        { id: 14, name: 'Fatigue', weight: 15 },
+        { id: 15, name: 'Appetite Changes', weight: 10 },
+        { id: 16, name: 'Concentration Issues', weight: 10 }
+      ]
+    },
+    {
+      id: 5,
+      name: 'Anxiety Assessment',
+      description: 'Evaluation of anxiety symptoms and their impact on daily functioning',
+      standard: 'GAD-7',
+      weight: 25,
+      type: 'assessment',
+      indicators: [
+        { id: 17, name: 'Nervousness', weight: 20 },
+        { id: 18, name: 'Worry Control', weight: 20 },
+        { id: 19, name: 'Restlessness', weight: 20 },
+        { id: 20, name: 'Irritability', weight: 20 },
+        { id: 21, name: 'Fear', weight: 20 }
+      ]
+    },
+    {
+      id: 6,
+      name: 'Cognitive Function',
+      description: 'Assessment of cognitive abilities and impairments',
+      standard: 'Custom',
+      weight: 20,
+      type: 'assessment',
+      indicators: [
+        { id: 22, name: 'Memory', weight: 25 },
+        { id: 23, name: 'Attention', weight: 25 },
+        { id: 24, name: 'Problem Solving', weight: 25 },
+        { id: 25, name: 'Decision Making', weight: 25 }
+      ]
+    },
+    {
+      id: 7,
+      name: 'Social Functioning',
+      description: 'Evaluation of social relationships and community integration',
+      standard: 'Custom',
+      weight: 15,
+      type: 'assessment',
+      indicators: [
+        { id: 26, name: 'Interpersonal Relationships', weight: 34 },
+        { id: 27, name: 'Social Engagement', weight: 33 },
+        { id: 28, name: 'Community Participation', weight: 33 }
+      ]
+    }
+  ];
+
+  // Combined mock data
+  const mockCriteria = [...mockAuditCriteria, ...mockAssessmentCriteria];
 
   useEffect(() => {
     if (id) {
@@ -81,13 +160,14 @@ export const useCriteriaForm = (id?: string) => {
       const fetchData = async () => {
         try {
           const res = await axios.get(`http://localhost:8000/api/criteria/${id}/`);
-          const { name, description, standard, weight, indicators } = res.data;
+          const { name, description, standard, weight, indicators, type } = res.data;
           setCriteria({
             name,
             description,
             standard,
             weight,
             indicators: indicators || [{ name: '', weight: 1.0 }],
+            type: type || 'assessment'
           });
         } catch (error) {
           console.error('Error fetching criteria:', error);
@@ -101,6 +181,7 @@ export const useCriteriaForm = (id?: string) => {
               standard: foundCriteria.standard,
               weight: foundCriteria.weight,
               indicators: foundCriteria.indicators || [{ name: '', weight: 1.0 }],
+              type: foundCriteria.type || 'assessment'
             });
             toast.toast({
               title: "Using mock data",
@@ -125,7 +206,15 @@ export const useCriteriaForm = (id?: string) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setCriteria({ ...criteria, [name]: value });
+    
+    // If type changes, update the standard to match the type's default
+    if (name === 'type') {
+      const newType = value as 'assessment' | 'audit';
+      const newStandard = newType === 'assessment' ? 'PHQ-9' : 'WHO-AIMS 2.0';
+      setCriteria({ ...criteria, [name]: value, standard: newStandard });
+    } else {
+      setCriteria({ ...criteria, [name]: value });
+    }
   };
 
   const handleWeightChange = (value: number) => {

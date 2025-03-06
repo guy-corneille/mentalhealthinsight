@@ -1,15 +1,24 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CriteriaFormFields from './CriteriaFormFields';
 import IndicatorsList from './IndicatorsList';
 import { useCriteriaForm } from './criteria/useCriteriaForm';
 
-const CriteriaForm: React.FC = () => {
+interface CriteriaFormProps {
+  criteriaType?: 'assessment' | 'audit';
+}
+
+const CriteriaForm: React.FC<CriteriaFormProps> = ({ criteriaType }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // If editing existing criteria, we'll get the type from the API
+  // For new criteria, use the passed type from the parent
+  const formType = id ? undefined : criteriaType || 'assessment';
   
   const {
     criteria,
@@ -20,12 +29,14 @@ const CriteriaForm: React.FC = () => {
     handleAddIndicator,
     handleRemoveIndicator,
     handleSubmit,
-  } = useCriteriaForm(id);
+  } = useCriteriaForm(id, formType);
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>{id ? 'Edit Criteria' : 'Add New Criteria'}</CardTitle>
+        <CardTitle>
+          {id ? 'Edit Criteria' : `Add New ${formType === 'assessment' ? 'Assessment' : 'Audit'} Criteria`}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -37,6 +48,7 @@ const CriteriaForm: React.FC = () => {
               description={criteria.description}
               standard={criteria.standard}
               weight={criteria.weight}
+              type={criteria.type}
               onInputChange={handleInputChange}
               onWeightChange={handleWeightChange}
             />

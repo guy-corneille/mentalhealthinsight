@@ -13,13 +13,14 @@ interface CriteriaFormData {
   standard: string;
   weight: number;
   indicators: Indicator[];
+  type: 'assessment' | 'audit';
 }
 
 export const validateCriteria = (
   criteria: CriteriaFormData,
   toastObj: ReturnType<typeof useToast>
 ): boolean => {
-  if (!criteria.name || !criteria.description || criteria.weight <= 0 || criteria.weight > 100) {
+  if (!criteria.name || !criteria.description || !criteria.type || criteria.weight <= 0 || criteria.weight > 100) {
     toastObj.toast({
       variant: "destructive",
       title: "Validation error",

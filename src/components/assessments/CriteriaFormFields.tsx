@@ -7,6 +7,7 @@ interface CriteriaFormFieldsProps {
   description: string;
   standard: string;
   weight: number;
+  type?: 'assessment' | 'audit';
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   onWeightChange: (value: number) => void;
 }
@@ -16,6 +17,7 @@ const CriteriaFormFields: React.FC<CriteriaFormFieldsProps> = ({
   description,
   standard,
   weight,
+  type = 'assessment',
   onInputChange,
   onWeightChange
 }) => {
@@ -46,6 +48,21 @@ const CriteriaFormFields: React.FC<CriteriaFormFieldsProps> = ({
       </div>
 
       <div className="space-y-2">
+        <label htmlFor="type" className="block text-sm font-medium">Criteria Type</label>
+        <select
+          id="type"
+          name="type"
+          value={type}
+          onChange={onInputChange}
+          className="w-full rounded-md border border-input px-3 py-2 text-sm"
+          disabled={type !== undefined}
+        >
+          <option value="assessment">Patient Assessment</option>
+          <option value="audit">Facility Audit</option>
+        </select>
+      </div>
+
+      <div className="space-y-2">
         <label htmlFor="standard" className="block text-sm font-medium">Standard</label>
         <select
           id="standard"
@@ -54,9 +71,21 @@ const CriteriaFormFields: React.FC<CriteriaFormFieldsProps> = ({
           onChange={onInputChange}
           className="w-full rounded-md border border-input px-3 py-2 text-sm"
         >
-          <option value="WHO-AIMS 2.0">WHO-AIMS 2.0</option>
-          <option value="ISO 9001">ISO 9001</option>
-          <option value="Custom">Custom</option>
+          {type === 'assessment' ? (
+            <>
+              <option value="DSM-5">DSM-5</option>
+              <option value="ICD-10">ICD-10</option>
+              <option value="PHQ-9">PHQ-9 (Depression)</option>
+              <option value="GAD-7">GAD-7 (Anxiety)</option>
+              <option value="Custom">Custom</option>
+            </>
+          ) : (
+            <>
+              <option value="WHO-AIMS 2.0">WHO-AIMS 2.0</option>
+              <option value="ISO 9001">ISO 9001</option>
+              <option value="Custom">Custom</option>
+            </>
+          )}
         </select>
       </div>
 

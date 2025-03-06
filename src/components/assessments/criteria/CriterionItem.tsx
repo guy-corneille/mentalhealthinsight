@@ -20,6 +20,7 @@ interface Criterion {
   standard: string;
   weight: number;
   indicators: Indicator[];
+  type?: 'assessment' | 'audit';
 }
 
 interface CriterionItemProps {
@@ -53,6 +54,11 @@ const CriterionItem: React.FC<CriterionItemProps> = ({
         </div>
         <div className="flex items-center gap-4">
           <StandardBadge standard={criterion.standard} />
+          {criterion.type && (
+            <Badge variant="outline" className={criterion.type === 'assessment' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}>
+              {criterion.type === 'assessment' ? 'Assessment' : 'Audit'}
+            </Badge>
+          )}
           <div className="text-sm text-muted-foreground font-medium w-16 text-right">
             {criterion.weight}%
           </div>
