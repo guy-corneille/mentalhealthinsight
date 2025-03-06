@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export type UserRole = 'superuser' | 'admin' | 'auditor' | 'clinician' | 'viewer';
+export type UserRole = 'superuser' | 'admin' | 'evaluator' | 'viewer';
 
 export interface User {
   id: string;
@@ -21,47 +20,38 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user data - In a real app, this would come from an API/backend
 const MOCK_USERS = [
   {
     id: '1',
-    username: 'johndoe',
-    email: 'john.doe@mentalhealthiq.com',
-    password: 'password123', // In a real app, passwords would be hashed and stored securely
+    username: 'superuser',
+    email: 'super.user@mentalhealthiq.com',
+    password: 'password123',
     role: 'superuser' as UserRole,
-    displayName: 'John Doe'
+    displayName: 'Super User'
   },
   {
     id: '2',
-    username: 'janedoe',
-    email: 'jane.doe@mentalhealthiq.com',
+    username: 'admin',
+    email: 'admin@mentalhealthiq.com',
     password: 'password123',
     role: 'admin' as UserRole,
-    displayName: 'Jane Doe'
+    displayName: 'Admin User'
   },
   {
     id: '3',
-    username: 'auditor',
-    email: 'auditor@mentalhealthiq.com',
+    username: 'evaluator',
+    email: 'evaluator@mentalhealthiq.com',
     password: 'password123',
-    role: 'auditor' as UserRole,
-    displayName: 'Sam Auditor'
+    role: 'evaluator' as UserRole,
+    displayName: 'Health Evaluator'
   },
   {
     id: '4',
-    username: 'clinician',
-    email: 'clinician@mentalhealthiq.com',
-    password: 'password123',
-    role: 'clinician' as UserRole,
-    displayName: 'Dr. Smith'
-  },
-  {
-    id: '5',
     username: 'viewer',
     email: 'viewer@mentalhealthiq.com',
     password: 'password123',
     role: 'viewer' as UserRole,
-    displayName: 'Alex Viewer'
+    displayName: 'Viewer User'
   }
 ];
 
@@ -69,7 +59,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for stored auth on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('mentalhealthiq_user');
     if (storedUser) {
@@ -87,7 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     
-    // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     const foundUser = MOCK_USERS.find(u => u.username === username && u.password === password);
@@ -97,11 +85,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('Invalid username or password');
     }
     
-    // Create user object without password
     const { password: _, ...userWithoutPassword } = foundUser;
     setUser(userWithoutPassword);
     
-    // Store in localStorage
     localStorage.setItem('mentalhealthiq_user', JSON.stringify(userWithoutPassword));
     setIsLoading(false);
   };

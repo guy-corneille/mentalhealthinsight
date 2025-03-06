@@ -5,8 +5,7 @@ import { useAuth, UserRole } from '../contexts/AuthContext';
 const rolePermissions: Record<UserRole, string[]> = {
   superuser: ['manage:all'],
   admin: ['manage:facilities', 'manage:staff', 'manage:configurations'],
-  auditor: ['manage:audits', 'manage:criteria:audit', 'view:reports'],
-  clinician: ['manage:patients', 'manage:assessments', 'manage:criteria:clinical', 'view:dashboard'],
+  evaluator: ['manage:assessments', 'manage:audits', 'manage:criteria', 'view:reports', 'manage:patients'],
   viewer: ['view:dashboard', 'view:reports', 'view:facilities', 'view:patients']
 };
 
@@ -48,8 +47,7 @@ export const useAuthorization = () => {
         return hasPermission('manage:audits');
       
       case '/criteria':
-        return hasPermission('manage:criteria:audit') || 
-               hasPermission('manage:criteria:clinical');
+        return hasPermission('manage:criteria');
       
       case '/reports':
         return hasPermission('view:reports');

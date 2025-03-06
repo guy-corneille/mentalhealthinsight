@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BellIcon, SearchIcon, UserIcon, LogOutIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -44,12 +43,12 @@ const Header: React.FC = () => {
           <BellIcon className="h-5 w-5" />
         </Button>
         
-        {isAuthenticated ? (
+        {isAuthenticated && user ? (
           <div className="flex items-center">
             <div className="mr-4 text-right hidden sm:block">
-              <p className="text-sm font-medium">{user?.displayName || user?.username}</p>
+              <p className="text-sm font-medium">{user.displayName || user.username}</p>
               <Badge variant="outline" className="text-xs capitalize">
-                {user?.role}
+                {user.role}
               </Badge>
             </div>
             
@@ -62,8 +61,8 @@ const Header: React.FC = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>
                   <div className="flex flex-col space-y-1">
-                    <p>{user?.displayName || user?.username}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                    <p>{user.displayName || user.username}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

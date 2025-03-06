@@ -1,4 +1,3 @@
-
 import { UserRole } from '@/contexts/AuthContext';
 
 export type Rating = "pass" | "high-partial" | "partial" | "low-partial" | "fail" | "not-applicable" | "not-rated";
@@ -69,10 +68,8 @@ export const canAccessCriteriaType = (role: UserRole, criteriaType: 'assessment'
     case 'superuser':
     case 'admin':
       return true; // Can access all criteria types
-    case 'auditor':
-      return criteriaType === 'audit'; // Can only access audit criteria
-    case 'clinician':
-      return criteriaType === 'assessment'; // Can only access assessment criteria
+    case 'evaluator':
+      return true; // Can access both assessment and audit criteria
     case 'viewer':
       return false; // Cannot modify any criteria
     default:
