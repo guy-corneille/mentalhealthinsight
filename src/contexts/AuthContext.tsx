@@ -214,8 +214,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Add to mock users (in a real app, this would be a database operation)
     const { password, status, requestDate, ...userWithoutPendingFields } = userToApprove;
+    
+    // Ensure displayName has a default value if it's undefined
+    const displayName = userWithoutPendingFields.displayName || userWithoutPendingFields.username;
+    
     MOCK_USERS.push({
       ...userWithoutPendingFields,
+      displayName,
       password // In a real app, this would be hashed
     });
     
