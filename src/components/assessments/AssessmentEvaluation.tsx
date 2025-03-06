@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, ArrowRight, Check, FileText, Save } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, FileText, Save, CheckCircleIcon, XCircleIcon, AlertCircleIcon } from 'lucide-react';
 import axios from 'axios';
+import { type Rating, getRatingValue, calculateWeightedScore } from '@/utils/ratingUtils';
 
 interface AssessmentEvaluationProps {
   patientId: string;
@@ -23,6 +23,7 @@ interface Indicator {
   name: string;
   weight: number;
   score: number;
+  rating: Rating;
 }
 
 interface Criterion {
@@ -59,12 +60,12 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
       weight: 30,
       type: 'assessment',
       indicators: [
-        { id: 11, name: 'Depressed Mood', weight: 25, score: 0 },
-        { id: 12, name: 'Loss of Interest', weight: 25, score: 0 },
-        { id: 13, name: 'Sleep Disturbance', weight: 15, score: 0 },
-        { id: 14, name: 'Fatigue', weight: 15, score: 0 },
-        { id: 15, name: 'Appetite Changes', weight: 10, score: 0 },
-        { id: 16, name: 'Concentration Issues', weight: 10, score: 0 }
+        { id: 11, name: 'Depressed Mood', weight: 25, score: 0, rating: "not-rated" },
+        { id: 12, name: 'Loss of Interest', weight: 25, score: 0, rating: "not-rated" },
+        { id: 13, name: 'Sleep Disturbance', weight: 15, score: 0, rating: "not-rated" },
+        { id: 14, name: 'Fatigue', weight: 15, score: 0, rating: "not-rated" },
+        { id: 15, name: 'Appetite Changes', weight: 10, score: 0, rating: "not-rated" },
+        { id: 16, name: 'Concentration Issues', weight: 10, score: 0, rating: "not-rated" }
       ]
     },
     {
@@ -75,11 +76,11 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
       weight: 25,
       type: 'assessment',
       indicators: [
-        { id: 17, name: 'Nervousness', weight: 20, score: 0 },
-        { id: 18, name: 'Worry Control', weight: 20, score: 0 },
-        { id: 19, name: 'Restlessness', weight: 20, score: 0 },
-        { id: 20, name: 'Irritability', weight: 20, score: 0 },
-        { id: 21, name: 'Fear', weight: 20, score: 0 }
+        { id: 17, name: 'Nervousness', weight: 20, score: 0, rating: "not-rated" },
+        { id: 18, name: 'Worry Control', weight: 20, score: 0, rating: "not-rated" },
+        { id: 19, name: 'Restlessness', weight: 20, score: 0, rating: "not-rated" },
+        { id: 20, name: 'Irritability', weight: 20, score: 0, rating: "not-rated" },
+        { id: 21, name: 'Fear', weight: 20, score: 0, rating: "not-rated" }
       ]
     },
     {
@@ -90,10 +91,10 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
       weight: 20,
       type: 'assessment',
       indicators: [
-        { id: 22, name: 'Memory', weight: 25, score: 0 },
-        { id: 23, name: 'Attention', weight: 25, score: 0 },
-        { id: 24, name: 'Problem Solving', weight: 25, score: 0 },
-        { id: 25, name: 'Decision Making', weight: 25, score: 0 }
+        { id: 22, name: 'Memory', weight: 25, score: 0, rating: "not-rated" },
+        { id: 23, name: 'Attention', weight: 25, score: 0, rating: "not-rated" },
+        { id: 24, name: 'Problem Solving', weight: 25, score: 0, rating: "not-rated" },
+        { id: 25, name: 'Decision Making', weight: 25, score: 0, rating: "not-rated" }
       ]
     },
     {
@@ -104,9 +105,9 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
       weight: 15,
       type: 'assessment',
       indicators: [
-        { id: 26, name: 'Interpersonal Relationships', weight: 34, score: 0 },
-        { id: 27, name: 'Social Engagement', weight: 33, score: 0 },
-        { id: 28, name: 'Community Participation', weight: 33, score: 0 }
+        { id: 26, name: 'Interpersonal Relationships', weight: 34, score: 0, rating: "not-rated" },
+        { id: 27, name: 'Social Engagement', weight: 33, score: 0, rating: "not-rated" },
+        { id: 28, name: 'Community Participation', weight: 33, score: 0, rating: "not-rated" }
       ]
     }
   ];
@@ -129,7 +130,8 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
             ...criterion,
             indicators: criterion.indicators.map(indicator => ({
               ...indicator,
-              score: 0
+              score: 0,
+              rating: "not-rated"
             }))
           }));
           setCriteria(criteriaWithScores);
@@ -148,35 +150,29 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
     
     fetchCriteria();
   }, []);
-  
-  const handleScoreChange = (criterionIndex: number, indicatorIndex: number, score: number) => {
+
+  const handleRatingChange = (criterionIndex: number, indicatorIndex: number, rating: Rating) => {
     const newCriteria = [...criteria];
+    const score = getRatingValue(rating) * 100;
+    newCriteria[criterionIndex].indicators[indicatorIndex].rating = rating;
     newCriteria[criterionIndex].indicators[indicatorIndex].score = score;
     setCriteria(newCriteria);
     
-    // Calculate overall score
+    // Calculate overall score based on weighted ratings
     let totalWeightedScore = 0;
     let totalWeight = 0;
     
     for (const criterion of newCriteria) {
-      let criterionScore = 0;
-      let criterionTotalWeight = 0;
+      const criterionScore = calculateWeightedScore(
+        criterion.indicators.map(i => ({ weight: i.weight, score: i.score }))
+      );
       
-      for (const indicator of criterion.indicators) {
-        criterionScore += (indicator.score * indicator.weight);
-        criterionTotalWeight += indicator.weight;
-      }
-      
-      const weightedCriterionScore = criterionTotalWeight > 0 
-        ? (criterionScore / criterionTotalWeight) * criterion.weight 
-        : 0;
-      
-      totalWeightedScore += weightedCriterionScore;
+      totalWeightedScore += (criterionScore * criterion.weight);
       totalWeight += criterion.weight;
     }
     
     const calculatedOverallScore = totalWeight > 0 
-      ? (totalWeightedScore / totalWeight) 
+      ? (totalWeightedScore / totalWeight)
       : 0;
     
     setOverallScore(Math.round(calculatedOverallScore * 10) / 10);
@@ -263,15 +259,32 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
                         <span className="text-sm text-muted-foreground">Weight: {indicator.weight}%</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Input
-                          type="range"
-                          min="0"
-                          max="100"
-                          step="5"
-                          value={indicator.score}
-                          onChange={(e) => handleScoreChange(currentStep, i, parseInt(e.target.value))}
-                          className="flex-1"
-                        />
+                        <div className="flex space-x-2">
+                          <Button
+                            variant={indicator.rating === "pass" ? "default" : "outline"}
+                            className={indicator.rating === "pass" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                            onClick={() => handleRatingChange(currentStep, i, "pass")}
+                          >
+                            <CheckCircleIcon className="h-4 w-4 mr-2" />
+                            Pass
+                          </Button>
+                          <Button
+                            variant={indicator.rating === "partial" ? "default" : "outline"}
+                            className={indicator.rating === "partial" ? "bg-amber-600 hover:bg-amber-700" : ""}
+                            onClick={() => handleRatingChange(currentStep, i, "partial")}
+                          >
+                            <AlertCircleIcon className="h-4 w-4 mr-2" />
+                            Partial
+                          </Button>
+                          <Button
+                            variant={indicator.rating === "fail" ? "default" : "outline"}
+                            className={indicator.rating === "fail" ? "bg-rose-600 hover:bg-rose-700" : ""}
+                            onClick={() => handleRatingChange(currentStep, i, "fail")}
+                          >
+                            <XCircleIcon className="h-4 w-4 mr-2" />
+                            Fail
+                          </Button>
+                        </div>
                         <div className="w-16 text-center font-medium">
                           {indicator.score}%
                         </div>
