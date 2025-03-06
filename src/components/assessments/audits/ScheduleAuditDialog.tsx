@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Facility {
   id: number;
@@ -47,7 +47,6 @@ interface ScheduleAuditDialogProps {
   facilities: Facility[];
 }
 
-// Define form schema
 const formSchema = z.object({
   facilityId: z.string().min(1, "Facility is required"),
   auditorName: z.string().min(3, "Auditor name is required"),
@@ -217,7 +216,14 @@ const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Scheduling..." : "Schedule Audit"}
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Spinner size="sm" />
+                    <span>Scheduling...</span>
+                  </div>
+                ) : (
+                  "Schedule Audit"
+                )}
               </Button>
             </DialogFooter>
           </form>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -22,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Spinner } from '@/components/ui/spinner';
 
 interface FacilityFormProps {
   isEdit?: boolean;
@@ -33,7 +33,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Form state
   const [facilityData, setFacilityData] = useState({
     name: '',
     type: '',
@@ -47,13 +46,10 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
     staffCount: '',
   });
 
-  // If this is an edit form, fetch the facility data
   useEffect(() => {
     if (isEdit && id) {
       setIsLoading(true);
-      // This would normally be an API call
       setTimeout(() => {
-        // Mock data for editing
         setFacilityData({
           name: 'Central Hospital',
           type: 'Hospital',
@@ -84,7 +80,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Validate form
     if (!facilityData.name || !facilityData.type || !facilityData.location) {
       toast({
         title: "Validation Error",
@@ -95,7 +90,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
       return;
     }
 
-    // Submit form data (would normally be an API call)
     setTimeout(() => {
       if (isEdit) {
         toast({
@@ -129,8 +123,9 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
       </div>
 
       {isLoading && !isEdit ? (
-        <div className="flex justify-center p-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-healthiq-600"></div>
+        <div className="flex flex-col items-center justify-center p-8 gap-4">
+          <Spinner size="lg" />
+          <p className="text-muted-foreground">Loading facility data...</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -326,10 +321,10 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
               disabled={isLoading}
             >
               {isLoading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  {isEdit ? 'Updating...' : 'Creating...'}
-                </>
+                <div className="flex items-center gap-2">
+                  <Spinner size="sm" />
+                  <span>{isEdit ? 'Updating...' : 'Creating...'}</span>
+                </div>
               ) : (
                 <>
                   <SaveIcon className="h-4 w-4 mr-2" />
