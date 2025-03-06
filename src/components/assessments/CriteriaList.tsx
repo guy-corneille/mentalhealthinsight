@@ -60,7 +60,7 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
     
     // For now, let's use mock data for development
     // Different mock data based on the criteriaType
-    const getMockData = () => {
+    const getMockData = (): Criterion[] => {
       if (criteriaType === 'audit') {
         return [
           {

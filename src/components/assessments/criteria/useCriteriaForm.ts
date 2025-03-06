@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -30,7 +29,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
   const typeFromUrl = urlParams.get('type') as 'assessment' | 'audit' | null;
   
   // Set initial type based on priority: defaultType, URL param, or default to 'assessment'
-  const initialType = defaultType || typeFromUrl || 'assessment';
+  const initialType = defaultType || (typeFromUrl as 'assessment' | 'audit') || 'assessment';
   
   const [criteria, setCriteria] = useState<CriteriaFormData>({
     name: '',
@@ -51,7 +50,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
       description: 'Physical structure and resources available at the facility',
       standard: 'WHO-AIMS 2.0',
       weight: 25,
-      type: 'audit',
+      type: 'audit' as const,
       indicators: [
         { id: 1, name: 'Building Condition', weight: 40 },
         { id: 2, name: 'Equipment Availability', weight: 30 },
@@ -64,7 +63,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
       description: 'Skills and qualifications of the mental health professionals',
       standard: 'ISO 9001',
       weight: 35,
-      type: 'audit',
+      type: 'audit' as const,
       indicators: [
         { id: 4, name: 'Education Level', weight: 25 },
         { id: 5, name: 'Years of Experience', weight: 25 },
@@ -78,7 +77,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
       description: 'Effectiveness of mental health interventions provided',
       standard: 'Custom',
       weight: 40,
-      type: 'audit',
+      type: 'audit' as const,
       indicators: [
         { id: 8, name: 'Symptom Reduction', weight: 50 },
         { id: 9, name: 'Functional Improvement', weight: 30 },
@@ -95,7 +94,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
       description: 'Assessment criteria for evaluating depression symptoms and severity',
       standard: 'PHQ-9',
       weight: 30,
-      type: 'assessment',
+      type: 'assessment' as const,
       indicators: [
         { id: 11, name: 'Depressed Mood', weight: 25 },
         { id: 12, name: 'Loss of Interest', weight: 25 },
@@ -111,7 +110,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
       description: 'Evaluation of anxiety symptoms and their impact on daily functioning',
       standard: 'GAD-7',
       weight: 25,
-      type: 'assessment',
+      type: 'assessment' as const,
       indicators: [
         { id: 17, name: 'Nervousness', weight: 20 },
         { id: 18, name: 'Worry Control', weight: 20 },
@@ -126,7 +125,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
       description: 'Assessment of cognitive abilities and impairments',
       standard: 'Custom',
       weight: 20,
-      type: 'assessment',
+      type: 'assessment' as const,
       indicators: [
         { id: 22, name: 'Memory', weight: 25 },
         { id: 23, name: 'Attention', weight: 25 },
@@ -140,7 +139,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
       description: 'Evaluation of social relationships and community integration',
       standard: 'Custom',
       weight: 15,
-      type: 'assessment',
+      type: 'assessment' as const,
       indicators: [
         { id: 26, name: 'Interpersonal Relationships', weight: 34 },
         { id: 27, name: 'Social Engagement', weight: 33 },
@@ -167,7 +166,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
             standard,
             weight,
             indicators: indicators || [{ name: '', weight: 1.0 }],
-            type: type || 'assessment'
+            type: type as 'assessment' | 'audit' || 'assessment'
           });
         } catch (error) {
           console.error('Error fetching criteria:', error);
@@ -181,7 +180,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
               standard: foundCriteria.standard,
               weight: foundCriteria.weight,
               indicators: foundCriteria.indicators || [{ name: '', weight: 1.0 }],
-              type: foundCriteria.type || 'assessment'
+              type: foundCriteria.type
             });
             toast.toast({
               title: "Using mock data",
@@ -211,7 +210,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
     if (name === 'type') {
       const newType = value as 'assessment' | 'audit';
       const newStandard = newType === 'assessment' ? 'PHQ-9' : 'WHO-AIMS 2.0';
-      setCriteria({ ...criteria, [name]: value, standard: newStandard });
+      setCriteria({ ...criteria, [name]: newType, standard: newStandard });
     } else {
       setCriteria({ ...criteria, [name]: value });
     }
@@ -286,10 +285,63 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
     criteria,
     isLoading,
     handleInputChange,
-    handleWeightChange,
-    handleIndicatorChange,
-    handleAddIndicator,
-    handleRemoveIndicator,
-    handleSubmit,
+    handleWeightChange: (value: number) => setCriteria({ ...criteria, weight: value }),
+    handleIndicatorChange: (index: number, field: keyof Indicator, value: string | number) => {
+      const newIndicators = [...criteria.indicators];
+      if (field === 'name') {
+        newIndicators[index][field] = value as string;
+      } else if (field === 'weight') {
+        newIndicators[index][field] = Number(value);
+      }
+      setCriteria({ ...criteria, indicators: newIndicators });
+    },
+    handleAddIndicator: () => {
+      setCriteria({
+        ...criteria,
+        indicators: [...criteria.indicators, { name: '', weight: 1.0 }],
+      });
+    },
+    handleRemoveIndicator: (index: number) => {
+      const newIndicators = criteria.indicators.filter((_, i) => i !== index);
+      setCriteria({ ...criteria, indicators: newIndicators });
+    },
+    handleSubmit: async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!validateCriteria(criteria, toast)) return;
+
+      try {
+        setIsLoading(true);
+        
+        // Try to use the API
+        try {
+          const method = id ? axios.put : axios.post;
+          const url = id ? `http://localhost:8000/api/criteria/${id}/` : 'http://localhost:8000/api/criteria/';
+          await method(url, criteria);
+          toast.toast({
+            title: "Success",
+            description: `Criteria ${id ? 'updated' : 'created'} successfully!`,
+          });
+        } catch (error) {
+          console.error("Error saving criteria:", error);
+          
+          // Mock successful save
+          toast.toast({
+            title: "Success (Mock)",
+            description: `Criteria ${id ? 'updated' : 'created'} successfully in development mode!`,
+          });
+        }
+        
+        navigate('/criteria');
+      } catch (error) {
+        console.error("Error in form submission:", error);
+        toast.toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to save criteria. Please try again.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
   };
 };
