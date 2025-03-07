@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatCard } from "../ui/StatCard";
+import StatCard from "../ui/StatCard";
 import { 
   Building2, 
   Users, 
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from "@/components/ui/badge";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();

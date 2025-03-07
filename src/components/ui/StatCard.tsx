@@ -6,25 +6,27 @@ import { cn } from '@/lib/utils';
 interface StatCardProps {
   title: string;
   value: string | number;
-  icon: React.ElementType;
+  icon: React.ReactNode;
   description?: string;
-  trend?: {
-    value: number;
-    positive: boolean;
-  };
+  trend?: string;
+  onClick?: () => void;
   className?: string;
 }
 
 const StatCard: React.FC<StatCardProps> = ({
   title,
   value,
-  icon: Icon,
+  icon,
   description,
   trend,
+  onClick,
   className
 }) => {
   return (
-    <Card className={cn("overflow-hidden transition-all duration-200 hover:shadow-md", className)}>
+    <Card 
+      className={cn("overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer", className)}
+      onClick={onClick}
+    >
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -35,18 +37,12 @@ const StatCard: React.FC<StatCardProps> = ({
             )}
             {trend && (
               <div className="flex items-center mt-2">
-                <span className={cn(
-                  "text-xs font-medium",
-                  trend.positive ? "text-emerald-600" : "text-rose-600"
-                )}>
-                  {trend.positive ? "+" : "-"}{Math.abs(trend.value)}%
-                </span>
-                <span className="text-xs text-muted-foreground ml-1">from previous period</span>
+                <span className="text-xs text-emerald-600 font-medium">{trend}</span>
               </div>
             )}
           </div>
           <div className="p-2 rounded-lg bg-healthiq-50">
-            <Icon className="h-5 w-5 text-healthiq-600" />
+            {icon}
           </div>
         </div>
       </CardContent>
