@@ -22,6 +22,8 @@ import Assessments from "./pages/Assessments";
 import Criteria from "./pages/Criteria";
 import Audits from "./pages/Audits";
 import Reports from "./pages/Reports";
+import Profile from "./pages/Profile";
+import UserManagement from "./pages/UserManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -95,6 +97,16 @@ const App = () => (
             <Route path="/reports" element={
               <ProtectedRoute>
                 <Reports />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/user-management" element={
+              <ProtectedRoute>
+                <UserManagement />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { BellIcon, SearchIcon, UserIcon, LogOutIcon, UsersIcon } from 'lucide-react';
+import { BellIcon, SearchIcon, UserIcon, LogOutIcon, UsersIcon, UserCogIcon, SettingsIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,9 +15,11 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from 'react-router-dom';
 import UserManagementDialog from '../users/UserManagementDialog';
+import { useAuthorization } from '@/hooks/useAuthorization';
 
 const Header: React.FC = () => {
   const { user, logout, isAuthenticated, pendingUsers } = useAuth();
+  const { hasPermission } = useAuthorization();
   const navigate = useNavigate();
   const [userManagementOpen, setUserManagementOpen] = useState(false);
 
@@ -26,13 +28,14 @@ const Header: React.FC = () => {
     navigate('/login');
   };
 
-  const hasManagementAccess = user?.role === 'admin' || user?.role === 'superuser';
+  const hasManagementAccess = hasPermission('approve:users') || hasPermission('manage:users');
   const pendingCount = hasManagementAccess ? pendingUsers.length : 0;
 
   return (
     <header className="h-16 px-6 border-b border-border/40 bg-background/95 backdrop-blur flex items-center justify-between sticky top-0 z-30 transition-all duration-300">
       <div className="flex items-center">
-        <h1 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-healthiq-600 to-healthiq-800 mr-6">
+        <h1 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-healthiq-600 to-healthiq-800 mr-6 cursor-pointer"
+          onClick={() => navigate('/dashboard')}>
           MentalHealthIQ
         </h1>
         <div className="hidden sm:flex items-center relative w-72">
@@ -73,18 +76,29 @@ const Header: React.FC = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
-                  Profile
+                  <UserIcon className="h-4 w-4 mr-2" />
+                  My Profile
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/account-settings')}>
-                  Account settings
+                  <SettingsIcon className="h-4 w-4 mr-2" />
+                  Account Settings
                 </DropdownMenuItem>
                 
                 {hasManagementAccess && (
                   <>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/user-management')}>
+                      <UserCogIcon className="h-4 w-4 mr-2" />
+                      User Management
+                      {pendingCount > 0 && (
+                        <Badge variant="destructive" className="ml-2 text-xs">
+                          {pendingCount}
+                        </Badge>
+                      )}
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setUserManagementOpen(true)}>
                       <UsersIcon className="h-4 w-4 mr-2" />
-                      User Management
+                      Quick Approvals
                       {pendingCount > 0 && (
                         <Badge variant="destructive" className="ml-2 text-xs">
                           {pendingCount}

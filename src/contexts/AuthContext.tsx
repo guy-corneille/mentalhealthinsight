@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserRole = 'superuser' | 'admin' | 'evaluator' | 'viewer';
@@ -35,6 +36,7 @@ interface AuthContextType {
   registerUser: (user: UserRegistration) => Promise<void>;
   approveUser: (userId: string) => Promise<void>;
   rejectUser: (userId: string) => Promise<void>;
+  updateProfile: (userData: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -198,6 +200,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateProfile = async (userData: Partial<User>) => {
+    setIsLoading(true);
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      if (!user) {
+        throw new Error('No user is logged in');
+      }
+      
+      const updatedUser = { ...user, ...userData };
+      setUser(updatedUser);
+      localStorage.setItem('mentalhealthiq_user', JSON.stringify(updatedUser));
+      
+      // Also update the user in the MOCK_USERS array
+      const userIndex = MOCK_USERS.findIndex(u => u.id === user.id);
+      if (userIndex !== -1) {
+        const { password } = MOCK_USERS[userIndex];
+        MOCK_USERS[userIndex] = { ...updatedUser, password };
+      }
+      
+      return updatedUser;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const approveUser = async (userId: string) => {
     setIsLoading(true);
     
@@ -211,6 +240,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const { password, status, requestDate, ...userWithoutPendingFields } = userToApprove;
       
+      // Ensure displayName is set, using username as fallback
       const displayName = userWithoutPendingFields.displayName || userWithoutPendingFields.username;
       
       MOCK_USERS.push({
@@ -249,6 +279,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     registerUser,
     approveUser,
     rejectUser,
+    updateProfile,
     isAuthenticated: !!user,
     isLoading
   };
