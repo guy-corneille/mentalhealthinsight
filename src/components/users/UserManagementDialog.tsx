@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { CheckIcon, XIcon } from 'lucide-react';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { Spinner } from '@/components/ui/spinner';
+import { toast } from 'sonner';
 
 interface UserRequest {
   id: string;
@@ -23,6 +25,33 @@ const UserManagementDialog: React.FC<{
   onOpenChange: (open: boolean) => void;
 }> = ({ open, onOpenChange }) => {
   const { pendingUsers, approveUser, rejectUser } = useAuth();
+  const [processingUsers, setProcessingUsers] = useState<Record<string, boolean>>({});
+
+  const handleApproveUser = async (userId: string) => {
+    try {
+      setProcessingUsers(prev => ({ ...prev, [userId]: true }));
+      await approveUser(userId);
+      toast.success("User approved successfully");
+    } catch (error) {
+      console.error("Error approving user:", error);
+      toast.error("Failed to approve user");
+    } finally {
+      setProcessingUsers(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const handleRejectUser = async (userId: string) => {
+    try {
+      setProcessingUsers(prev => ({ ...prev, [userId]: true }));
+      await rejectUser(userId);
+      toast.success("User request rejected");
+    } catch (error) {
+      console.error("Error rejecting user:", error);
+      toast.error("Failed to reject user");
+    } finally {
+      setProcessingUsers(prev => ({ ...prev, [userId]: false }));
+    }
+  };
 
   if (!pendingUsers || pendingUsers.length === 0) {
     return (
@@ -83,17 +112,29 @@ const UserManagementDialog: React.FC<{
                         variant="outline" 
                         size="sm" 
                         className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100 hover:text-green-700"
-                        onClick={() => approveUser(user.id)}
+                        onClick={() => handleApproveUser(user.id)}
+                        disabled={processingUsers[user.id]}
                       >
-                        <CheckIcon className="h-4 w-4 mr-1" /> Approve
+                        {processingUsers[user.id] ? (
+                          <Spinner className="h-4 w-4 mr-1" />
+                        ) : (
+                          <CheckIcon className="h-4 w-4 mr-1" />
+                        )} 
+                        Approve
                       </Button>
                       <Button 
                         variant="outline" 
                         size="sm" 
                         className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:text-red-700"
-                        onClick={() => rejectUser(user.id)}
+                        onClick={() => handleRejectUser(user.id)}
+                        disabled={processingUsers[user.id]}
                       >
-                        <XIcon className="h-4 w-4 mr-1" /> Reject
+                        {processingUsers[user.id] ? (
+                          <Spinner className="h-4 w-4 mr-1" />
+                        ) : (
+                          <XIcon className="h-4 w-4 mr-1" />
+                        )} 
+                        Reject
                       </Button>
                     </div>
                   </TableCell>

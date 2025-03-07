@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserRole = 'superuser' | 'admin' | 'evaluator' | 'viewer';
@@ -77,7 +76,6 @@ const MOCK_USERS = [
   }
 ];
 
-// Initialize some mock pending users
 const INITIAL_PENDING_USERS: PendingUser[] = [
   {
     id: '101',
@@ -132,7 +130,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setPendingUsers(INITIAL_PENDING_USERS);
       }
     } else {
-      // Initialize with mock pending users if none are stored
       setPendingUsers(INITIAL_PENDING_USERS);
     }
     
@@ -142,20 +139,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (username: string, password: string) => {
     setIsLoading(true);
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const foundUser = MOCK_USERS.find(u => u.username === username && u.password === password);
-    
-    if (!foundUser) {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const foundUser = MOCK_USERS.find(u => u.username === username && u.password === password);
+      
+      if (!foundUser) {
+        throw new Error('Invalid username or password');
+      }
+      
+      const { password: _, ...userWithoutPassword } = foundUser;
+      setUser(userWithoutPassword);
+      
+      localStorage.setItem('mentalhealthiq_user', JSON.stringify(userWithoutPassword));
+    } finally {
       setIsLoading(false);
-      throw new Error('Invalid username or password');
     }
-    
-    const { password: _, ...userWithoutPassword } = foundUser;
-    setUser(userWithoutPassword);
-    
-    localStorage.setItem('mentalhealthiq_user', JSON.stringify(userWithoutPassword));
-    setIsLoading(false);
   };
 
   const logout = () => {
@@ -166,83 +165,80 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const registerUser = async (userData: UserRegistration) => {
     setIsLoading(true);
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check if username or email already exists
-    const usernameExists = [...MOCK_USERS, ...pendingUsers].some(u => u.username === userData.username);
-    if (usernameExists) {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const usernameExists = [...MOCK_USERS, ...pendingUsers].some(u => u.username === userData.username);
+      if (usernameExists) {
+        throw new Error('Username is already taken');
+      }
+      
+      const emailExists = [...MOCK_USERS, ...pendingUsers].some(u => u.email === userData.email);
+      if (emailExists) {
+        throw new Error('Email is already registered');
+      }
+      
+      const newPendingUser: PendingUser = {
+        id: Date.now().toString(),
+        username: userData.username,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role,
+        displayName: userData.displayName,
+        phoneNumber: userData.phoneNumber,
+        status: 'pending',
+        requestDate: new Date()
+      };
+      
+      const updatedPendingUsers = [...pendingUsers, newPendingUser];
+      setPendingUsers(updatedPendingUsers);
+      localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
+    } finally {
       setIsLoading(false);
-      throw new Error('Username is already taken');
     }
-    
-    const emailExists = [...MOCK_USERS, ...pendingUsers].some(u => u.email === userData.email);
-    if (emailExists) {
-      setIsLoading(false);
-      throw new Error('Email is already registered');
-    }
-    
-    // Create new pending user
-    const newPendingUser: PendingUser = {
-      id: Date.now().toString(),
-      username: userData.username,
-      email: userData.email,
-      password: userData.password,
-      role: userData.role,
-      displayName: userData.displayName,
-      phoneNumber: userData.phoneNumber,
-      status: 'pending',
-      requestDate: new Date()
-    };
-    
-    const updatedPendingUsers = [...pendingUsers, newPendingUser];
-    setPendingUsers(updatedPendingUsers);
-    localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
-    
-    setIsLoading(false);
   };
 
   const approveUser = async (userId: string) => {
     setIsLoading(true);
     
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const userToApprove = pendingUsers.find(u => u.id === userId);
-    if (!userToApprove) {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const userToApprove = pendingUsers.find(u => u.id === userId);
+      if (!userToApprove) {
+        throw new Error('User not found');
+      }
+      
+      const { password, status, requestDate, ...userWithoutPendingFields } = userToApprove;
+      
+      const displayName = userWithoutPendingFields.displayName || userWithoutPendingFields.username;
+      
+      MOCK_USERS.push({
+        ...userWithoutPendingFields,
+        displayName,
+        password
+      });
+      
+      const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
+      setPendingUsers(updatedPendingUsers);
+      localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
+    } finally {
       setIsLoading(false);
-      throw new Error('User not found');
     }
-    
-    // Add to mock users (in a real app, this would be a database operation)
-    const { password, status, requestDate, ...userWithoutPendingFields } = userToApprove;
-    
-    // Ensure displayName has a default value if it's undefined
-    const displayName = userWithoutPendingFields.displayName || userWithoutPendingFields.username;
-    
-    MOCK_USERS.push({
-      ...userWithoutPendingFields,
-      displayName,
-      password // In a real app, this would be hashed
-    });
-    
-    // Remove from pending users
-    const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
-    setPendingUsers(updatedPendingUsers);
-    localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
-    
-    setIsLoading(false);
   };
 
   const rejectUser = async (userId: string) => {
     setIsLoading(true);
     
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Simply remove from pending users
-    const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
-    setPendingUsers(updatedPendingUsers);
-    localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
-    
-    setIsLoading(false);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
+      setPendingUsers(updatedPendingUsers);
+      localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const value = {
