@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserRole = 'superuser' | 'admin' | 'evaluator' | 'viewer';
@@ -229,7 +230,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...updatedUser, 
           password,
           displayName: updatedUser.displayName || updatedUser.username
-        };
+        } as MockUser;
       }
     } finally {
       setIsLoading(false);
