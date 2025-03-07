@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserRole = 'superuser' | 'admin' | 'evaluator' | 'viewer';
@@ -43,7 +42,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const MOCK_USERS = [
+interface MockUser {
+  id: string;
+  username: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  displayName: string;
+}
+
+const MOCK_USERS: MockUser[] = [
   {
     id: '1',
     username: 'superuser',
@@ -200,7 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const updateProfile = async (userData: Partial<User>) => {
+  const updateProfile = async (userData: Partial<User>): Promise<void> => {
     setIsLoading(true);
     
     try {
@@ -214,11 +222,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(updatedUser);
       localStorage.setItem('mentalhealthiq_user', JSON.stringify(updatedUser));
       
-      // Also update the user in the MOCK_USERS array
       const userIndex = MOCK_USERS.findIndex(u => u.id === user.id);
       if (userIndex !== -1) {
         const { password } = MOCK_USERS[userIndex];
-        MOCK_USERS[userIndex] = { ...updatedUser, password };
+        MOCK_USERS[userIndex] = { 
+          ...updatedUser, 
+          password,
+          displayName: updatedUser.displayName || updatedUser.username
+        };
       }
     } finally {
       setIsLoading(false);
@@ -238,14 +249,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const { password, status, requestDate, ...userWithoutPendingFields } = userToApprove;
       
-      // Ensure displayName is set, using username as fallback
       const displayName = userWithoutPendingFields.displayName || userWithoutPendingFields.username;
       
       MOCK_USERS.push({
         ...userWithoutPendingFields,
-        displayName, // This ensures displayName is always defined
+        displayName,
         password
-      });
+      } as MockUser);
       
       const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
       setPendingUsers(updatedPendingUsers);
