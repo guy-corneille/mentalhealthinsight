@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type UserRole = 'superuser' | 'admin' | 'evaluator' | 'viewer';
@@ -242,7 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       MOCK_USERS.push({
         ...userWithoutPendingFields,
-        displayName,
+        displayName, // This ensures displayName is always defined
         password
       });
       
