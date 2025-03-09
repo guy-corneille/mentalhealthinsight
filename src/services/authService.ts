@@ -1,6 +1,6 @@
 
 import api from './api';
-import { User, UserRegistration } from '../types/auth';
+import { User, UserRegistration, PendingUser } from '../types/auth';
 
 // Types for API responses
 interface LoginResponse {
@@ -31,7 +31,7 @@ const authService = {
     return response.user;
   },
   
-  register: async (userData: UserRegistration): Promise<any> => {
+  register: async (userData: UserRegistration): Promise<RegisterResponse> => {
     return await api.post<RegisterResponse>('/users/register/', userData);
   },
   
@@ -56,16 +56,16 @@ const authService = {
   },
   
   // Admin functions
-  getPendingUsers: async (): Promise<any[]> => {
-    return await api.get<any[]>('/pending-users/');
+  getPendingUsers: async (): Promise<PendingUser[]> => {
+    return await api.get<PendingUser[]>('/pending-users/');
   },
   
-  approveUser: async (userId: string): Promise<any> => {
-    return await api.post<any>(`/pending-users/${userId}/approve/`);
+  approveUser: async (userId: string): Promise<PendingUser> => {
+    return await api.post<PendingUser>(`/pending-users/${userId}/approve/`);
   },
   
-  rejectUser: async (userId: string): Promise<any> => {
-    return await api.post<any>(`/pending-users/${userId}/reject/`);
+  rejectUser: async (userId: string): Promise<PendingUser> => {
+    return await api.post<PendingUser>(`/pending-users/${userId}/reject/`);
   }
 };
 

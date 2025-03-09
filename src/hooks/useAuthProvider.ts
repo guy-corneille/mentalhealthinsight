@@ -1,12 +1,13 @@
-
 import { useState, useEffect } from 'react';
 import { User, PendingUser, UserRegistration } from '../types/auth';
 import authService from '../services/authService';
+import { useToast } from '@/hooks/use-toast';
 
 export function useAuthProvider() {
   const [user, setUser] = useState<User | null>(null);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Try to get user from localStorage first for quick UI rendering
@@ -52,7 +53,21 @@ export function useAuthProvider() {
       const userResponse = await authService.login(username, password);
       setUser(userResponse);
       localStorage.setItem('mentalhealthiq_user', JSON.stringify(userResponse));
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      
       return userResponse;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Login failed';
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: errorMsg,
+      });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -62,6 +77,10 @@ export function useAuthProvider() {
     setIsLoading(true);
     try {
       await authService.logout();
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully",
+      });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -78,13 +97,17 @@ export function useAuthProvider() {
     try {
       const response = await authService.register(userData);
       
+      toast({
+        title: "Registration Successful",
+        description: "Your account is pending approval from an administrator.",
+      });
+      
       // Convert the response to match our PendingUser type
       const pendingUser: PendingUser = {
         id: response.user.id,
         username: response.user.username,
         email: response.user.email,
-        password: userData.password, // This would typically not be returned from the API
-        role: response.user.role,
+        role: response.user.role as any,
         displayName: userData.displayName,
         phoneNumber: userData.phoneNumber,
         status: 'pending',
@@ -97,6 +120,14 @@ export function useAuthProvider() {
       }
       
       return pendingUser;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Registration failed';
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: errorMsg,
+      });
+      throw error;
     } finally {
       setIsLoading(false);
     }

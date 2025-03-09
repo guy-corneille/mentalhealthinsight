@@ -1,3 +1,4 @@
+
 """
 URL configuration for mentalhealthiq project.
 
@@ -16,6 +17,7 @@ Including another URLconf
 """
 from django.urls import include, path
 from rest_framework import routers
+from rest_framework.authtoken.views import obtain_auth_token
 from django.contrib import admin
 from . import views
 
@@ -38,9 +40,10 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     
-    # Add any additional non-viewset based API endpoints here
-    # For example, if you want to add custom authentication endpoints:
-    # path('api/auth/login/', obtain_auth_token, name='api-token-auth'),
+    # Authentication endpoints
+    path('api/users/login/', obtain_auth_token, name='api-token-auth'),
+    path('api/users/logout/', views.logout_view, name='api-logout'),
+    path('api/users/register/', views.register_user, name='api-register'),
 ]
 
 # Optional: Add a nice API root for browsing the API

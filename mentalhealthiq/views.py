@@ -1,7 +1,8 @@
 from rest_framework import viewsets, filters, status
 from rest_framework.response import Response
-from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.authtoken.models import Token
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 import logging
@@ -19,6 +20,42 @@ from .serializers import (
 
 logger = logging.getLogger(__name__)
 
+# Authentication views
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def register_user(request):
+    """Register a new user as pending"""
+    try:
+        # Create pending user
+        pending_user = PendingUser.objects.create(
+            username=request.data['username'],
+            email=request.data['email'],
+            password=request.data['password'],  # Note: This would normally be hashed
+            role=request.data['role'],
+            display_name=request.data.get('displayName', ''),
+            phone_number=request.data.get('phoneNumber', '')
+        )
+        
+        serializer = PendingUserSerializer(pending_user)
+        return Response({
+            'message': 'Registration successful. Your account is pending approval.',
+            'user': serializer.data
+        }, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        logger.error(f"Registration error: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    """Logout a user by invalidating their token"""
+    try:
+        request.user.auth_token.delete()
+        return Response({'message': 'Successfully logged out.'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.error(f"Logout error: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
@@ -33,7 +70,7 @@ class UserViewSet(viewsets.ModelViewSet):
     search_fields = ['username', 'email', 'display_name']
     ordering_fields = ['date_joined', 'username', 'display_name']
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def me(self, request):
         """Get the current logged in user"""
         serializer = self.get_serializer(request.user)
@@ -284,4 +321,8 @@ class ReportViewSet(viewsets.ModelViewSet):
             # Here you would add logic to generate the actual report
             
             serializer = self.get_serializer(report)
-            return Response(serializ
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.error(f"Error generating audit report: {str(e)}")
+            return Response({'error': str(e)}, 
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)

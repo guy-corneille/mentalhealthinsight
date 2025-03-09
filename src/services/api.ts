@@ -45,6 +45,7 @@ api.interceptors.response.use(
 // Define an interface for error data
 interface ErrorResponse {
   message?: string;
+  detail?: string;
   [key: string]: any;
 }
 
@@ -59,7 +60,8 @@ const request = async <T>(config: AxiosRequestConfig): Promise<T> => {
     // Create a more user-friendly error
     const errorMessage = 
       axiosError.response?.data?.message || 
-      axiosError.message || 
+      axiosError.response?.data?.detail ||
+      (axiosError.message as string) || 
       'An unknown error occurred';
     
     const apiError = new Error(errorMessage);
