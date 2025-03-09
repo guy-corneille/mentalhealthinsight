@@ -10,8 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuFooter
+  DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotifications, Notification, NotificationType } from "@/contexts/NotificationContext";
@@ -107,7 +106,7 @@ const NotificationBell: React.FC = () => {
               </DropdownMenuGroup>
             </ScrollArea>
             
-            <DropdownMenuFooter className="flex justify-center p-2">
+            <div className="flex justify-center p-2">
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -116,7 +115,7 @@ const NotificationBell: React.FC = () => {
               >
                 Clear all
               </Button>
-            </DropdownMenuFooter>
+            </div>
           </>
         )}
       </DropdownMenuContent>

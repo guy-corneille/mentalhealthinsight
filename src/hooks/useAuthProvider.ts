@@ -38,7 +38,7 @@ export function useAuthProvider() {
     setIsLoading(false);
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string): Promise<User> => {
     setIsLoading(true);
     
     try {
@@ -55,7 +55,7 @@ export function useAuthProvider() {
       
       localStorage.setItem('mentalhealthiq_user', JSON.stringify(userWithoutPassword));
       
-      return userWithoutPassword; // Return the user for notification purposes
+      return userWithoutPassword;
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +66,7 @@ export function useAuthProvider() {
     localStorage.removeItem('mentalhealthiq_user');
   };
 
-  const registerUser = async (userData: UserRegistration) => {
+  const registerUser = async (userData: UserRegistration): Promise<PendingUser> => {
     setIsLoading(true);
     
     try {
@@ -98,7 +98,7 @@ export function useAuthProvider() {
       setPendingUsers(updatedPendingUsers);
       localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
       
-      return newPendingUser; // Return the new user for notification purposes
+      return newPendingUser;
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +132,7 @@ export function useAuthProvider() {
     }
   };
 
-  const approveUser = async (userId: string) => {
+  const approveUser = async (userId: string): Promise<PendingUser> => {
     setIsLoading(true);
     
     try {
@@ -157,24 +157,28 @@ export function useAuthProvider() {
       setPendingUsers(updatedPendingUsers);
       localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
       
-      return userToApprove; // Return the approved user for notification purposes
+      return userToApprove;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const rejectUser = async (userId: string) => {
+  const rejectUser = async (userId: string): Promise<PendingUser> => {
     setIsLoading(true);
     
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const userToReject = pendingUsers.find(u => u.id === userId);
+      if (!userToReject) {
+        throw new Error('User not found');
+      }
+      
       const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
       setPendingUsers(updatedPendingUsers);
       localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
       
-      return userToReject; // Return the rejected user for notification purposes
+      return userToReject;
     } finally {
       setIsLoading(false);
     }

@@ -38,11 +38,11 @@ export interface MockUser {
 export interface AuthContextType {
   user: User | null;
   pendingUsers: PendingUser[];
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<User>;
   logout: () => void;
-  registerUser: (user: UserRegistration) => Promise<void>;
-  approveUser: (userId: string) => Promise<void>;
-  rejectUser: (userId: string) => Promise<void>;
+  registerUser: (user: UserRegistration) => Promise<PendingUser>;
+  approveUser: (userId: string) => Promise<PendingUser>;
+  rejectUser: (userId: string) => Promise<PendingUser>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;

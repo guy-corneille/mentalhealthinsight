@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,10 +23,10 @@ const UserManagement: React.FC = () => {
   const handleApproveUser = async (userId: string) => {
     try {
       setProcessingUsers(prev => ({ ...prev, [userId]: true }));
-      const approvedUser = await approveUser(userId);
+      const user = await approveUser(userId);
       addNotification(
         "User approved",
-        `${approvedUser.displayName || approvedUser.username} has been approved and can now access the system.`,
+        `${user.displayName || user.username} has been approved and can now access the system.`,
         "success"
       );
     } catch (error) {
@@ -43,10 +44,10 @@ const UserManagement: React.FC = () => {
   const handleRejectUser = async (userId: string) => {
     try {
       setProcessingUsers(prev => ({ ...prev, [userId]: true }));
-      const rejectedUser = await rejectUser(userId);
+      const user = await rejectUser(userId);
       addNotification(
         "User rejected",
-        `${rejectedUser.displayName || rejectedUser.username}'s request has been rejected.`,
+        `${user.displayName || user.username}'s request has been rejected.`,
         "info"
       );
     } catch (error) {
