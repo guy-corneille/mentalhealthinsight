@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BrainIcon, HeartPulseIcon, AlertCircleIcon, UserPlusIcon } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -16,24 +16,35 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { addNotification } = useNotifications();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     
     try {
-      await login(username, password);
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
+      const user = await login(username, password);
+      addNotification(
+        "Welcome back!",
+        `You have successfully logged in as ${user.displayName || user.username}`,
+        "success"
+      );
       navigate('/dashboard');
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
+        addNotification(
+          "Login failed",
+          err.message,
+          "error"
+        );
       } else {
         setError('An unknown error occurred');
+        addNotification(
+          "Login failed",
+          "An unknown error occurred",
+          "error"
+        );
       }
     }
   };

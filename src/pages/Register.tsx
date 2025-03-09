@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,12 +8,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BrainIcon, HeartPulseIcon, AlertCircleIcon, ArrowLeftIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UserRole } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 const registerSchema = z.object({
   displayName: z.string().min(2, "Full name must be at least 2 characters"),
@@ -35,7 +34,7 @@ const Register: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { registerUser } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { addNotification } = useNotifications();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -53,7 +52,7 @@ const Register: React.FC = () => {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true);
     try {
-      await registerUser({
+      const newUser = await registerUser({
         displayName: data.displayName,
         username: data.username,
         email: data.email,
@@ -62,18 +61,19 @@ const Register: React.FC = () => {
         password: data.password
       });
       
-      toast({
-        title: "Registration submitted",
-        description: "Your account request has been submitted for approval. You will be notified when it's approved.",
-      });
+      addNotification(
+        "Registration submitted",
+        `Your account request has been submitted for approval. You will be notified when it's approved.`,
+        "success"
+      );
       
       navigate('/login');
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Registration failed",
-        description: error instanceof Error ? error.message : "An error occurred during registration",
-      });
+      addNotification(
+        "Registration failed",
+        error instanceof Error ? error.message : "An error occurred during registration",
+        "error"
+      );
     } finally {
       setIsSubmitting(false);
     }

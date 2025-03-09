@@ -54,6 +54,8 @@ export function useAuthProvider() {
       setUser(userWithoutPassword);
       
       localStorage.setItem('mentalhealthiq_user', JSON.stringify(userWithoutPassword));
+      
+      return userWithoutPassword; // Return the user for notification purposes
     } finally {
       setIsLoading(false);
     }
@@ -95,6 +97,8 @@ export function useAuthProvider() {
       const updatedPendingUsers = [...pendingUsers, newPendingUser];
       setPendingUsers(updatedPendingUsers);
       localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
+      
+      return newPendingUser; // Return the new user for notification purposes
     } finally {
       setIsLoading(false);
     }
@@ -152,6 +156,8 @@ export function useAuthProvider() {
       const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
       setPendingUsers(updatedPendingUsers);
       localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
+      
+      return userToApprove; // Return the approved user for notification purposes
     } finally {
       setIsLoading(false);
     }
@@ -163,9 +169,12 @@ export function useAuthProvider() {
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      const userToReject = pendingUsers.find(u => u.id === userId);
       const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
       setPendingUsers(updatedPendingUsers);
       localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
+      
+      return userToReject; // Return the rejected user for notification purposes
     } finally {
       setIsLoading(false);
     }

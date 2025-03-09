@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { BellIcon, SearchIcon, UserIcon, LogOutIcon, UsersIcon, UserCogIcon, SettingsIcon } from 'lucide-react';
+import { SearchIcon, UserIcon, LogOutIcon, UsersIcon, UserCogIcon, SettingsIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from 'react-router-dom';
 import UserManagementDialog from '../users/UserManagementDialog';
 import { useAuthorization } from '@/hooks/useAuthorization';
+import NotificationBell from '../notifications/NotificationBell';
 
 const Header: React.FC = () => {
   const { user, logout, isAuthenticated, pendingUsers } = useAuth();
@@ -48,9 +49,7 @@ const Header: React.FC = () => {
       </div>
       
       <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <BellIcon className="h-5 w-5" />
-        </Button>
+        {isAuthenticated && <NotificationBell />}
         
         {isAuthenticated && user ? (
           <div className="flex items-center">

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { CheckIcon, XIcon } from 'lucide-react';
 import { useAuth, UserRole } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/spinner';
-import { toast } from 'sonner';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 interface UserRequest {
   id: string;
@@ -26,15 +25,24 @@ const UserManagementDialog: React.FC<{
 }> = ({ open, onOpenChange }) => {
   const { pendingUsers, approveUser, rejectUser } = useAuth();
   const [processingUsers, setProcessingUsers] = useState<Record<string, boolean>>({});
+  const { addNotification } = useNotifications();
 
   const handleApproveUser = async (userId: string) => {
     try {
       setProcessingUsers(prev => ({ ...prev, [userId]: true }));
-      await approveUser(userId);
-      toast.success("User approved successfully");
+      const approvedUser = await approveUser(userId);
+      addNotification(
+        "User approved",
+        `${approvedUser.displayName || approvedUser.username} has been approved and can now access the system.`,
+        "success"
+      );
     } catch (error) {
       console.error("Error approving user:", error);
-      toast.error("Failed to approve user");
+      addNotification(
+        "Approval failed",
+        error instanceof Error ? error.message : "Failed to approve user",
+        "error"
+      );
     } finally {
       setProcessingUsers(prev => ({ ...prev, [userId]: false }));
     }
@@ -43,11 +51,19 @@ const UserManagementDialog: React.FC<{
   const handleRejectUser = async (userId: string) => {
     try {
       setProcessingUsers(prev => ({ ...prev, [userId]: true }));
-      await rejectUser(userId);
-      toast.success("User request rejected");
+      const rejectedUser = await rejectUser(userId);
+      addNotification(
+        "User rejected",
+        `${rejectedUser.displayName || rejectedUser.username}'s request has been rejected.`,
+        "info"
+      );
     } catch (error) {
       console.error("Error rejecting user:", error);
-      toast.error("Failed to reject user");
+      addNotification(
+        "Rejection failed",
+        error instanceof Error ? error.message : "Failed to reject user",
+        "error"
+      );
     } finally {
       setProcessingUsers(prev => ({ ...prev, [userId]: false }));
     }
