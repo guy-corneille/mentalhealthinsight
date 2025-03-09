@@ -7,11 +7,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { format, subMonths } from 'date-fns';
 import { FileDown } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { downloadReportAsCSV } from '@/utils/reportUtils';
 
 const FacilityPerformanceReport: React.FC = () => {
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState('12months');
   const [facility, setFacility] = useState('all');
+  const [isExporting, setIsExporting] = useState(false);
   
   // Mock facilities data
   const facilities = [
@@ -60,10 +62,60 @@ const FacilityPerformanceReport: React.FC = () => {
   ];
 
   const handleExportReport = () => {
-    toast({
-      title: "Report exported",
-      description: "Facility performance report has been exported as PDF",
-    });
+    setIsExporting(true);
+    
+    try {
+      // Create an array for facility data
+      const facilityData = occupancyData.map(item => ({
+        Period: item.month,
+        'Central Hospital': item['Central Hospital'],
+        'Eastern District Clinic': item['Eastern District Clinic'],
+        'Northern Community Center': item['Northern Community Center'],
+        'Southern District Hospital': item['Southern District Hospital'],
+      }));
+      
+      // Create an array for compliance data
+      const complianceDataForExport = complianceData.map(item => ({
+        Period: item.month,
+        'Regulatory Compliance': item['Regulatory Compliance'],
+        'Quality Standards': item['Quality Standards'],
+        'Safety Metrics': item['Safety Metrics'],
+      }));
+      
+      // Create an array for resource utilization
+      const resourceData = resourceUtilization.map(item => ({
+        Resource: item.name,
+        'Utilization %': item.utilized,
+        'Underutilized %': item.underutilized,
+      }));
+      
+      // Download facility occupancy data
+      downloadReportAsCSV(facilityData, 'Facility_Occupancy');
+      
+      // Short delay between downloads to prevent browser blocking
+      setTimeout(() => {
+        downloadReportAsCSV(complianceDataForExport, 'Compliance_Metrics');
+      }, 300);
+      
+      setTimeout(() => {
+        downloadReportAsCSV(resourceData, 'Resource_Utilization');
+        
+        toast({
+          title: "Reports downloaded",
+          description: "Facility performance reports have been downloaded as CSV files",
+        });
+        
+        setIsExporting(false);
+      }, 600);
+    } catch (error) {
+      console.error("Error exporting reports:", error);
+      toast({
+        title: "Export failed",
+        description: "There was an error generating the reports",
+        variant: "destructive",
+      });
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -99,9 +151,14 @@ const FacilityPerformanceReport: React.FC = () => {
           </Select>
         </div>
         
-        <Button onClick={handleExportReport} variant="outline" className="gap-2">
+        <Button 
+          onClick={handleExportReport} 
+          variant="outline" 
+          className="gap-2"
+          disabled={isExporting}
+        >
           <FileDown className="h-4 w-4" />
-          Export Report
+          {isExporting ? 'Exporting...' : 'Export Report'}
         </Button>
       </div>
       

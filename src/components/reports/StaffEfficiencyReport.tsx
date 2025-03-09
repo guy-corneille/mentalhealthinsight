@@ -7,11 +7,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { format, subMonths } from 'date-fns';
 import { FileDown } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { downloadReportAsCSV } from '@/utils/reportUtils';
 
 const StaffEfficiencyReport: React.FC = () => {
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState('12months');
   const [department, setDepartment] = useState('all');
+  const [isExporting, setIsExporting] = useState(false);
   
   // Mock departments data
   const departments = [
@@ -59,10 +61,58 @@ const StaffEfficiencyReport: React.FC = () => {
   ];
   
   const handleExportReport = () => {
-    toast({
-      title: "Report exported",
-      description: "Staff efficiency report has been exported as PDF",
-    });
+    setIsExporting(true);
+    
+    try {
+      // Create an array for productivity data
+      const productivityDataForExport = productivityData.map(item => ({
+        Period: item.month,
+        'General Medicine': item['General Medicine'],
+        'Mental Health': item['Mental Health'],
+        'Pediatrics': item['Pediatrics'],
+        'Emergency Care': item['Emergency Care'],
+      }));
+      
+      // Create an array for staff-patient ratio data
+      const ratioDataForExport = staffPatientRatio.map(item => ({
+        Period: item.month,
+        'Average Ratio': item['Average Ratio'],
+        'Target Ratio': item['Target Ratio'],
+      }));
+      
+      // Create an array for staff allocation
+      const allocationDataForExport = staffAllocation.map(item => ({
+        'Activity Type': item.name,
+        'Percentage': item.value,
+      }));
+      
+      // Download productivity data
+      downloadReportAsCSV(productivityDataForExport, 'Staff_Productivity');
+      
+      // Short delay between downloads to prevent browser blocking
+      setTimeout(() => {
+        downloadReportAsCSV(ratioDataForExport, 'Staff_Patient_Ratio');
+      }, 300);
+      
+      setTimeout(() => {
+        downloadReportAsCSV(allocationDataForExport, 'Staff_Time_Allocation');
+        
+        toast({
+          title: "Reports downloaded",
+          description: "Staff efficiency reports have been downloaded as CSV files",
+        });
+        
+        setIsExporting(false);
+      }, 600);
+    } catch (error) {
+      console.error("Error exporting reports:", error);
+      toast({
+        title: "Export failed",
+        description: "There was an error generating the reports",
+        variant: "destructive",
+      });
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -98,9 +148,14 @@ const StaffEfficiencyReport: React.FC = () => {
           </Select>
         </div>
         
-        <Button onClick={handleExportReport} variant="outline" className="gap-2">
+        <Button 
+          onClick={handleExportReport} 
+          variant="outline" 
+          className="gap-2"
+          disabled={isExporting}
+        >
           <FileDown className="h-4 w-4" />
-          Export Report
+          {isExporting ? 'Exporting...' : 'Export Report'}
         </Button>
       </div>
       

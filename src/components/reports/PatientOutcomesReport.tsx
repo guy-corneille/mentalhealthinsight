@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { format, subMonths } from 'date-fns';
 import { FileDown } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { downloadReportAsCSV } from '@/utils/reportUtils';
 
 const PatientOutcomesReport: React.FC = () => {
   const { toast } = useToast();
@@ -67,14 +68,57 @@ const PatientOutcomesReport: React.FC = () => {
   
   const handleExportReport = () => {
     setIsGeneratingReport(true);
-    // Simulate export delay
-    setTimeout(() => {
+    
+    try {
+      // Create an array for treatment outcomes data
+      const outcomeDataForExport = treatmentOutcomeData.map(item => ({
+        Period: item.month,
+        'Significant Improvement': item['Significant Improvement'],
+        'Moderate Improvement': item['Moderate Improvement'],
+        'Minimal/No Change': item['Minimal/No Change'],
+        'Deterioration': item['Deterioration'],
+      }));
+      
+      // Create an array for readmission data
+      const readmissionDataForExport = readmissionData.map(item => ({
+        Period: item.month,
+        'Readmission Rate': item['Readmission Rate'],
+        'Target Rate': item['Target Rate'],
+      }));
+      
+      // Create an array for satisfaction scores
+      const satisfactionDataForExport = satisfactionScores.map(item => ({
+        'Satisfaction Level': item.name,
+        'Percentage': item.value,
+      }));
+      
+      // Download treatment outcomes data
+      downloadReportAsCSV(outcomeDataForExport, 'Treatment_Outcomes');
+      
+      // Short delay between downloads to prevent browser blocking
+      setTimeout(() => {
+        downloadReportAsCSV(readmissionDataForExport, 'Readmission_Rates');
+      }, 300);
+      
+      setTimeout(() => {
+        downloadReportAsCSV(satisfactionDataForExport, 'Patient_Satisfaction');
+        
+        toast({
+          title: "Reports downloaded",
+          description: "Patient outcomes reports have been downloaded as CSV files",
+        });
+        
+        setIsGeneratingReport(false);
+      }, 600);
+    } catch (error) {
+      console.error("Error exporting reports:", error);
       toast({
-        title: "Report exported",
-        description: "Patient outcomes report has been exported as PDF",
+        title: "Export failed",
+        description: "There was an error generating the reports",
+        variant: "destructive",
       });
       setIsGeneratingReport(false);
-    }, 1000);
+    }
   };
 
   const handleTimeRangeChange = (value: string) => {

@@ -17,7 +17,7 @@ const Reports: React.FC = () => {
     setTimeout(() => {
       setActiveTab(value);
       setIsLoading(false);
-    }, 10);
+    }, 300); // Increased delay for better user experience
   };
 
   return (
