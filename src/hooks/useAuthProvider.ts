@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { User, PendingUser, UserRegistration } from '../types/auth';
-import { MOCK_USERS, INITIAL_PENDING_USERS } from '../data/mockUsers';
+import authService from '../services/authService';
 
 export function useAuthProvider() {
   const [user, setUser] = useState<User | null>(null);
@@ -9,8 +9,8 @@ export function useAuthProvider() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Try to get user from localStorage first for quick UI rendering
     const storedUser = localStorage.getItem('mentalhealthiq_user');
-    const storedPendingUsers = localStorage.getItem('mentalhealthiq_pending_users');
     
     if (storedUser) {
       try {
@@ -22,83 +22,81 @@ export function useAuthProvider() {
       }
     }
     
-    if (storedPendingUsers) {
+    // Then verify the token with the backend
+    const verifyToken = async () => {
       try {
-        const parsedPendingUsers = JSON.parse(storedPendingUsers);
-        setPendingUsers(parsedPendingUsers);
+        // Only call API if we have a token
+        if (localStorage.getItem('mentalhealthiq_token')) {
+          const currentUser = await authService.getCurrentUser();
+          setUser(currentUser);
+          localStorage.setItem('mentalhealthiq_user', JSON.stringify(currentUser));
+        }
       } catch (error) {
-        console.error('Failed to parse stored pending users:', error);
-        localStorage.removeItem('mentalhealthiq_pending_users');
-        setPendingUsers(INITIAL_PENDING_USERS);
+        console.error('Failed to verify token:', error);
+        // Clear invalid token
+        localStorage.removeItem('mentalhealthiq_token');
+        localStorage.removeItem('mentalhealthiq_user');
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      setPendingUsers(INITIAL_PENDING_USERS);
-    }
-    
-    setIsLoading(false);
+    };
+
+    verifyToken();
   }, []);
 
   const login = async (username: string, password: string): Promise<User> => {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const foundUser = MOCK_USERS.find(u => u.username === username && u.password === password);
-      
-      if (!foundUser) {
-        throw new Error('Invalid username or password');
-      }
-      
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      
-      localStorage.setItem('mentalhealthiq_user', JSON.stringify(userWithoutPassword));
-      
-      return userWithoutPassword;
+      const userResponse = await authService.login(username, password);
+      setUser(userResponse);
+      localStorage.setItem('mentalhealthiq_user', JSON.stringify(userResponse));
+      return userResponse;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('mentalhealthiq_user');
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('mentalhealthiq_user');
+      localStorage.removeItem('mentalhealthiq_token');
+      setIsLoading(false);
+    }
   };
 
   const registerUser = async (userData: UserRegistration): Promise<PendingUser> => {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await authService.register(userData);
       
-      const usernameExists = [...MOCK_USERS, ...pendingUsers].some(u => u.username === userData.username);
-      if (usernameExists) {
-        throw new Error('Username is already taken');
-      }
-      
-      const emailExists = [...MOCK_USERS, ...pendingUsers].some(u => u.email === userData.email);
-      if (emailExists) {
-        throw new Error('Email is already registered');
-      }
-      
-      const newPendingUser: PendingUser = {
-        id: Date.now().toString(),
-        username: userData.username,
-        email: userData.email,
-        password: userData.password,
-        role: userData.role,
+      // Convert the response to match our PendingUser type
+      const pendingUser: PendingUser = {
+        id: response.user.id,
+        username: response.user.username,
+        email: response.user.email,
+        password: userData.password, // This would typically not be returned from the API
+        role: response.user.role,
         displayName: userData.displayName,
         phoneNumber: userData.phoneNumber,
         status: 'pending',
         requestDate: new Date()
       };
       
-      const updatedPendingUsers = [...pendingUsers, newPendingUser];
-      setPendingUsers(updatedPendingUsers);
-      localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
+      // Update pending users list if we're an admin
+      if (user?.role === 'admin' || user?.role === 'superuser') {
+        setPendingUsers([...pendingUsers, pendingUser]);
+      }
       
-      return newPendingUser;
+      return pendingUser;
     } finally {
       setIsLoading(false);
     }
@@ -108,25 +106,26 @@ export function useAuthProvider() {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      if (!user) {
-        throw new Error('No user is logged in');
-      }
-      
-      const updatedUser = { ...user, ...userData };
+      const updatedUser = await authService.updateProfile(userData);
       setUser(updatedUser);
       localStorage.setItem('mentalhealthiq_user', JSON.stringify(updatedUser));
-      
-      const userIndex = MOCK_USERS.findIndex(u => u.id === user.id);
-      if (userIndex !== -1) {
-        const { password } = MOCK_USERS[userIndex];
-        MOCK_USERS[userIndex] = { 
-          ...updatedUser, 
-          password,
-          displayName: updatedUser.displayName || updatedUser.username
-        } as typeof MOCK_USERS[0];
-      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadPendingUsers = async (): Promise<void> => {
+    // Only admins can see pending users
+    if (user?.role !== 'admin' && user?.role !== 'superuser') {
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const pendingUsersList = await authService.getPendingUsers();
+      setPendingUsers(pendingUsersList);
+    } catch (error) {
+      console.error('Failed to load pending users:', error);
     } finally {
       setIsLoading(false);
     }
@@ -136,28 +135,13 @@ export function useAuthProvider() {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const approvedUser = await authService.approveUser(userId);
       
-      const userToApprove = pendingUsers.find(u => u.id === userId);
-      if (!userToApprove) {
-        throw new Error('User not found');
-      }
-      
-      const { password, status, requestDate, ...userWithoutPendingFields } = userToApprove;
-      
-      const displayName = userWithoutPendingFields.displayName || userWithoutPendingFields.username;
-      
-      MOCK_USERS.push({
-        ...userWithoutPendingFields,
-        displayName,
-        password
-      } as typeof MOCK_USERS[0]);
-      
+      // Remove from pending list
       const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
       setPendingUsers(updatedPendingUsers);
-      localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
       
-      return userToApprove;
+      return approvedUser;
     } finally {
       setIsLoading(false);
     }
@@ -167,22 +151,24 @@ export function useAuthProvider() {
     setIsLoading(true);
     
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const rejectedUser = await authService.rejectUser(userId);
       
-      const userToReject = pendingUsers.find(u => u.id === userId);
-      if (!userToReject) {
-        throw new Error('User not found');
-      }
-      
+      // Remove from pending list
       const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
       setPendingUsers(updatedPendingUsers);
-      localStorage.setItem('mentalhealthiq_pending_users', JSON.stringify(updatedPendingUsers));
       
-      return userToReject;
+      return rejectedUser;
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Load pending users if we're an admin
+  useEffect(() => {
+    if (user?.role === 'admin' || user?.role === 'superuser') {
+      loadPendingUsers();
+    }
+  }, [user?.role]);
 
   return {
     user,
