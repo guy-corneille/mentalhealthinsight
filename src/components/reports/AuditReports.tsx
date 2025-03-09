@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,7 +8,6 @@ import { FileDown } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { downloadReportAsCSV } from '@/utils/reportUtils';
 
-// Mock audit criteria categories
 const auditCategories = [
   { id: 1, name: 'Infrastructure & Safety' },
   { id: 2, name: 'Staffing & Training' },
@@ -23,7 +21,6 @@ const AuditReports: React.FC = () => {
   const [category, setCategory] = useState('all');
   const [isExporting, setIsExporting] = useState(false);
   
-  // Generate the last 12 months as labels
   const getLast12Months = () => {
     const months = [];
     for (let i = 11; i >= 0; i--) {
@@ -33,15 +30,13 @@ const AuditReports: React.FC = () => {
     return months;
   };
   
-  // Generate consistent mock data based on selected category
   const generateAuditScores = () => {
     const monthLabels = getLast12Months();
     
-    // Create a progressive improvement trend with some random variation
     return monthLabels.map((month, index) => {
-      const monthIndex = index; // Use index for trending patterns
-      const baseScore = 70; // Starting baseline score
-      const improvementRate = 0.8; // Monthly improvement
+      const monthIndex = index;
+      const baseScore = 70;
+      const improvementRate = 0.8;
       
       return {
         month,
@@ -56,7 +51,6 @@ const AuditReports: React.FC = () => {
   
   const auditScores = generateAuditScores();
   
-  // Audit compliance by criterion
   const complianceData = [
     { name: 'Physical Safety Features', pass: 92, partial: 6, fail: 2 },
     { name: 'Staff Qualifications', pass: 89, partial: 8, fail: 3 },
@@ -65,9 +59,7 @@ const AuditReports: React.FC = () => {
     { name: 'Emergency Procedures', pass: 91, partial: 7, fail: 2 }
   ];
   
-  // Audit frequency over time
   const auditFrequencyData = getLast12Months().map((month, index) => {
-    // More audits in recent months to show improvement in process
     const baseAudits = 8;
     const monthIndex = 11 - index;
     
@@ -82,41 +74,74 @@ const AuditReports: React.FC = () => {
     setIsExporting(true);
     
     try {
-      // Create an array for audit scores data
+      const scoresTitleDesc = {
+        title: "Audit Scores by Category Report",
+        description: `Time period: ${timeRange === '3months' ? 'Last 3 Months' : 
+                      timeRange === '6months' ? 'Last 6 Months' : 
+                      timeRange === 'ytd' ? 'Year to Date' : 'Last 12 Months'} | 
+                      Category: ${category === 'all' ? 'All Categories' : 
+                      auditCategories.find(c => c.id.toString() === category)?.name}`
+      };
+      
+      const complianceTitleDesc = {
+        title: "Audit Compliance by Criterion Report",
+        description: "Pass, partial, and fail rates for key audit criteria"
+      };
+      
+      const frequencyTitleDesc = {
+        title: "Audit Frequency Report",
+        description: `Number of scheduled vs. completed audits over ${timeRange === '3months' ? 'the last 3 months' : 
+                      timeRange === '6months' ? 'the last 6 months' : 
+                      timeRange === 'ytd' ? 'year to date' : 'the last 12 months'}`
+      };
+      
       const scoreDataForExport = auditScores.map(item => ({
-        Period: item.month,
-        'Infrastructure & Safety': item['Infrastructure & Safety'],
-        'Staffing & Training': item['Staffing & Training'],
-        'Treatment & Care': item['Treatment & Care'],
-        'Rights & Dignity': item['Rights & Dignity'],
-        'Overall Score': item['Overall Score']
+        'Time Period': item.month,
+        'Infrastructure & Safety Score (0-100)': item['Infrastructure & Safety'],
+        'Staffing & Training Score (0-100)': item['Staffing & Training'],
+        'Treatment & Care Score (0-100)': item['Treatment & Care'],
+        'Rights & Dignity Score (0-100)': item['Rights & Dignity'],
+        'Overall Audit Score (0-100)': item['Overall Score']
       }));
       
-      // Create an array for compliance data
       const complianceDataForExport = complianceData.map(item => ({
-        'Criterion': item.name,
+        'Audit Criterion': item.name,
         'Pass Rate (%)': item.pass,
         'Partial Compliance (%)': item.partial,
-        'Fail Rate (%)': item.fail
+        'Fail Rate (%)': item.fail,
+        'Total (%)': item.pass + item.partial + item.fail
       }));
       
-      // Create an array for audit frequency data
       const frequencyDataForExport = auditFrequencyData.map(item => ({
-        Period: item.month,
-        'Scheduled Audits': item['Scheduled Audits'],
-        'Completed Audits': item['Completed Audits'],
+        'Time Period': item.month,
+        'Scheduled Audits (Count)': item['Scheduled Audits'],
+        'Completed Audits (Count)': item['Completed Audits'],
+        'Completion Rate (%)': Math.round((item['Completed Audits'] / item['Scheduled Audits']) * 100) + '%'
       }));
       
-      // Download data files
-      downloadReportAsCSV(scoreDataForExport, 'Audit_Scores_By_Category');
+      downloadReportAsCSV(
+        scoreDataForExport, 
+        'Audit_Scores_By_Category',
+        scoresTitleDesc.title,
+        scoresTitleDesc.description
+      );
       
-      // Short delay between downloads to prevent browser blocking
       setTimeout(() => {
-        downloadReportAsCSV(complianceDataForExport, 'Audit_Compliance_By_Criterion');
+        downloadReportAsCSV(
+          complianceDataForExport, 
+          'Audit_Compliance_By_Criterion',
+          complianceTitleDesc.title,
+          complianceTitleDesc.description
+        );
       }, 300);
       
       setTimeout(() => {
-        downloadReportAsCSV(frequencyDataForExport, 'Audit_Frequency');
+        downloadReportAsCSV(
+          frequencyDataForExport, 
+          'Audit_Frequency',
+          frequencyTitleDesc.title,
+          frequencyTitleDesc.description
+        );
         
         toast({
           title: "Reports downloaded",

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,7 +8,6 @@ import { FileDown } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { downloadReportAsCSV } from '@/utils/reportUtils';
 
-// Mock assessment criteria data that could come from the system
 const assessmentCriteria = [
   { id: 1, name: 'Depression Severity', category: 'Mental Health' },
   { id: 2, name: 'Anxiety Levels', category: 'Mental Health' },
@@ -24,7 +22,6 @@ const AssessmentReports: React.FC = () => {
   const [criteriaType, setCriteriaType] = useState('all');
   const [isExporting, setIsExporting] = useState(false);
   
-  // Generate the last 12 months as labels
   const getLast12Months = () => {
     const months = [];
     for (let i = 11; i >= 0; i--) {
@@ -34,14 +31,12 @@ const AssessmentReports: React.FC = () => {
     return months;
   };
   
-  // Generate consistent mock data based on criteria type
   const generateAssessmentData = () => {
     const monthLabels = getLast12Months();
     
-    // Create consistent patterns for different criteria
     return monthLabels.map((month, index) => {
       const baseValue = 65;
-      const monthIndex = 11 - index; // Reverse index to create trending patterns
+      const monthIndex = 11 - index;
       
       return {
         month,
@@ -57,9 +52,7 @@ const AssessmentReports: React.FC = () => {
   
   const assessmentData = generateAssessmentData();
   
-  // Generate assessment completion rate data
   const completionRateData = getLast12Months().map((month, index) => {
-    // Create a pattern where completion rates generally improve over time
     const baseCompletion = 75;
     const monthIndex = 11 - index;
     return {
@@ -69,7 +62,6 @@ const AssessmentReports: React.FC = () => {
     };
   });
   
-  // Criteria distribution across assessment types
   const distributionData = [
     { name: 'Depression Criteria', count: 245, color: '#6366f1' },
     { name: 'Anxiety Criteria', count: 198, color: '#8b5cf6' },
@@ -82,40 +74,72 @@ const AssessmentReports: React.FC = () => {
     setIsExporting(true);
     
     try {
-      // Create an array for assessment score data
+      const scoreTitleDesc = {
+        title: "Assessment Scores Report",
+        description: `Time period: ${timeRange === '3months' ? 'Last 3 Months' : 
+                      timeRange === '6months' ? 'Last 6 Months' : 
+                      timeRange === 'ytd' ? 'Year to Date' : 'Last 12 Months'} | 
+                      Criteria Type: ${criteriaType === 'all' ? 'All Criteria Types' : 
+                      assessmentCriteria.find(c => c.id.toString() === criteriaType)?.name}`
+      };
+      
+      const completionTitleDesc = {
+        title: "Assessment Completion Rates Report",
+        description: `Time period: ${timeRange === '3months' ? 'Last 3 Months' : 
+                      timeRange === '6months' ? 'Last 6 Months' : 
+                      timeRange === 'ytd' ? 'Year to Date' : 'Last 12 Months'}`
+      };
+      
+      const distributionTitleDesc = {
+        title: "Assessment Criteria Distribution Report",
+        description: "Number of assessments completed by criteria type"
+      };
+      
       const scoreDataForExport = assessmentData.map(item => ({
-        Period: item.month,
-        'Depression Severity': item['Depression Severity'],
-        'Anxiety Levels': item['Anxiety Levels'],
-        'Social Functioning': item['Social Functioning'],
-        'Treatment Adherence': item['Treatment Adherence'],
-        'Risk Assessment': item['Risk Assessment'],
-        'Average Score': item.average
+        'Time Period': item.month,
+        'Depression Severity Score (0-100)': item['Depression Severity'],
+        'Anxiety Levels Score (0-100)': item['Anxiety Levels'],
+        'Social Functioning Score (0-100)': item['Social Functioning'],
+        'Treatment Adherence Score (0-100)': item['Treatment Adherence'],
+        'Risk Assessment Score (0-100)': item['Risk Assessment'],
+        'Average Assessment Score (0-100)': item.average
       }));
       
-      // Create an array for completion rate data
       const completionDataForExport = completionRateData.map(item => ({
-        Period: item.month,
-        'Completion Rate': item['Completion Rate'],
-        'Target Rate': item['Target Rate']
+        'Time Period': item.month,
+        'Completion Rate (%)': item['Completion Rate'],
+        'Target Completion Rate (%)': item['Target Rate']
       }));
       
-      // Create an array for distribution data
       const distributionDataForExport = distributionData.map(item => ({
         'Criteria Type': item.name,
-        'Count': item.count
+        'Number of Assessments': item.count,
+        'Percentage of Total': Math.round((item.count / distributionData.reduce((sum, i) => sum + i.count, 0)) * 100) + '%'
       }));
       
-      // Download data files
-      downloadReportAsCSV(scoreDataForExport, 'Assessment_Scores');
+      downloadReportAsCSV(
+        scoreDataForExport, 
+        'Assessment_Scores',
+        scoreTitleDesc.title,
+        scoreTitleDesc.description
+      );
       
-      // Short delay between downloads to prevent browser blocking
       setTimeout(() => {
-        downloadReportAsCSV(completionDataForExport, 'Assessment_Completion_Rates');
+        downloadReportAsCSV(
+          completionDataForExport, 
+          'Assessment_Completion_Rates',
+          completionTitleDesc.title,
+          completionTitleDesc.description
+        );
       }, 300);
       
       setTimeout(() => {
-        downloadReportAsCSV(distributionDataForExport, 'Assessment_Criteria_Distribution');
+        downloadReportAsCSV(
+          distributionDataForExport, 
+          'Assessment_Criteria_Distribution',
+          distributionTitleDesc.title,
+          distributionTitleDesc.description
+        );
         
         toast({
           title: "Reports downloaded",

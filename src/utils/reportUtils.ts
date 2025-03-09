@@ -7,19 +7,52 @@
  * Converts chart data to CSV format and triggers a download
  * @param data Array of objects to convert to CSV
  * @param fileName Base name for the downloaded file (date will be appended)
+ * @param title Optional title to include at the top of the CSV
+ * @param description Optional description to include below the title
  * @returns void
  */
-export function downloadReportAsCSV(data: any[], fileName: string) {
+export function downloadReportAsCSV(
+  data: any[], 
+  fileName: string,
+  title?: string,
+  description?: string
+) {
   if (!data || !data.length) {
     console.error("No data provided for CSV export");
     return;
   }
   
+  // Initialize CSV content with title and description if provided
+  let csvContent = '';
+  
+  if (title) {
+    csvContent += `"${title}"\n`;
+  }
+  
+  if (description) {
+    csvContent += `"${description}"\n`;
+  }
+  
+  if (title || description) {
+    csvContent += '\n'; // Add empty line after metadata
+  }
+  
   // Get headers from the first object's keys
   const headers = Object.keys(data[0]);
   
-  // Create CSV header row
-  let csvContent = headers.join(',') + '\n';
+  // Create CSV header row with proper formatting
+  csvContent += headers.map(header => {
+    // Format header for readability (remove camelCase, add spaces)
+    const formattedHeader = header
+      .replace(/([A-Z])/g, ' $1') // Add space before capital letters
+      .replace(/^./, str => str.toUpperCase()); // Capitalize first letter
+    
+    // Handle headers with commas or quotes
+    if (formattedHeader.includes(',') || formattedHeader.includes('"')) {
+      return `"${formattedHeader.replace(/"/g, '""')}"`;
+    }
+    return formattedHeader;
+  }).join(',') + '\n';
   
   // Add data rows
   data.forEach(item => {
@@ -27,6 +60,7 @@ export function downloadReportAsCSV(data: any[], fileName: string) {
       // Handle values that might contain commas or quotes
       const value = item[header];
       const valueStr = value === null || value === undefined ? '' : String(value);
+      
       // Escape quotes and wrap values with commas in quotes
       if (valueStr.includes(',') || valueStr.includes('"')) {
         return `"${valueStr.replace(/"/g, '""')}"`;
@@ -35,6 +69,9 @@ export function downloadReportAsCSV(data: any[], fileName: string) {
     });
     csvContent += row.join(',') + '\n';
   });
+  
+  // Add report generation timestamp at the bottom
+  csvContent += `\n"Report generated on: ${new Date().toLocaleString()}"\n`;
   
   // Create a downloadable blob
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
