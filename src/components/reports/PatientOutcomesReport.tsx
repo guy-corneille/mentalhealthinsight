@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const PatientOutcomesReport: React.FC = () => {
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState('12months');
   const [condition, setCondition] = useState('all');
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   
   // Mock conditions data
   const conditions = [
@@ -31,45 +32,64 @@ const PatientOutcomesReport: React.FC = () => {
     return months;
   };
   
-  // Mock data for charts
-  const treatmentOutcomeData = getLast12Months().map((month, index) => {
-    return {
-      month,
-      'Significant Improvement': 35 + Math.floor(Math.random() * 10),
-      'Moderate Improvement': 40 + Math.floor(Math.random() * 10),
-      'Minimal/No Change': 15 + Math.floor(Math.random() * 8),
-      'Deterioration': 5 + Math.floor(Math.random() * 5),
-    };
-  });
+  // Memoized chart data to prevent unnecessary recalculations
+  const treatmentOutcomeData = useMemo(() => {
+    const monthLabels = getLast12Months();
+    return monthLabels.map((month, index) => {
+      return {
+        month,
+        'Significant Improvement': 35 + Math.floor(Math.random() * 10),
+        'Moderate Improvement': 40 + Math.floor(Math.random() * 10),
+        'Minimal/No Change': 15 + Math.floor(Math.random() * 8),
+        'Deterioration': 5 + Math.floor(Math.random() * 5),
+      };
+    });
+  }, [timeRange, condition]);
   
-  const readmissionData = getLast12Months().map((month, index) => {
-    return {
-      month,
-      'Readmission Rate': 12 - (index % 5) * 0.5,
-      'Target Rate': 10
-    };
-  });
+  const readmissionData = useMemo(() => {
+    const monthLabels = getLast12Months();
+    return monthLabels.map((month, index) => {
+      return {
+        month,
+        'Readmission Rate': 12 - (index % 5) * 0.5,
+        'Target Rate': 10
+      };
+    });
+  }, [timeRange, condition]);
   
-  const satisfactionScores = [
+  const satisfactionScores = useMemo(() => [
     { name: 'Very Satisfied', value: 42, color: '#10b981' },
     { name: 'Satisfied', value: 35, color: '#6366f1' },
     { name: 'Neutral', value: 15, color: '#8b5cf6' },
     { name: 'Dissatisfied', value: 6, color: '#f59e0b' },
     { name: 'Very Dissatisfied', value: 2, color: '#ef4444' }
-  ];
+  ], [condition]);
   
   const handleExportReport = () => {
-    toast({
-      title: "Report exported",
-      description: "Patient outcomes report has been exported as PDF",
-    });
+    setIsGeneratingReport(true);
+    // Simulate export delay
+    setTimeout(() => {
+      toast({
+        title: "Report exported",
+        description: "Patient outcomes report has been exported as PDF",
+      });
+      setIsGeneratingReport(false);
+    }, 1000);
+  };
+
+  const handleTimeRangeChange = (value: string) => {
+    setTimeRange(value);
+  };
+
+  const handleConditionChange = (value: string) => {
+    setCondition(value);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4">
-          <Select value={condition} onValueChange={setCondition}>
+          <Select value={condition} onValueChange={handleConditionChange}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="All Conditions" />
             </SelectTrigger>
@@ -83,7 +103,7 @@ const PatientOutcomesReport: React.FC = () => {
             </SelectContent>
           </Select>
           
-          <Select value={timeRange} onValueChange={setTimeRange}>
+          <Select value={timeRange} onValueChange={handleTimeRangeChange}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Last 12 Months" />
             </SelectTrigger>
@@ -98,9 +118,14 @@ const PatientOutcomesReport: React.FC = () => {
           </Select>
         </div>
         
-        <Button onClick={handleExportReport} variant="outline" className="gap-2">
+        <Button 
+          onClick={handleExportReport} 
+          variant="outline" 
+          className="gap-2"
+          disabled={isGeneratingReport}
+        >
           <FileDown className="h-4 w-4" />
-          Export Report
+          {isGeneratingReport ? 'Exporting...' : 'Export Report'}
         </Button>
       </div>
       
