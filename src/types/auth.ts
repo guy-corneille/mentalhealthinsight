@@ -12,7 +12,7 @@ export interface User {
 
 export interface PendingUser extends Omit<User, 'id'> {
   id: string;
-  password: string;
+  password?: string; // Make password optional
   status: 'pending';
   requestDate: Date;
 }

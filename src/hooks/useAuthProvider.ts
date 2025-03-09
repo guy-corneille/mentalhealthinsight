@@ -10,7 +10,6 @@ export function useAuthProvider() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Try to get user from localStorage first for quick UI rendering
     const storedUser = localStorage.getItem('mentalhealthiq_user');
     
     if (storedUser) {
@@ -23,10 +22,8 @@ export function useAuthProvider() {
       }
     }
     
-    // Then verify the token with the backend
     const verifyToken = async () => {
       try {
-        // Only call API if we have a token
         if (localStorage.getItem('mentalhealthiq_token')) {
           const currentUser = await authService.getCurrentUser();
           setUser(currentUser);
@@ -34,7 +31,6 @@ export function useAuthProvider() {
         }
       } catch (error) {
         console.error('Failed to verify token:', error);
-        // Clear invalid token
         localStorage.removeItem('mentalhealthiq_token');
         localStorage.removeItem('mentalhealthiq_user');
         setUser(null);
@@ -102,7 +98,6 @@ export function useAuthProvider() {
         description: "Your account is pending approval from an administrator.",
       });
       
-      // Convert the response to match our PendingUser type
       const pendingUser: PendingUser = {
         id: response.user.id,
         username: response.user.username,
@@ -114,7 +109,6 @@ export function useAuthProvider() {
         requestDate: new Date()
       };
       
-      // Update pending users list if we're an admin
       if (user?.role === 'admin' || user?.role === 'superuser') {
         setPendingUsers([...pendingUsers, pendingUser]);
       }
@@ -146,7 +140,6 @@ export function useAuthProvider() {
   };
 
   const loadPendingUsers = async (): Promise<void> => {
-    // Only admins can see pending users
     if (user?.role !== 'admin' && user?.role !== 'superuser') {
       return;
     }
@@ -168,7 +161,6 @@ export function useAuthProvider() {
     try {
       const approvedUser = await authService.approveUser(userId);
       
-      // Remove from pending list
       const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
       setPendingUsers(updatedPendingUsers);
       
@@ -184,7 +176,6 @@ export function useAuthProvider() {
     try {
       const rejectedUser = await authService.rejectUser(userId);
       
-      // Remove from pending list
       const updatedPendingUsers = pendingUsers.filter(u => u.id !== userId);
       setPendingUsers(updatedPendingUsers);
       
@@ -194,7 +185,6 @@ export function useAuthProvider() {
     }
   };
 
-  // Load pending users if we're an admin
   useEffect(() => {
     if (user?.role === 'admin' || user?.role === 'superuser') {
       loadPendingUsers();
