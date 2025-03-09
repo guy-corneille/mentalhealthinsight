@@ -3,7 +3,7 @@
  * Utility functions for generating and downloading reports
  */
 
-import api from '@/services/api';
+import axios from 'axios';
 
 /**
  * Converts chart data to CSV format and triggers a download
@@ -103,13 +103,14 @@ export function downloadReportAsCSV(
 export async function downloadReportFromAPI(reportType: string, filters: any = {}) {
   try {
     // Use axios directly to get a blob response
-    const response = await api.get(`/reports/export/${reportType}/`, { 
+    const response = await axios.get(`/reports/export/${reportType}/`, { 
       params: filters,
       responseType: 'blob' 
     });
     
-    // Create a download link
-    const url = window.URL.createObjectURL(new Blob([response]));
+    // Create a download link with proper type assertion
+    const blob = new Blob([response.data as BlobPart]);
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
     

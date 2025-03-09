@@ -18,12 +18,15 @@ const Reports: React.FC = () => {
     queryKey: ['assessmentReports'],
     queryFn: () => reportService.getAssessmentReports(),
     enabled: activeTab === "assessments",
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Failed to load assessment reports",
-        description: error.message || "Please try again later",
-      });
+    // Using onSettled with error handling instead of onError
+    onSettled: (_, error: Error | null) => {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Failed to load assessment reports",
+          description: error.message || "Please try again later",
+        });
+      }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -32,12 +35,15 @@ const Reports: React.FC = () => {
     queryKey: ['auditReports'],
     queryFn: () => reportService.getAuditReports(),
     enabled: activeTab === "audits",
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Failed to load audit reports",
-        description: error.message || "Please try again later",
-      });
+    // Using onSettled with error handling instead of onError
+    onSettled: (_, error: Error | null) => {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Failed to load audit reports",
+          description: error.message || "Please try again later",
+        });
+      }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

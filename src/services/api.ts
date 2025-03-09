@@ -42,20 +42,27 @@ api.interceptors.response.use(
   }
 );
 
+// Define an interface for error data
+interface ErrorResponse {
+  message?: string;
+  [key: string]: any;
+}
+
 // Generic request method
 const request = async <T>(config: AxiosRequestConfig): Promise<T> => {
   try {
     const response: AxiosResponse<T> = await api(config);
     return response.data;
   } catch (error) {
-    const axiosError = error as AxiosError;
+    const axiosError = error as AxiosError<ErrorResponse>;
     
     // Create a more user-friendly error
-    const apiError = new Error(
+    const errorMessage = 
       axiosError.response?.data?.message || 
       axiosError.message || 
-      'An unknown error occurred'
-    );
+      'An unknown error occurred';
+    
+    const apiError = new Error(errorMessage);
     
     // Add status code to error object for easier handling
     Object.assign(apiError, { 
