@@ -18,9 +18,8 @@ const Reports: React.FC = () => {
     queryKey: ['assessmentReports'],
     queryFn: () => reportService.getAssessmentReports(),
     enabled: activeTab === "assessments",
-    // Using onSettled with error handling instead of onError
-    onSettled: (_, error: Error | null) => {
-      if (error) {
+    meta: {
+      onError: (error: Error) => {
         toast({
           variant: "destructive",
           title: "Failed to load assessment reports",
@@ -35,9 +34,8 @@ const Reports: React.FC = () => {
     queryKey: ['auditReports'],
     queryFn: () => reportService.getAuditReports(),
     enabled: activeTab === "audits",
-    // Using onSettled with error handling instead of onError
-    onSettled: (_, error: Error | null) => {
-      if (error) {
+    meta: {
+      onError: (error: Error) => {
         toast({
           variant: "destructive",
           title: "Failed to load audit reports",
