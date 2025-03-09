@@ -2,13 +2,12 @@
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import FacilityPerformanceReport from '@/components/reports/FacilityPerformanceReport';
-import StaffEfficiencyReport from '@/components/reports/StaffEfficiencyReport';
-import PatientOutcomesReport from '@/components/reports/PatientOutcomesReport';
 import { Spinner } from '@/components/ui/spinner';
+import AssessmentReports from '@/components/reports/AssessmentReports';
+import AuditReports from '@/components/reports/AuditReports';
 
 const Reports: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("facilities");
+  const [activeTab, setActiveTab] = useState("assessments");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleTabChange = (value: string) => {
@@ -17,7 +16,7 @@ const Reports: React.FC = () => {
     setTimeout(() => {
       setActiveTab(value);
       setIsLoading(false);
-    }, 300); // Increased delay for better user experience
+    }, 300);
   };
 
   return (
@@ -26,15 +25,14 @@ const Reports: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
           <p className="text-muted-foreground mt-1">
-            Access and generate detailed reports about facilities, staff, and patient outcomes.
+            Access and generate detailed reports about patient assessments and facility audits.
           </p>
         </div>
         
-        <Tabs defaultValue="facilities" value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="grid w-full md:w-auto grid-cols-3 mb-6">
-            <TabsTrigger value="facilities">Facility Performance</TabsTrigger>
-            <TabsTrigger value="staff">Staff Efficiency</TabsTrigger>
-            <TabsTrigger value="patients">Patient Outcomes</TabsTrigger>
+        <Tabs defaultValue="assessments" value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="grid w-full md:w-auto grid-cols-2 mb-6">
+            <TabsTrigger value="assessments">Assessment Reports</TabsTrigger>
+            <TabsTrigger value="audits">Audit Reports</TabsTrigger>
           </TabsList>
           
           {isLoading ? (
@@ -43,16 +41,12 @@ const Reports: React.FC = () => {
             </div>
           ) : (
             <>
-              <TabsContent value="facilities" className="mt-0">
-                <FacilityPerformanceReport />
+              <TabsContent value="assessments" className="mt-0">
+                <AssessmentReports />
               </TabsContent>
               
-              <TabsContent value="staff" className="mt-0">
-                <StaffEfficiencyReport />
-              </TabsContent>
-              
-              <TabsContent value="patients" className="mt-0">
-                <PatientOutcomesReport />
+              <TabsContent value="audits" className="mt-0">
+                <AuditReports />
               </TabsContent>
             </>
           )}

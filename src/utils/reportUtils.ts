@@ -5,9 +5,13 @@
 
 /**
  * Converts chart data to CSV format and triggers a download
+ * @param data Array of objects to convert to CSV
+ * @param fileName Base name for the downloaded file (date will be appended)
+ * @returns void
  */
 export function downloadReportAsCSV(data: any[], fileName: string) {
   if (!data || !data.length) {
+    console.error("No data provided for CSV export");
     return;
   }
   
@@ -44,4 +48,9 @@ export function downloadReportAsCSV(data: any[], fileName: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  
+  // Clean up the URL object
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 100);
 }
