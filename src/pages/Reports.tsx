@@ -5,18 +5,52 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Spinner } from '@/components/ui/spinner';
 import AssessmentReports from '@/components/reports/AssessmentReports';
 import AuditReports from '@/components/reports/AuditReports';
+import { useQuery } from '@tanstack/react-query';
+import reportService from '@/services/reportService';
+import { useToast } from '@/hooks/use-toast';
 
 const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState("assessments");
-  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
+  // Pre-fetch both data sets to make switching tabs faster
+  const { isLoading: isLoadingAssessments } = useQuery({
+    queryKey: ['assessmentReports'],
+    queryFn: () => reportService.getAssessmentReports(),
+    enabled: activeTab === "assessments",
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "Failed to load assessment reports",
+          description: error.message || "Please try again later",
+        });
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const { isLoading: isLoadingAudits } = useQuery({
+    queryKey: ['auditReports'],
+    queryFn: () => reportService.getAuditReports(),
+    enabled: activeTab === "audits",
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          variant: "destructive",
+          title: "Failed to load audit reports",
+          description: error.message || "Please try again later",
+        });
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const isLoading = (activeTab === "assessments" && isLoadingAssessments) || 
+                    (activeTab === "audits" && isLoadingAudits);
 
   const handleTabChange = (value: string) => {
-    setIsLoading(true);
-    // Add a small delay to prevent UI freezing when switching tabs
-    setTimeout(() => {
-      setActiveTab(value);
-      setIsLoading(false);
-    }, 300);
+    setActiveTab(value);
   };
 
   return (
