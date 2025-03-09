@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,7 +31,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     }
   }, [isLoading, isAuthenticated, location.pathname, canAccessRoute, toast]);
 
-  // Still loading, don't redirect yet
   if (isLoading) {
     return (
       <div className="h-screen w-full flex items-center justify-center flex-col gap-4">
@@ -42,17 +40,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // Not authenticated, redirect to login
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Authenticated but not authorized for this route
   if (!canAccessRoute(location.pathname)) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Authenticated and authorized
   return <>{children}</>;
 };
 

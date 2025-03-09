@@ -1,0 +1,49 @@
+
+export type UserRole = 'superuser' | 'admin' | 'evaluator' | 'viewer';
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: UserRole;
+  displayName?: string;
+  phoneNumber?: string;
+}
+
+export interface PendingUser extends Omit<User, 'id'> {
+  id: string;
+  password: string;
+  status: 'pending';
+  requestDate: Date;
+}
+
+export interface UserRegistration {
+  displayName: string;
+  username: string;
+  email: string;
+  role: UserRole;
+  password: string;
+  phoneNumber: string;
+}
+
+export interface MockUser {
+  id: string;
+  username: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  displayName: string;
+}
+
+export interface AuthContextType {
+  user: User | null;
+  pendingUsers: PendingUser[];
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
+  registerUser: (user: UserRegistration) => Promise<void>;
+  approveUser: (userId: string) => Promise<void>;
+  rejectUser: (userId: string) => Promise<void>;
+  updateProfile: (userData: Partial<User>) => Promise<void>;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}

@@ -1,5 +1,6 @@
 
-import { useAuth, UserRole } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
+import { UserRole } from '../types/auth';
 
 // Define permissions for each role
 const rolePermissions: Record<UserRole, string[]> = {
