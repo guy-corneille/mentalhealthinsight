@@ -1,8 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FacilityPerformanceReport from '@/components/reports/FacilityPerformanceReport';
+import StaffEfficiencyReport from '@/components/reports/StaffEfficiencyReport';
+import PatientOutcomesReport from '@/components/reports/PatientOutcomesReport';
 
 const Reports: React.FC = () => {
+  const [activeTab, setActiveTab] = useState("facilities");
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -13,43 +19,25 @@ const Reports: React.FC = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="p-6 border rounded-lg bg-card shadow-sm">
-            <h3 className="text-lg font-medium mb-2">Facility Performance</h3>
-            <p className="text-muted-foreground mb-4">Comparative analysis of facility performance against benchmarks.</p>
-            <button className="text-sm font-medium text-primary hover:underline">Generate Report</button>
-          </div>
+        <Tabs defaultValue="facilities" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full md:w-auto grid-cols-3 mb-6">
+            <TabsTrigger value="facilities">Facility Performance</TabsTrigger>
+            <TabsTrigger value="staff">Staff Efficiency</TabsTrigger>
+            <TabsTrigger value="patients">Patient Outcomes</TabsTrigger>
+          </TabsList>
           
-          <div className="p-6 border rounded-lg bg-card shadow-sm">
-            <h3 className="text-lg font-medium mb-2">Staff Efficiency</h3>
-            <p className="text-muted-foreground mb-4">Detailed analysis of staff performance and resource allocation.</p>
-            <button className="text-sm font-medium text-primary hover:underline">Generate Report</button>
-          </div>
+          <TabsContent value="facilities" className="mt-0">
+            <FacilityPerformanceReport />
+          </TabsContent>
           
-          <div className="p-6 border rounded-lg bg-card shadow-sm">
-            <h3 className="text-lg font-medium mb-2">Patient Outcomes</h3>
-            <p className="text-muted-foreground mb-4">Analysis of patient treatment outcomes and satisfaction rates.</p>
-            <button className="text-sm font-medium text-primary hover:underline">Generate Report</button>
-          </div>
+          <TabsContent value="staff" className="mt-0">
+            <StaffEfficiencyReport />
+          </TabsContent>
           
-          <div className="p-6 border rounded-lg bg-card shadow-sm">
-            <h3 className="text-lg font-medium mb-2">Compliance Audit</h3>
-            <p className="text-muted-foreground mb-4">Reports on facility compliance with healthcare regulations.</p>
-            <button className="text-sm font-medium text-primary hover:underline">Generate Report</button>
-          </div>
-          
-          <div className="p-6 border rounded-lg bg-card shadow-sm">
-            <h3 className="text-lg font-medium mb-2">Resource Utilization</h3>
-            <p className="text-muted-foreground mb-4">Analysis of resource utilization and optimization opportunities.</p>
-            <button className="text-sm font-medium text-primary hover:underline">Generate Report</button>
-          </div>
-          
-          <div className="p-6 border rounded-lg bg-card shadow-sm">
-            <h3 className="text-lg font-medium mb-2">Quality Metrics</h3>
-            <p className="text-muted-foreground mb-4">Key quality indicators across all healthcare facilities.</p>
-            <button className="text-sm font-medium text-primary hover:underline">Generate Report</button>
-          </div>
-        </div>
+          <TabsContent value="patients" className="mt-0">
+            <PatientOutcomesReport />
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
