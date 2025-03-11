@@ -9,7 +9,7 @@ class FacilityFilter(django_filters.FilterSet):
 
     class Meta:
         model = Facility
-        fields = '__all__'
+        fields = ['name', 'facility_type', 'district', 'province', 'status']
 
     def custom_search(self, queryset, name, value):
         return queryset.filter(
@@ -26,7 +26,7 @@ class PatientFilter(django_filters.FilterSet):
 
     class Meta:
         model = Patient
-        fields = '__all__'
+        fields = ['first_name', 'last_name', 'gender', 'status', 'facility']
 
     def custom_search(self, queryset, name, value):
         return queryset.filter(
@@ -42,7 +42,7 @@ class AssessmentFilter(django_filters.FilterSet):
 
     class Meta:
         model = Assessment
-        fields = '__all__'
+        fields = ['patient', 'criteria', 'facility', 'evaluator']
 
     def custom_search(self, queryset, name, value):
         return queryset.filter(
@@ -58,7 +58,7 @@ class AssessmentCriteriaFilter(django_filters.FilterSet):
 
     class Meta:
         model = AssessmentCriteria
-        fields = '__all__'
+        fields = ['name', 'category']
 
     def custom_search(self, queryset, name, value):
         return queryset.filter(
@@ -72,7 +72,7 @@ class AuditFilter(django_filters.FilterSet):
 
     class Meta:
         model = Audit
-        fields = '__all__'
+        fields = ['facility', 'auditor', 'status']
 
     def custom_search(self, queryset, name, value):
         return queryset.filter(
