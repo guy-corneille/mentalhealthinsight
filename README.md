@@ -1,69 +1,91 @@
-# Welcome to your Lovable project
 
-## Project info
+# MentalHealthIQ
 
-**URL**: https://lovable.dev/projects/09f0bc2a-126a-48b5-b595-4d27c88ab458
+A comprehensive mental health facility management and assessment platform.
 
-## How can I edit this code?
+## Project Structure
 
-There are several ways of editing your application.
+The project is organized into two main directories:
 
-**Use Lovable**
+### Backend (Django)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/09f0bc2a-126a-48b5-b595-4d27c88ab458) and start prompting.
+Contains the Django server that handles the API and database operations.
 
-Changes made via Lovable will be committed automatically to this repo.
+- `/Backend` - Django project root
+  - `/mentalhealthiq` - Main Django app
+    - `/migrations` - Database migration files
+    - `filters.py` - Filter definitions for API queries
+    - Other Django files (models.py, views.py, etc.)
 
-**Use your preferred IDE**
+### Frontend (React)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Contains the React frontend application.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- `/Frontend` - React application root
+  - `/src` - Source code directory
+    - `/components` - Reusable React components
+    - `/pages` - Page components
+    - `/contexts` - React contexts for state management
+    - `/hooks` - Custom React hooks
+    - `/lib` - Utility functions and helpers
 
-Follow these steps:
+## Getting Started
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Backend Setup
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+1. Navigate to the Backend directory:
+```
+cd Backend
 ```
 
-**Edit a file directly in GitHub**
+2. Create and activate a virtual environment:
+```
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+3. Install dependencies:
+```
+pip install -r requirements.txt
+```
 
-**Use GitHub Codespaces**
+4. Run migrations:
+```
+python manage.py makemigrations
+python manage.py migrate
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+5. Create a superuser:
+```
+python manage.py createsuperuser
+```
 
-## What technologies are used for this project?
+6. Run the development server:
+```
+python manage.py runserver
+```
 
-This project is built with .
+### Frontend Setup
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Navigate to the Frontend directory:
+```
+cd Frontend
+```
 
-## How can I deploy this project?
+2. Install dependencies:
+```
+npm install
+```
 
-Simply open [Lovable](https://lovable.dev/projects/09f0bc2a-126a-48b5-b595-4d27c88ab458) and click on Share -> Publish.
+3. Start the development server:
+```
+npm start
+```
 
-## I want to use a custom domain - is that possible?
+## Features
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- Facility management and performance tracking
+- Patient assessment and treatment monitoring
+- Standardized evaluation criteria
+- Comprehensive reporting and analytics
+- User authentication and role-based access control
