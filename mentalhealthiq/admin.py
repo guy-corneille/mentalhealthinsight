@@ -1,7 +1,7 @@
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .model import User, PendingUser, Facility, StaffMember, StaffQualification, AssessmentCriteria, Indicator, Patient, Assessment, IndicatorScore, Audit, AuditCriteria, Report
+from .models import User, PendingUser, Facility, StaffMember, StaffQualification, AssessmentCriteria, Indicator, Patient, Assessment, IndicatorScore, Audit, AuditCriteria, Report
 
 # Register User model with custom admin interface
 @admin.register(User)

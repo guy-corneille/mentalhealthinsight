@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta
 import json
 
 # Set up Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'healthquality.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mentalhealthiq.settings')
 django.setup()
 
 # Import models
@@ -14,7 +14,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db.utils import IntegrityError
 
-from healthcare.models import (
+from mentalhealthiq.models import (
     User, PendingUser, Facility, StaffMember, StaffQualification,
     AssessmentCriteria, Indicator, Patient, Assessment, IndicatorScore,
     Audit, AuditCriteria, Report

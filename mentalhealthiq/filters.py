@@ -2,7 +2,7 @@
 # mentalhealthiq/filters.py
 import django_filters
 from django.db import models
-from .model import Facility, Patient, Assessment, AssessmentCriteria, Audit
+from .models import Facility, Patient, Assessment, AssessmentCriteria, Audit
 
 class FacilityFilter(django_filters.FilterSet):
     search = django_filters.CharFilter(method='custom_search', label="Search")
