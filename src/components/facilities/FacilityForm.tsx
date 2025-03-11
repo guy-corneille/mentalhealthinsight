@@ -1,9 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   BuildingIcon,
   MapPinIcon,
+  UsersIcon,
+  CalendarIcon,
   SaveIcon,
   ArrowLeftIcon,
 } from 'lucide-react';
@@ -34,13 +35,15 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
 
   const [facilityData, setFacilityData] = useState({
     name: '',
-    facility_type: '',
-    address: '',
-    district: '',
-    province: '',
+    type: '',
+    location: '',
     capacity: '',
-    contact_name: '',
-    contact_phone: '',
+    description: '',
+    email: '',
+    phone: '',
+    website: '',
+    leadDoctor: '',
+    staffCount: '',
   });
 
   useEffect(() => {
@@ -49,13 +52,15 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
       setTimeout(() => {
         setFacilityData({
           name: 'Central Hospital',
-          facility_type: 'Hospital',
-          address: 'KN 5 Ave, Kigali',
-          district: 'Nyarugenge',
-          province: 'Kigali',
+          type: 'Hospital',
+          location: 'Kigali, Rwanda',
           capacity: '250',
-          contact_name: 'Dr. Jean Mutabazi',
-          contact_phone: '+250 782 123 456',
+          description: 'A leading mental health facility providing comprehensive services to the community.',
+          email: 'info@centralhospital.rw',
+          phone: '+250 782 123 456',
+          website: 'www.centralhospital.rw',
+          leadDoctor: 'Dr. Jean Mutabazi',
+          staffCount: '120',
         });
         setIsLoading(false);
       }, 800);
@@ -75,7 +80,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!facilityData.name || !facilityData.facility_type || !facilityData.address) {
+    if (!facilityData.name || !facilityData.type || !facilityData.location) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields.",
@@ -149,12 +154,12 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
                   </div>
 
                   <div>
-                    <Label htmlFor="facility_type" className="text-base">
+                    <Label htmlFor="type" className="text-base">
                       Facility Type <span className="text-red-500">*</span>
                     </Label>
                     <Select
-                      value={facilityData.facility_type}
-                      onValueChange={(value) => handleSelectChange(value, 'facility_type')}
+                      value={facilityData.type}
+                      onValueChange={(value) => handleSelectChange(value, 'type')}
                     >
                       <SelectTrigger className="w-full mt-1">
                         <SelectValue placeholder="Select facility type" />
@@ -169,37 +174,20 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
                   </div>
 
                   <div>
-                    <Label htmlFor="capacity" className="text-base">
-                      Capacity
-                    </Label>
-                    <Input
-                      id="capacity"
-                      name="capacity"
-                      type="number"
-                      value={facilityData.capacity}
-                      onChange={handleInputChange}
-                      className="mt-1"
-                      placeholder="Patient capacity"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="address" className="text-base">
-                      Address <span className="text-red-500">*</span>
+                    <Label htmlFor="location" className="text-base">
+                      Location <span className="text-red-500">*</span>
                     </Label>
                     <div className="flex mt-1">
                       <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted">
                         <MapPinIcon className="h-4 w-4 text-muted-foreground" />
                       </span>
                       <Input
-                        id="address"
-                        name="address"
-                        value={facilityData.address}
+                        id="location"
+                        name="location"
+                        value={facilityData.location}
                         onChange={handleInputChange}
                         className="rounded-l-none"
-                        placeholder="Enter address"
+                        placeholder="City, Country"
                         required
                       />
                     </div>
@@ -207,60 +195,112 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="district" className="text-base">
-                        District
+                      <Label htmlFor="capacity" className="text-base">
+                        Capacity
                       </Label>
                       <Input
-                        id="district"
-                        name="district"
-                        value={facilityData.district}
+                        id="capacity"
+                        name="capacity"
+                        type="number"
+                        value={facilityData.capacity}
                         onChange={handleInputChange}
                         className="mt-1"
-                        placeholder="District"
+                        placeholder="Patient capacity"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="province" className="text-base">
-                        Province
+                      <Label htmlFor="staffCount" className="text-base">
+                        Staff Count
                       </Label>
-                      <Input
-                        id="province"
-                        name="province"
-                        value={facilityData.province}
-                        onChange={handleInputChange}
-                        className="mt-1"
-                        placeholder="Province"
-                      />
+                      <div className="flex mt-1">
+                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted">
+                          <UsersIcon className="h-4 w-4 text-muted-foreground" />
+                        </span>
+                        <Input
+                          id="staffCount"
+                          name="staffCount"
+                          type="number"
+                          value={facilityData.staffCount}
+                          onChange={handleInputChange}
+                          className="rounded-l-none"
+                          placeholder="Number of staff"
+                        />
+                      </div>
                     </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="description" className="text-base">
+                      Description
+                    </Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      value={facilityData.description}
+                      onChange={handleInputChange}
+                      className="mt-1 h-32"
+                      placeholder="Describe the facility's services and specialties"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email" className="text-base">
+                      Email
+                    </Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={facilityData.email}
+                      onChange={handleInputChange}
+                      className="mt-1"
+                      placeholder="contact@example.com"
+                    />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="contact_name" className="text-base">
-                        Contact Person
+                      <Label htmlFor="phone" className="text-base">
+                        Phone
                       </Label>
                       <Input
-                        id="contact_name"
-                        name="contact_name"
-                        value={facilityData.contact_name}
+                        id="phone"
+                        name="phone"
+                        value={facilityData.phone}
                         onChange={handleInputChange}
                         className="mt-1"
-                        placeholder="Contact name"
+                        placeholder="+1 234 567 890"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="contact_phone" className="text-base">
-                        Contact Phone
+                      <Label htmlFor="website" className="text-base">
+                        Website
                       </Label>
                       <Input
-                        id="contact_phone"
-                        name="contact_phone"
-                        value={facilityData.contact_phone}
+                        id="website"
+                        name="website"
+                        value={facilityData.website}
                         onChange={handleInputChange}
                         className="mt-1"
-                        placeholder="Phone number"
+                        placeholder="www.example.com"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="leadDoctor" className="text-base">
+                      Lead Doctor
+                    </Label>
+                    <Input
+                      id="leadDoctor"
+                      name="leadDoctor"
+                      value={facilityData.leadDoctor}
+                      onChange={handleInputChange}
+                      className="mt-1"
+                      placeholder="Dr. Name"
+                    />
                   </div>
                 </div>
               </div>

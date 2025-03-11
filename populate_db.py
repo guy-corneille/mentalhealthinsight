@@ -1,8 +1,8 @@
-
 import os
 import django
 import random
 from datetime import date, datetime, timedelta
+import json
 
 # Set up Django environment
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mentalhealthiq.settings')
@@ -153,14 +153,22 @@ def create_facilities(count=15):
             name=name,
             facility_type=facility_type,
             address=f"{random.randint(100, 999)} Main St, {district}",
-            district=district,
+            city=f"City {random.randint(1, 5)}",
             province=province,
-            coordinates=f"{random.uniform(-90, 90):.6f},{random.uniform(-180, 180):.6f}",
+            district=district,
+            postal_code=f"{random.randint(10000, 99999)}",
+            country="Country",
+            phone=random_phone(),
+            email=f"info@{name.lower().replace(' ', '')}.org",
+            website=f"https://www.{name.lower().replace(' ', '')}.org",
             capacity=random.randint(20, 500),
-            status=random.choice(status_options),
+            established_date=random_date(date(2000, 1, 1), date(2020, 12, 31)),
+            last_inspection_date=random_date(date(2022, 1, 1), date.today()),
             contact_name=f"Contact Person {i}",
             contact_phone=random_phone(),
             contact_email=f"contact{i}@example.com",
+            status=random.choice(status_options),
+            description=f"Description for {name}. This is a {facility_type} located in {province}, {district}.",
             created_at=timezone.now(),
             updated_at=timezone.now()
         )
@@ -170,28 +178,25 @@ def create_facilities(count=15):
     return facilities
 
 # Populate Staff with Qualifications
-def create_staff(facilities, count_per_facility=5):
+def create_staff(facilities, count_per_facility=10):
     print(f"Creating staff for {len(facilities)} facilities...")
     staff_members = []
-    positions = ["Doctor", "Nurse", "Therapist", "Psychologist", "Psychiatrist", "Social Worker"]
-    departments = ["Psychiatry", "Psychology", "Therapy", "Social Services", "Outpatient"]
-    status_options = ["Active", "On Leave", "Former"]
-    qualifications = ["MD", "PhD", "RN", "MSW", "LCSW", "PsyD", "BSc Nursing", "Certified Therapist"]
+    positions = ["Doctor", "Nurse", "Therapist", "Psychologist", "Psychiatrist", "Social Worker", "Administrator"]
+    departments = ["Psychiatry", "Psychology", "Therapy", "Admin", "Social Services", "Outpatient", "Emergency"]
+    status_options = ["Active", "On Leave", "Terminated", "Contract"]
+    qualifications = ["MD", "PhD", "RN", "MSW", "LCSW", "PsyD", "MBA", "MPH", "BSc Nursing", "Certified Therapist"]
     
     for facility in facilities:
         for i in range(1, count_per_facility + 1):
             position = random.choice(positions)
             department = random.choice(departments)
             
-            staff_id = f"S-{facility.id}{i:03d}"
-            
             staff = StaffMember.objects.create(
-                id=staff_id,
-                name=f"Staff {facility.id}-{i}",
+                name=f"Staff Member {facility.id}-{i}",
                 position=position,
                 department=department,
                 facility=facility,
-                join_date=random_date(date(2015, 1, 1), date.today()),
+                join_date=random_date(facility.established_date, date.today()),
                 status=random.choice(status_options),
                 email=f"staff{facility.id}.{i}@example.com",
                 phone=random_phone(),
@@ -199,8 +204,8 @@ def create_staff(facilities, count_per_facility=5):
                 updated_at=timezone.now()
             )
             
-            # Add 1-2 qualifications per staff
-            for _ in range(random.randint(1, 2)):
+            # Add 1-3 qualifications per staff
+            for _ in range(random.randint(1, 3)):
                 qual = random.choice(qualifications)
                 StaffQualification.objects.create(
                     staff=staff,
@@ -258,6 +263,47 @@ def create_assessment_criteria():
                 {"name": "Comfort & Privacy", "weight": 0.3},
                 {"name": "Therapeutic Activities", "weight": 0.4}
             ]
+        },
+        {
+            "name": "Staff Competency",
+            "category": "Administrative",
+            "description": "Evaluation of staff qualifications and training",
+            "indicators": [
+                {"name": "Required Credentials", "weight": 0.4},
+                {"name": "Continuing Education", "weight": 0.3},
+                {"name": "Supervision Quality", "weight": 0.3}
+            ]
+        },
+        {
+            "name": "Patient Rights",
+            "category": "Ethical",
+            "description": "Assessment of respect for patient rights",
+            "indicators": [
+                {"name": "Informed Consent", "weight": 0.25},
+                {"name": "Confidentiality", "weight": 0.25},
+                {"name": "Complaint Process", "weight": 0.25},
+                {"name": "Dignity & Respect", "weight": 0.25}
+            ]
+        },
+        {
+            "name": "Care Coordination",
+            "category": "Administrative",
+            "description": "Evaluation of coordination among providers",
+            "indicators": [
+                {"name": "Information Sharing", "weight": 0.3},
+                {"name": "Referral Process", "weight": 0.3},
+                {"name": "Discharge Planning", "weight": 0.4}
+            ]
+        },
+        {
+            "name": "Outcomes Measurement",
+            "category": "Quality Improvement",
+            "description": "Assessment of outcome tracking systems",
+            "indicators": [
+                {"name": "Standard Measures Used", "weight": 0.3},
+                {"name": "Regular Data Collection", "weight": 0.3},
+                {"name": "Results Utilization", "weight": 0.4}
+            ]
         }
     ]
     
@@ -283,26 +329,23 @@ def create_assessment_criteria():
     return criteria
 
 # Populate Patients
-def create_patients(facilities, count_per_facility=10):
+def create_patients(facilities, count_per_facility=30):
     print(f"Creating patients for {len(facilities)} facilities...")
     patients = []
-    genders = ["M", "F", "O"]
-    status_options = ["Active", "Discharged", "Referred", "Inactive"]
+    genders = ["Male", "Female", "Other"]
+    status_options = ["Active", "Discharged", "Transferred", "Deceased"]
     
     for facility in facilities:
         for i in range(1, count_per_facility + 1):
             dob = random_date(date(1950, 1, 1), date(2005, 12, 31))
             registration_date = random_date(date(2020, 1, 1), date.today())
             
-            patient_id = f"P-{facility.id}{i:03d}"
-            
             patient = Patient.objects.create(
-                id=patient_id,
-                first_name=f"Patient{i}First",
-                last_name=f"Patient{i}Last",
+                first_name=f"Patient{facility.id}{i}First",
+                last_name=f"Patient{facility.id}{i}Last",
                 date_of_birth=dob,
                 gender=random.choice(genders),
-                address=f"{random.randint(100, 999)} Patient St, City",
+                address=f"{random.randint(100, 999)} Patient St, City {random.randint(1, 10)}",
                 phone=random_phone(),
                 email=f"patient{facility.id}.{i}@example.com",
                 national_id=f"ID{random.randint(10000000, 99999999)}",
@@ -322,7 +365,7 @@ def create_patients(facilities, count_per_facility=10):
     return patients
 
 # Populate Assessments and Indicator Scores
-def create_assessments(patients, criteria, users, count_per_patient=2):
+def create_assessments(patients, criteria, users, count_per_patient=3):
     print(f"Creating assessments for {len(patients)} patients...")
     assessments = []
     evaluators = [user for user in users if user.role == 'evaluator']
@@ -346,7 +389,7 @@ def create_assessments(patients, criteria, users, count_per_patient=2):
                 facility=facility,
                 assessment_date=assessment_date,
                 score=score,
-                notes=f"Assessment notes for patient {patient.id}.",
+                notes=f"Assessment notes for patient {patient.id}, assessment #{i+1}.",
                 created_at=timezone.now(),
                 updated_at=timezone.now()
             )
@@ -359,7 +402,7 @@ def create_assessments(patients, criteria, users, count_per_patient=2):
                     assessment=assessment,
                     indicator=indicator,
                     score=indicator_score,
-                    notes=f"Notes for indicator {indicator.name}."
+                    notes=f"Notes for indicator {indicator.name} score."
                 )
             
             assessments.append(assessment)
@@ -368,10 +411,10 @@ def create_assessments(patients, criteria, users, count_per_patient=2):
     return assessments
 
 # Populate Audits
-def create_audits(facilities, criteria, users, count_per_facility=1):
+def create_audits(facilities, criteria, users, count_per_facility=2):
     print(f"Creating audits for {len(facilities)} facilities...")
     audits = []
-    status_options = ["Completed", "In Progress", "Scheduled"]
+    status_options = ["Completed", "In Progress", "Scheduled", "Reported"]
     auditors = [user for user in users if user.role in ['admin', 'evaluator']]
     
     if not auditors:
@@ -390,13 +433,13 @@ def create_audits(facilities, criteria, users, count_per_facility=1):
                 audit_date=audit_date,
                 overall_score=overall_score,
                 status=random.choice(status_options),
-                notes=f"Audit notes for facility {facility.name}.",
+                notes=f"Audit notes for facility {facility.name}, audit #{i+1}.",
                 created_at=timezone.now(),
                 updated_at=timezone.now()
             )
             
-            # Create audit criteria scores
-            selected_criteria = random.sample(list(criteria), min(3, len(criteria)))
+            # Create audit criteria scores (3-6 criteria per audit)
+            selected_criteria = random.sample(list(criteria), min(random.randint(3, 6), len(criteria)))
             for criterion in selected_criteria:
                 criterion_score = random.randint(max(50, overall_score-15), min(100, overall_score+15))
                 AuditCriteria.objects.create(
@@ -412,7 +455,7 @@ def create_audits(facilities, criteria, users, count_per_facility=1):
     return audits
 
 # Populate Reports
-def create_reports(facilities, users, assessments, audits, count=5):
+def create_reports(facilities, users, assessments, audits, count=15):
     print(f"Creating {count} reports...")
     reports = []
     report_types = ["assessment", "audit", "facility"]
@@ -425,7 +468,9 @@ def create_reports(facilities, users, assessments, audits, count=5):
         # Create report parameters based on type
         parameters = {}
         if report_type == "assessment":
+            assessment_ids = [assessment.id for assessment in random.sample(assessments, min(3, len(assessments)))]
             parameters = {
+                "assessment_ids": assessment_ids,
                 "date_range": {
                     "start": str(date.today() - timedelta(days=90)),
                     "end": str(date.today())
@@ -433,13 +478,17 @@ def create_reports(facilities, users, assessments, audits, count=5):
             }
             title = f"Assessment Report {i+1}"
         elif report_type == "audit":
+            audit_ids = [audit.id for audit in random.sample(audits, min(2, len(audits)))]
             parameters = {
+                "audit_ids": audit_ids,
                 "include_criteria": random.choice([True, False])
             }
             title = f"Audit Report {i+1}"
         else:  # facility
+            facility_ids = [facility.id for facility in random.sample(facilities, min(3, len(facilities)))]
             parameters = {
-                "metrics": ["staff_ratio", "patient_outcomes"]
+                "facility_ids": facility_ids,
+                "metrics": ["staff_ratio", "patient_outcomes", "compliance_rate"]
             }
             title = f"Facility Performance Report {i+1}"
         
@@ -449,7 +498,7 @@ def create_reports(facilities, users, assessments, audits, count=5):
             description=f"Description for {title}",
             generated_by=user,
             generated_at=generated_at,
-            file_path=f"/reports/{report_type}_{i+1}.pdf",
+            file_path=f"/reports/{report_type}_{i+1}_{generated_at.strftime('%Y%m%d')}.pdf",
             parameters=parameters
         )
         
@@ -466,20 +515,20 @@ def populate_database():
         clear_data()
         
         # Create base data
-        users = create_users(10)
-        facilities = create_facilities(10)
-        staff = create_staff(facilities, 5)
+        users = create_users(30)
+        facilities = create_facilities(20)
+        staff = create_staff(facilities, 15)
         criteria = create_assessment_criteria()
         
         # Create patients
-        patients = create_patients(facilities, 10)
+        patients = create_patients(facilities, 40)
         
         # Create assessments and audits
-        assessments = create_assessments(patients, criteria, users, 2)
-        audits = create_audits(facilities, criteria, users, 1)
+        assessments = create_assessments(patients, criteria, users, 5)
+        audits = create_audits(facilities, criteria, users, 3)
         
         # Create reports
-        reports = create_reports(facilities, users, assessments, audits, 5)
+        reports = create_reports(facilities, users, assessments, audits, 25)
         
         print("\nDatabase populated successfully!")
         print(f"Created:")
