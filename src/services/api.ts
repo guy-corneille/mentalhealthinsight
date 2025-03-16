@@ -40,6 +40,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,  // Return data directly
   (error: AxiosError) => {
+    console.error('API Error:', error.response?.data || error.message);
+    
     // Handle authentication errors
     if (error.response?.status === 401) {
       // Clear token and user data only if not trying to login

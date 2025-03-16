@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 import logging
@@ -21,6 +22,30 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 
 # Authentication views
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    """Custom login view that returns token and user data"""
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    if not username or not password:
+        return Response({'non_field_errors': ['Must include "username" and "password".']}, 
+                        status=status.HTTP_400_BAD_REQUEST)
+    
+    user = authenticate(username=username, password=password)
+    
+    if user:
+        token, created = Token.objects.get_or_create(user=user)
+        serializer = UserSerializer(user)
+        return Response({
+            'token': token.key,
+            'user': serializer.data
+        })
+    else:
+        return Response({'non_field_errors': ['Unable to log in with provided credentials.']}, 
+                        status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register_user(request):

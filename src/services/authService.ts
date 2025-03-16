@@ -24,10 +24,13 @@ const authService = {
     try {
       console.log('Making login request with:', { username });
       
-      // Django REST Framework's token auth expects username and password
-      const response = await api.post<LoginResponse>('/users/login/', { username, password });
+      // Send credentials to our custom login endpoint
+      const response = await api.post<LoginResponse>('/users/login/', { 
+        username, 
+        password 
+      });
       
-      console.log('Login response:', response);
+      console.log('Login response received');
       
       // Store token in localStorage
       if (response.token) {

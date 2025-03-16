@@ -17,7 +17,6 @@ Including another URLconf
 """
 from django.urls import include, path
 from rest_framework import routers
-from rest_framework.authtoken.views import obtain_auth_token
 from django.contrib import admin
 from . import views
 
@@ -41,7 +40,7 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     
     # Authentication endpoints
-    path('api/users/login/', obtain_auth_token, name='api-token-auth'),
+    path('api/users/login/', views.login_view, name='api-token-auth'),  # Use our custom login view
     path('api/users/logout/', views.logout_view, name='api-logout'),
     path('api/users/register/', views.register_user, name='api-register'),
 ]
