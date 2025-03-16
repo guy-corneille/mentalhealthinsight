@@ -24,33 +24,6 @@ const authService = {
     try {
       console.log('Making login request with:', { username });
       
-      // For development: Skip actual API call and create a mock user
-      // This will bypass backend authentication temporarily
-      
-      console.log('Using development login mode - bypassing API authentication');
-      
-      // Create a basic user object for development
-      const basicUser: User = {
-        id: username, // Using username as ID for simplicity
-        username: username,
-        email: `${username}@example.com`,
-        role: username === 'admin' ? 'admin' : 
-              username === 'evaluator' ? 'evaluator' :
-              username === 'superuser' ? 'superuser' : 'viewer',
-        displayName: username.charAt(0).toUpperCase() + username.slice(1), // Capitalize first letter
-        phoneNumber: undefined
-      };
-      
-      // Generate a fake token
-      const mockToken = `dev-token-${Date.now()}-${username}`;
-      localStorage.setItem('mentalhealthiq_token', mockToken);
-      localStorage.setItem('mentalhealthiq_user', JSON.stringify(basicUser));
-      
-      console.log('Development login successful with user:', basicUser);
-      
-      return basicUser;
-      
-      /* Uncomment this section when ready to use real API authentication
       // Send credentials to our custom login endpoint
       const response = await api.post<LoginResponse>('/users/login/', { 
         username, 
@@ -83,7 +56,8 @@ const authService = {
             email: '',
             role: 'viewer', // Using 'viewer' which is a valid UserRole
             displayName: username,
-            phoneNumber: undefined
+            phoneNumber: undefined,
+            dateJoined: new Date()
           };
           localStorage.setItem('mentalhealthiq_user', JSON.stringify(basicUser));
           return basicUser;
@@ -91,7 +65,6 @@ const authService = {
       } else {
         throw new Error('No authentication token received');
       }
-      */
     } catch (error) {
       console.error('Login error:', error);
       throw error;
