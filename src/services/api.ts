@@ -1,6 +1,14 @@
 
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
+// Define interface for API error responses
+interface ApiErrorResponse {
+  message?: string;
+  detail?: string;
+  error?: string;
+  [key: string]: any; // Allow for other properties
+}
+
 // Create a base API instance with common configuration
 const api = axios.create({
   baseURL: 'http://localhost:8000/api',
@@ -15,7 +23,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('mentalhealthiq_token');
     if (token) {
-      config.headers.Authorization = `Token ${token}`;  // Changed from Bearer to Token for Django's token auth
+      config.headers.Authorization = `Token ${token}`;  // Using Token for Django's token auth
     }
     return config;
   },
@@ -38,11 +46,14 @@ api.interceptors.response.use(
       }
     }
     
-    // Create a more user-friendly error
+    // Type assertion for the error response data
+    const responseData = error.response?.data as ApiErrorResponse | undefined;
+    
+    // Create a more user-friendly error message
     const errorMessage = 
-      error.response?.data?.message || 
-      error.response?.data?.detail ||
-      error.response?.data?.error ||
+      responseData?.message || 
+      responseData?.detail ||
+      responseData?.error ||
       (error.message as string) || 
       'An unknown error occurred';
     
