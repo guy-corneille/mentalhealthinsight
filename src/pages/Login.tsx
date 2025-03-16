@@ -46,12 +46,15 @@ const Login: React.FC = () => {
       
       if (err instanceof Error) {
         // Custom error handling for specific error messages
-        if (err.message.includes('credentials') || err.message.includes('401')) {
+        if (err.message.includes('credentials') || err.message.includes('401') || 
+            err.message.includes('Unable to log in') || err.message.includes('password is incorrect')) {
           errorMessage = 'Invalid credentials. Please check your username and password.';
         } else if (err.message.includes('network') || err.message.includes('connection')) {
           errorMessage = 'Network error. Please check your connection and try again.';
-        } else if (err.message.includes('not provided')) {
+        } else if (err.message.includes('not provided') || err.message.includes('Authentication credentials')) {
           errorMessage = 'Authentication failed. Please check your username and password.';
+        } else if (err.message.toLowerCase().includes('this field is required')) {
+          errorMessage = 'Username and password are required.';
         } else {
           errorMessage = err.message;
         }

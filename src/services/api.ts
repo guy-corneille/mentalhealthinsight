@@ -6,6 +6,7 @@ interface ApiErrorResponse {
   message?: string;
   detail?: string;
   error?: string;
+  non_field_errors?: string[];
   [key: string]: any; // Allow for other properties
 }
 
@@ -57,12 +58,20 @@ api.interceptors.response.use(
     const responseData = error.response?.data as ApiErrorResponse | undefined;
     
     // Create a more user-friendly error message
-    const errorMessage = 
+    let errorMessage = 
       responseData?.message || 
       responseData?.detail ||
       responseData?.error ||
+      (responseData?.non_field_errors && responseData.non_field_errors[0]) ||
       (error.message as string) || 
       'An unknown error occurred';
+    
+    // Special handling for Django's token auth errors
+    if (error.config?.url?.includes('/login/') && error.response?.status === 400) {
+      if (responseData?.non_field_errors) {
+        errorMessage = responseData.non_field_errors[0];
+      }
+    }
     
     const apiError = new Error(errorMessage);
     
