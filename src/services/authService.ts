@@ -22,8 +22,12 @@ interface RegisterResponse {
 const authService = {
   login: async (username: string, password: string): Promise<User> => {
     try {
+      console.log('Making login request with:', { username });
+      
       // Django REST Framework's token auth expects username and password
       const response = await api.post<LoginResponse>('/users/login/', { username, password });
+      
+      console.log('Login response:', response);
       
       // Store token in localStorage
       if (response.token) {

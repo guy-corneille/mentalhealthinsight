@@ -50,6 +50,8 @@ const Login: React.FC = () => {
           errorMessage = 'Invalid credentials. Please check your username and password.';
         } else if (err.message.includes('network') || err.message.includes('connection')) {
           errorMessage = 'Network error. Please check your connection and try again.';
+        } else if (err.message.includes('not provided')) {
+          errorMessage = 'Authentication failed. Please check your username and password.';
         } else {
           errorMessage = err.message;
         }

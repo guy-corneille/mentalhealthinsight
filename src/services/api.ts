@@ -41,13 +41,15 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     // Handle authentication errors
     if (error.response?.status === 401) {
-      // Clear token and user data
-      localStorage.removeItem('mentalhealthiq_token');
-      localStorage.removeItem('mentalhealthiq_user');
-      
-      // Redirect to login if not already there
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      // Clear token and user data only if not trying to login
+      if (!error.config?.url?.includes('/login/')) {
+        localStorage.removeItem('mentalhealthiq_token');
+        localStorage.removeItem('mentalhealthiq_user');
+        
+        // Redirect to login if not already there
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
     
