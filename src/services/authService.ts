@@ -30,7 +30,7 @@ const authService = {
         password 
       });
       
-      console.log('Login response received');
+      console.log('Login response received:', response);
       
       // Store token in localStorage
       if (response.token) {

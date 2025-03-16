@@ -41,6 +41,9 @@ api.interceptors.response.use(
   (response) => response.data,  // Return data directly
   (error: AxiosError) => {
     console.error('API Error:', error.response?.data || error.message);
+    console.error('Status:', error.response?.status);
+    console.error('Request URL:', error.config?.url);
+    console.error('Request Data:', error.config?.data);
     
     // Handle authentication errors
     if (error.response?.status === 401) {
