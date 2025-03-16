@@ -42,18 +42,29 @@ const Login: React.FC = () => {
     } catch (err) {
       console.error('Login error:', err);
       
+      let errorMessage = 'Invalid credentials. Please check your username and password.';
+      
       if (err instanceof Error) {
-        setError(err.message);
+        // Custom error handling for specific error messages
+        if (err.message.includes('credentials') || err.message.includes('401')) {
+          errorMessage = 'Invalid credentials. Please check your username and password.';
+        } else if (err.message.includes('network') || err.message.includes('connection')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          errorMessage = err.message;
+        }
+        
+        setError(errorMessage);
         addNotification(
           "Login failed",
-          err.message,
+          errorMessage,
           "error"
         );
       } else {
-        setError('An unknown error occurred during login. Please check your credentials and try again.');
+        setError(errorMessage);
         addNotification(
           "Login failed",
-          "An unknown error occurred during login. Please check your credentials and try again.",
+          errorMessage,
           "error"
         );
       }

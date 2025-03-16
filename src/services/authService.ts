@@ -1,3 +1,4 @@
+
 import api from './api';
 import { User, UserRegistration, PendingUser } from '../types/auth';
 
@@ -21,6 +22,7 @@ interface RegisterResponse {
 const authService = {
   login: async (username: string, password: string): Promise<User> => {
     try {
+      // Django REST Framework's token auth expects username and password
       const response = await api.post<LoginResponse>('/users/login/', { username, password });
       
       // Store token in localStorage

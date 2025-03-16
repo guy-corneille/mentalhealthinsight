@@ -21,6 +21,11 @@ const api = axios.create({
 // Request interceptor for adding auth token
 api.interceptors.request.use(
   (config) => {
+    // Skip adding token for login and register endpoints
+    if (config.url?.includes('/login/') || config.url?.includes('/register/')) {
+      return config;
+    }
+    
     const token = localStorage.getItem('mentalhealthiq_token');
     if (token) {
       config.headers.Authorization = `Token ${token}`;  // Using Token for Django's token auth
