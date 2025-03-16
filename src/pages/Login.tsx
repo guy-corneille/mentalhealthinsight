@@ -22,15 +22,26 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     
+    if (!username || !password) {
+      setError('Username and password are required');
+      return;
+    }
+    
     try {
+      console.log('Attempting login with:', { username });
       const user = await login(username, password);
+      console.log('Login successful:', user);
+      
       addNotification(
         "Welcome back!",
         `You have successfully logged in as ${user.displayName || user.username}`,
         "success"
       );
+      
       navigate('/dashboard');
     } catch (err) {
+      console.error('Login error:', err);
+      
       if (err instanceof Error) {
         setError(err.message);
         addNotification(
@@ -39,10 +50,10 @@ const Login: React.FC = () => {
           "error"
         );
       } else {
-        setError('An unknown error occurred');
+        setError('An unknown error occurred during login. Please check your credentials and try again.');
         addNotification(
           "Login failed",
-          "An unknown error occurred",
+          "An unknown error occurred during login. Please check your credentials and try again.",
           "error"
         );
       }
@@ -54,11 +65,11 @@ const Login: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-2 text-center">
           <div className="flex items-center justify-center space-x-3 mb-2">
-            <BrainIcon className="h-8 w-8 text-healthiq-600" />
-            <HeartPulseIcon className="h-8 w-8 text-healthiq-700" />
+            <BrainIcon className="h-8 w-8 text-primary" />
+            <HeartPulseIcon className="h-8 w-8 text-primary" />
           </div>
           
-          <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-healthiq-600 to-healthiq-800">
+          <CardTitle className="text-2xl font-bold">
             MentalHealthIQ
           </CardTitle>
           <CardDescription>
@@ -91,7 +102,7 @@ const Login: React.FC = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <a href="#" className="text-sm font-medium text-healthiq-600 hover:text-healthiq-700">
+                <a href="#" className="text-sm font-medium text-primary hover:text-primary/80">
                   Forgot password?
                 </a>
               </div>

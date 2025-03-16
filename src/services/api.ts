@@ -15,7 +15,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('mentalhealthiq_token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Token ${token}`;  // Changed from Bearer to Token for Django's token auth
     }
     return config;
   },
@@ -24,7 +24,7 @@ api.interceptors.request.use(
 
 // Response interceptor for handling common errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => response.data,  // Return data directly
   (error: AxiosError) => {
     // Handle authentication errors
     if (error.response?.status === 401) {
@@ -38,57 +38,39 @@ api.interceptors.response.use(
       }
     }
     
-    return Promise.reject(error);
-  }
-);
-
-// Define an interface for error data
-interface ErrorResponse {
-  message?: string;
-  detail?: string;
-  [key: string]: any;
-}
-
-// Generic request method
-const request = async <T>(config: AxiosRequestConfig): Promise<T> => {
-  try {
-    const response: AxiosResponse<T> = await api(config);
-    return response.data;
-  } catch (error) {
-    const axiosError = error as AxiosError<ErrorResponse>;
-    
     // Create a more user-friendly error
     const errorMessage = 
-      axiosError.response?.data?.message || 
-      axiosError.response?.data?.detail ||
-      (axiosError.message as string) || 
+      error.response?.data?.message || 
+      error.response?.data?.detail ||
+      error.response?.data?.error ||
+      (error.message as string) || 
       'An unknown error occurred';
     
     const apiError = new Error(errorMessage);
     
     // Add status code to error object for easier handling
     Object.assign(apiError, { 
-      status: axiosError.response?.status, 
-      data: axiosError.response?.data 
+      status: error.response?.status, 
+      data: error.response?.data 
     });
     
     throw apiError;
   }
-};
+);
 
 export default {
   get: <T>(url: string, params?: any) => 
-    request<T>({ method: 'GET', url, params }),
+    api.get<T, T>(url, { params }),
   
   post: <T>(url: string, data?: any, config?: AxiosRequestConfig) => 
-    request<T>({ method: 'POST', url, data, ...config }),
+    api.post<T, T>(url, data, config),
   
   put: <T>(url: string, data?: any) => 
-    request<T>({ method: 'PUT', url, data }),
+    api.put<T, T>(url, data),
   
   patch: <T>(url: string, data?: any) => 
-    request<T>({ method: 'PATCH', url, data }),
+    api.patch<T, T>(url, data),
   
   delete: <T>(url: string) => 
-    request<T>({ method: 'DELETE', url }),
+    api.delete<T, T>(url),
 };

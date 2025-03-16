@@ -1,11 +1,10 @@
-
 import api from './api';
 import { User, UserRegistration, PendingUser } from '../types/auth';
 
 // Types for API responses
 interface LoginResponse {
   token: string;
-  user: User;
+  user?: User;
 }
 
 interface RegisterResponse {
@@ -21,14 +20,30 @@ interface RegisterResponse {
 
 const authService = {
   login: async (username: string, password: string): Promise<User> => {
-    const response = await api.post<LoginResponse>('/users/login/', { username, password });
-    
-    // Store token in localStorage
-    if (response.token) {
-      localStorage.setItem('mentalhealthiq_token', response.token);
+    try {
+      const response = await api.post<LoginResponse>('/users/login/', { username, password });
+      
+      // Store token in localStorage
+      if (response.token) {
+        localStorage.setItem('mentalhealthiq_token', response.token);
+        
+        // If user info is returned with the token, use it
+        if (response.user) {
+          localStorage.setItem('mentalhealthiq_user', JSON.stringify(response.user));
+          return response.user;
+        }
+        
+        // Otherwise, fetch user details
+        const userResponse = await api.get<User>('/users/me/');
+        localStorage.setItem('mentalhealthiq_user', JSON.stringify(userResponse));
+        return userResponse;
+      } else {
+        throw new Error('No authentication token received');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
-    
-    return response.user;
   },
   
   register: async (userData: UserRegistration): Promise<RegisterResponse> => {
