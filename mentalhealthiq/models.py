@@ -72,8 +72,11 @@ class Facility(models.Model):
     name = models.CharField(max_length=255)
     facility_type = models.CharField(max_length=100)
     address = models.TextField()
+    city = models.CharField(max_length=100, blank=True, null=True)  # Add this field
     district = models.CharField(max_length=100)
     province = models.CharField(max_length=100)
+    postal_code = models.CharField(max_length=20, blank=True, null=True)  # Add this field
+    country = models.CharField(max_length=100, default="Country")  # Add this field
     coordinates = models.CharField(max_length=100, blank=True, null=True)
     capacity = models.IntegerField(default=0)
     status = models.CharField(max_length=20, default='Active')
@@ -82,10 +85,14 @@ class Facility(models.Model):
     contact_name = models.CharField(max_length=255, blank=True, null=True)
     contact_email = models.EmailField(blank=True, null=True)
     contact_phone = models.CharField(max_length=20, blank=True, null=True)
-    
+    website = models.URLField(blank=True, null=True)  # Add this field
+    established_date = models.DateField(blank=True, null=True)  # Add this field
+    last_inspection_date = models.DateField(blank=True, null=True)  # Add this field
+    description = models.TextField(blank=True, null=True)  # Add this field
+
     def __str__(self):
         return self.name
-    
+
     class Meta:
         verbose_name_plural = "Facilities"
 
@@ -118,20 +125,46 @@ class StaffQualification(models.Model):
     def __str__(self):
         return f"{self.qualification} - {self.staff.name}"
 
+# class AssessmentCriteria(models.Model):
+#     id = models.AutoField(primary_key=True)
+#     name = models.CharField(max_length=255)
+#     category = models.CharField(max_length=100)
+#     description = models.TextField(blank=True, null=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+    
+#     def __str__(self):
+#         return f"{self.name} ({self.category})"
+    
+#     class Meta:
+#         verbose_name_plural = "Assessment Criteria"
 class AssessmentCriteria(models.Model):
+    CATEGORY_CHOICES = (
+        ('Clinical', 'Clinical'),
+        ('Facility', 'Facility'),
+        ('Administrative', 'Administrative'),
+        ('Ethical', 'Ethical'),
+        ('Quality Improvement', 'Quality Improvement'),
+    )
+
+    PURPOSE_CHOICES = (
+        ('Assessment', 'Patient Assessment'),
+        ('Audit', 'Facility Audit'),
+    )
+
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    category = models.CharField(max_length=100)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     description = models.TextField(blank=True, null=True)
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)  # New field
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"{self.name} ({self.category})"
-    
+
     class Meta:
         verbose_name_plural = "Assessment Criteria"
-
 class Indicator(models.Model):
     criteria = models.ForeignKey(AssessmentCriteria, on_delete=models.CASCADE, related_name='indicators')
     name = models.CharField(max_length=255)
