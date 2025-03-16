@@ -1,4 +1,3 @@
-
 export type UserRole = 'superuser' | 'admin' | 'evaluator' | 'viewer';
 
 export interface User {
@@ -8,6 +7,7 @@ export interface User {
   role: UserRole;
   displayName?: string;
   phoneNumber?: string;
+  dateJoined?: Date;
 }
 
 export interface PendingUser extends Omit<User, 'id'> {
