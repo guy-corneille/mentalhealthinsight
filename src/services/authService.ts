@@ -1,4 +1,3 @@
-
 import api from './api';
 import { User, UserRegistration, PendingUser } from '../types/auth';
 
@@ -24,38 +23,7 @@ const authService = {
     try {
       console.log('Making login request with:', { username });
       
-      // Development mode - bypass actual API authentication
-      // Determine role based on username for demo purposes
-      let role: 'superuser' | 'admin' | 'evaluator' | 'viewer' = 'viewer';
-      
-      if (username === 'admin') {
-        role = 'admin';
-      } else if (username === 'evaluator') {
-        role = 'evaluator';
-      } else if (username === 'super') {
-        role = 'superuser';
-      }
-      
-      // In development mode, create a mock token and user
-      const mockToken = "dev_token_" + Math.random().toString(36).substring(2);
-      localStorage.setItem('mentalhealthiq_token', mockToken);
-      
-      // Create a basic user object
-      const user: User = {
-        id: username + '_id',
-        username: username,
-        email: `${username}@example.com`,
-        role: role,
-        displayName: username.charAt(0).toUpperCase() + username.slice(1),
-        dateJoined: new Date()
-      };
-      
-      localStorage.setItem('mentalhealthiq_user', JSON.stringify(user));
-      console.log('Development login created user:', user);
-      return user;
-      
-      /* Real API authentication code - commented out for now
-      // Send credentials to our custom login endpoint
+      // Send credentials to our login endpoint
       const response = await api.post<LoginResponse>('/users/login/', { 
         username, 
         password 
@@ -80,21 +48,11 @@ const authService = {
           return userResponse;
         } catch (error) {
           console.error('Error fetching user details:', error);
-          // If we can't get user details, construct a basic user object
-          const basicUser: User = {
-            id: 'unknown',
-            username: username,
-            email: '',
-            role: 'viewer', // Using 'viewer' which is a valid UserRole
-            displayName: username
-          };
-          localStorage.setItem('mentalhealthiq_user', JSON.stringify(basicUser));
-          return basicUser;
+          throw error;
         }
       } else {
         throw new Error('No authentication token received');
       }
-      */
     } catch (error) {
       console.error('Login error:', error);
       throw error;

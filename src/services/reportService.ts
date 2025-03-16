@@ -59,8 +59,7 @@ const reportService = {
     return await api.get<any[]>('/reports/improvement-trends/', filters);
   },
   
-  // Export reports to CSV (this will be handled by the frontend's downloadReportAsCSV)
-  // This is just for demonstration purposes to show how you might fetch data for export
+  // Export reports to CSV
   getExportData: async (reportType: string, filters: ReportFilter = {}) => {
     return await api.get<any[]>(`/reports/export/${reportType}/`, filters);
   }

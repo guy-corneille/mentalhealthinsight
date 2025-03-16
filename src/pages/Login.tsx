@@ -46,15 +46,14 @@ const Login: React.FC = () => {
       
       if (err instanceof Error) {
         // Custom error handling for specific error messages
-        if (err.message.includes('credentials') || err.message.includes('401') || 
-            err.message.includes('Unable to log in') || err.message.includes('password is incorrect')) {
-          errorMessage = 'Invalid credentials. Please check your username and password.';
+        if (err.message.includes('401') || err.message.includes('Unauthorized')) {
+          errorMessage = 'Authentication failed. Please check your username and password.';
         } else if (err.message.includes('network') || err.message.includes('connection')) {
           errorMessage = 'Network error. Please check your connection and try again.';
-        } else if (err.message.includes('not provided') || err.message.includes('Authentication credentials')) {
-          errorMessage = 'Authentication failed. Please check your username and password.';
-        } else if (err.message.toLowerCase().includes('this field is required')) {
-          errorMessage = 'Username and password are required.';
+        } else if (err.message.includes('timeout')) {
+          errorMessage = 'Request timed out. Please try again later.';
+        } else if (err.message.includes('server')) {
+          errorMessage = 'Server error. Please try again later.';
         } else {
           errorMessage = err.message;
         }
@@ -150,27 +149,6 @@ const Login: React.FC = () => {
             </Button>
           </CardFooter>
         </form>
-        
-        <div className="px-6 pb-6 text-center text-sm text-muted-foreground">
-          <div className="mt-4">
-            <p className="mb-2">Demo Accounts:</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-              <div className="border rounded p-1">
-                <p className="font-semibold">Admin</p>
-                <p>Username: admin</p>
-              </div>
-              <div className="border rounded p-1">
-                <p className="font-semibold">Evaluator</p>
-                <p>Username: evaluator</p>
-              </div>
-              <div className="border rounded p-1">
-                <p className="font-semibold">Viewer</p>
-                <p>Username: viewer</p>
-              </div>
-            </div>
-            <p className="mt-2">Password for all accounts: password123</p>
-          </div>
-        </div>
       </Card>
     </div>
   );
