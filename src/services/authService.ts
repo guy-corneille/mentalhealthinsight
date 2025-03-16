@@ -1,4 +1,3 @@
-
 import api from './api';
 import { User, UserRegistration, PendingUser } from '../types/auth';
 
@@ -43,9 +42,25 @@ const authService = {
         }
         
         // Otherwise, fetch user details
-        const userResponse = await api.get<User>('/users/me/');
-        localStorage.setItem('mentalhealthiq_user', JSON.stringify(userResponse));
-        return userResponse;
+        try {
+          const userResponse = await api.get<User>('/users/me/');
+          localStorage.setItem('mentalhealthiq_user', JSON.stringify(userResponse));
+          return userResponse;
+        } catch (error) {
+          console.error('Error fetching user details:', error);
+          // If we can't get user details, construct a basic user object
+          const basicUser: User = {
+            id: 'unknown',
+            username: username,
+            email: '',
+            role: 'user',
+            isActive: true,
+            displayName: username,
+            dateJoined: new Date()
+          };
+          localStorage.setItem('mentalhealthiq_user', JSON.stringify(basicUser));
+          return basicUser;
+        }
       } else {
         throw new Error('No authentication token received');
       }
