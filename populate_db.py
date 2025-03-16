@@ -82,44 +82,18 @@ def create_users(count=7):
                 "Wilson", "Moore", "Taylor", "Anderson", "Thomas", "Jackson", "White", 
                 "Harris", "Martin", "Thompson", "Garcia", "Martinez", "Robinson"]
 
-    # Create demo accounts with fixed credentials
+    # Create superuser if it doesn't exist
     if not User.objects.filter(username="admin").exists():
-        admin = User.objects.create_user(
+        User.objects.create_superuser(
             username="admin",
             email="admin@healthquality.org",
-            password="password123",
-            role="admin",
-            display_name="Admin User",
+            password="admin123",
+            role="superuser",
+            display_name="System Administrator",
             phone_number=random_phone()
         )
-        users.append(admin)
-        print("Admin demo account created.")
-        
-    if not User.objects.filter(username="evaluator").exists():
-        evaluator = User.objects.create_user(
-            username="evaluator",
-            email="evaluator@healthquality.org",
-            password="password123",
-            role="evaluator",
-            display_name="Evaluator User",
-            phone_number=random_phone()
-        )
-        users.append(evaluator)
-        print("Evaluator demo account created.")
-        
-    if not User.objects.filter(username="viewer").exists():
-        viewer = User.objects.create_user(
-            username="viewer",
-            email="viewer@healthquality.org",
-            password="password123",
-            role="viewer",
-            display_name="Viewer User",
-            phone_number=random_phone()
-        )
-        users.append(viewer)
-        print("Viewer demo account created.")
+        print("Superuser created.")
 
-    # Create additional random users
     for i in range(count):
         first_name = random.choice(first_names)
         last_name = random.choice(last_names)
@@ -160,7 +134,6 @@ def create_users(count=7):
                 role=role,
                 display_name=display_name,
                 phone_number=random_phone(),
-                password="password123",  # Store password for approval
                 status='pending',
                 request_date=random_datetime(datetime.now() - timedelta(days=30), datetime.now())
             )
@@ -209,6 +182,7 @@ def create_facilities(count=7):
     return facilities
 
 # Populate Staff with Qualifications
+
 def create_staff(facilities, count_per_facility=10):
     print(f"Creating staff for {len(facilities)} facilities...")
     staff_members = []
@@ -262,6 +236,7 @@ def create_staff(facilities, count_per_facility=10):
                 raise
 
     print(f"Created {len(staff_members)} staff members with qualifications.")
+
 
 # Populate Assessment Criteria and Indicators
 def create_assessment_criteria():
@@ -431,7 +406,7 @@ def create_patients(facilities, count_per_facility=5):
                 raise
 
     print(f"Created {len(patients)} patients.")
-    return patients
+
 
 # Populate Assessments and Indicator Scores
 def create_assessments(patients, criteria, users, count_per_patient=3):
@@ -492,7 +467,6 @@ def create_assessments(patients, criteria, users, count_per_patient=3):
 
     print(f"Created {len(assessments)} assessments with indicator scores.")
     return assessments
-
 # Populate Audits
 def create_audits(facilities, users, count_per_facility=2):
     print(f"Creating audits for {len(facilities)} facilities...")
@@ -549,7 +523,6 @@ def create_audits(facilities, users, count_per_facility=2):
 
     print(f"Created {len(audits)} audits with criteria scores.")
     return audits
-
 # Populate Reports
 def create_reports(facilities, users, assessments, audits, count=15):
     print(f"Creating {count} reports...")
@@ -613,7 +586,7 @@ def populate_database():
         # Create base data
         users = create_users(5)
         facilities = create_facilities(5)
-        create_staff(facilities, 7)
+        staff = create_staff(facilities, 7)
         patients = create_patients(facilities, 10)
 
         criteria = create_assessment_criteria()
@@ -623,7 +596,7 @@ def populate_database():
         
         # Create assessments and audits
         assessments = create_assessments(patients, criteria, users, 3)
-        audits = create_audits(facilities, users, 2)
+        audits = create_audits(facilities, criteria, users, 3)
         
         # Create reports
         reports = create_reports(facilities, users, assessments, audits, 15)
@@ -643,11 +616,6 @@ def populate_database():
         print(f"- {Audit.objects.count()} audits")
         print(f"- {AuditCriteria.objects.count()} audit criteria scores")
         print(f"- {Report.objects.count()} reports")
-        
-        print("\nDEMO ACCOUNTS:")
-        print("- Admin: username='admin', password='password123'")
-        print("- Evaluator: username='evaluator', password='password123'")
-        print("- Viewer: username='viewer', password='password123'")
         
         return True
     except Exception as e:
