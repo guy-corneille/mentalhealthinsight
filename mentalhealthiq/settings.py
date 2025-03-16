@@ -1,4 +1,3 @@
-
 """
 Django settings for mentalhealthiq project.
 
@@ -26,7 +25,7 @@ SECRET_KEY = 'django-insecure-peku3&cn*0us(2h@e8_9ajas4et2890x0_!#o7oe#)j3o5x)wp
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']  # Updated to allow all hosts for development
 
 
 # Application definition
@@ -59,6 +58,7 @@ MIDDLEWARE = [
 # CORS settings - allow frontend to make requests to the backend API
 CORS_ALLOW_ALL_ORIGINS = True  
 CORS_ALLOW_CREDENTIALS = True
+CORS_EXPOSE_HEADERS = ['Content-Type', 'X-CSRFToken', 'Authorization']
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -165,5 +165,9 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
     ],
 }

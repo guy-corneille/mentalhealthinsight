@@ -1,3 +1,4 @@
+
 import api from './api';
 import { User, UserRegistration, PendingUser } from '../types/auth';
 
@@ -23,10 +24,10 @@ const authService = {
     try {
       console.log('Making login request with:', { username });
       
-      // Send credentials to our login endpoint
+      // Modified to only send username
       const response = await api.post<LoginResponse>('/users/login/', { 
-        username, 
-        password 
+        username
+        // Password is no longer needed for authentication
       });
       
       console.log('Login response received:', response);

@@ -27,23 +27,22 @@ logger = logging.getLogger(__name__)
 def login_view(request):
     """Custom login view that returns token and user data"""
     username = request.data.get('username')
-    password = request.data.get('password')
     
-    if not username or not password:
-        return Response({'non_field_errors': ['Must include "username" and "password".']}, 
+    if not username:
+        return Response({'non_field_errors': ['Must include "username".']}, 
                         status=status.HTTP_400_BAD_REQUEST)
     
-    user = authenticate(username=username, password=password)
-    
-    if user:
+    # Modified to only check username - find user by username without password verification
+    try:
+        user = User.objects.get(username=username)
         token, created = Token.objects.get_or_create(user=user)
         serializer = UserSerializer(user)
         return Response({
             'token': token.key,
             'user': serializer.data
         })
-    else:
-        return Response({'non_field_errors': ['Unable to log in with provided credentials.']}, 
+    except User.DoesNotExist:
+        return Response({'non_field_errors': ['No user found with this username.']}, 
                         status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])

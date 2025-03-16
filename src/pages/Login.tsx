@@ -12,7 +12,7 @@ import { useNotifications } from '@/contexts/NotificationContext';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState(''); // We'll keep this for UI consistency but not use it
   const [error, setError] = useState('');
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -22,13 +22,14 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     
-    if (!username || !password) {
-      setError('Username and password are required');
+    if (!username) {
+      setError('Username is required');
       return;
     }
     
     try {
       console.log('Attempting login with:', { username });
+      // We still pass password to maintain the function signature but it's not used
       const user = await login(username, password);
       console.log('Login successful:', user);
       
@@ -42,12 +43,12 @@ const Login: React.FC = () => {
     } catch (err) {
       console.error('Login error:', err);
       
-      let errorMessage = 'Invalid credentials. Please check your username and password.';
+      let errorMessage = 'Invalid username. Please check your username.';
       
       if (err instanceof Error) {
         // Custom error handling for specific error messages
         if (err.message.includes('401') || err.message.includes('Unauthorized')) {
-          errorMessage = 'Authentication failed. Please check your username and password.';
+          errorMessage = 'Authentication failed. Please check your username.';
         } else if (err.message.includes('network') || err.message.includes('connection')) {
           errorMessage = 'Network error. Please check your connection and try again.';
         } else if (err.message.includes('timeout')) {
@@ -126,10 +127,12 @@ const Login: React.FC = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                required
+                placeholder="Enter your password (Not required)"
                 autoComplete="current-password"
               />
+              <p className="text-xs text-muted-foreground">
+                Note: Only username is required for this demo.
+              </p>
             </div>
           </CardContent>
           
