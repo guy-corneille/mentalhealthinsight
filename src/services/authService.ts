@@ -54,9 +54,9 @@ const authService = {
             id: 'unknown',
             username: username,
             email: '',
-            role: 'viewer', // Changed from 'user' to 'viewer' which is a valid UserRole
-            isActive: true,
+            role: 'viewer', // Using 'viewer' which is a valid UserRole
             displayName: username,
+            phoneNumber: undefined,
             dateJoined: new Date()
           };
           localStorage.setItem('mentalhealthiq_user', JSON.stringify(basicUser));
