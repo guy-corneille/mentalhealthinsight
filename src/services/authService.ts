@@ -1,3 +1,4 @@
+
 import api from './api';
 import { User, UserRegistration, PendingUser } from '../types/auth';
 
@@ -53,7 +54,7 @@ const authService = {
             id: 'unknown',
             username: username,
             email: '',
-            role: 'user',
+            role: 'viewer', // Changed from 'user' to 'viewer' which is a valid UserRole
             isActive: true,
             displayName: username,
             dateJoined: new Date()
