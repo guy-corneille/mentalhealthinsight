@@ -3,11 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { useStaff } from '@/services/staffService';
 import StaffTable from './StaffTable';
 import StaffModal from './modals/StaffModal';
-import { Button } from '@/components/ui/button';
-import { PlusIcon } from 'lucide-react';
-import { toast } from 'sonner';
+import { Spinner } from '@/components/ui/spinner';
 import SearchInput from '@/components/common/SearchInput';
 import PaginationControls from '@/components/common/PaginationControls';
+import { StaffListProvider } from './StaffListContext';
+import StaffFilters from './StaffFilters';
 
 const StaffList: React.FC = () => {
   // Fetch staff data
@@ -81,14 +81,16 @@ const StaffList: React.FC = () => {
 
   const handleCloseModal = (success?: boolean, message?: string) => {
     setIsModalOpen(false);
-    if (success && message) {
-      toast.success(message);
-    }
   };
 
   // Loading and error states
   if (isLoading) {
-    return <div className="py-10 text-center">Loading staff members...</div>;
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Spinner size="lg" />
+        <p className="ml-2 text-muted-foreground">Loading staff members...</p>
+      </div>
+    );
   }
 
   if (isError) {
@@ -97,49 +99,36 @@ const StaffList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Staff Members</h2>
-        <Button onClick={handleAddStaff} className="bg-healthiq-600 hover:bg-healthiq-700">
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Add Staff Member
-        </Button>
-      </div>
-      
-      {/* Search input */}
-      <div className="w-full max-w-sm">
-        <SearchInput
-          placeholder="Search staff members..."
-          value={searchQuery}
-          onChange={setSearchQuery}
-        />
-      </div>
+    <StaffListProvider showFacilityFilter={true}>
+      <div className="space-y-4">
+        <StaffFilters showFacilityFilter={true} />
 
-      {/* Staff table with pagination */}
-      <StaffTable 
-        staff={paginatedStaff || []} 
-        onEdit={handleEditStaff} 
-        onView={handleViewStaff} 
-      />
-      
-      {/* Show pagination controls if we have enough items */}
-      {totalPages > 1 && (
-        <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
+        {/* Staff table with pagination */}
+        <StaffTable 
+          staff={paginatedStaff || []} 
+          onEdit={handleEditStaff} 
+          onView={handleViewStaff} 
         />
-      )}
+        
+        {/* Show pagination controls if we have enough items */}
+        {totalPages > 1 && (
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        )}
 
-      {/* Staff modal */}
-      {isModalOpen && (
-        <StaffModal
-          staffId={selectedStaffId}
-          viewOnly={viewOnly}
-          onClose={handleCloseModal}
-        />
-      )}
-    </div>
+        {/* Staff modal */}
+        {isModalOpen && (
+          <StaffModal
+            staffId={selectedStaffId}
+            viewOnly={viewOnly}
+            onClose={handleCloseModal}
+          />
+        )}
+      </div>
+    </StaffListProvider>
   );
 };
 

@@ -20,7 +20,7 @@ interface StaffFiltersProps {
   showFacilityFilter: boolean;
 }
 
-const StaffFilters: React.FC<StaffFiltersProps> = ({ showFacilityFilter }) => {
+const StaffFilters: React.FC<StaffFiltersProps> = ({ showFacilityFilter = true }) => {
   const { 
     searchQuery, 
     setSearchQuery, 

@@ -1,15 +1,22 @@
 
 import React, { useState, useEffect } from 'react';
-import { usePatients, Patient, useDeletePatient } from '@/services/patientService';
+import { usePatients, Patient, useDeletePatient, useFacilities } from '@/services/patientService';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusIcon, Edit, Trash, Eye } from "lucide-react";
+import { MoreHorizontal, PlusIcon, Edit, Trash, Eye, FilterIcon } from "lucide-react";
 import { toast } from "sonner";
 import PatientDetails from './PatientDetails';
 import SearchInput from '@/components/common/SearchInput';
 import PaginationControls from '@/components/common/PaginationControls';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface PatientListProps {
   facilityId?: number;
@@ -18,6 +25,7 @@ interface PatientListProps {
 const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
   // Data fetching
   const { data: allPatients, isLoading, isError, error } = usePatients();
+  const { data: facilities = [] } = useFacilities();
   const deletePatientMutation = useDeletePatient();
   
   // Modal state
@@ -27,6 +35,7 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
   
   // Search and pagination state
   const [searchQuery, setSearchQuery] = useState('');
+  const [facilityFilter, setFacilityFilter] = useState<string>(facilityId ? facilityId.toString() : 'all');
   const [currentPage, setCurrentPage] = useState(1);
   const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
   const [paginatedPatients, setPaginatedPatients] = useState<Patient[]>([]);
@@ -38,9 +47,9 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
   useEffect(() => {
     if (!allPatients) return;
     
-    // First filter by facility if facilityId is provided
-    let patients = facilityId 
-      ? allPatients.filter(patient => patient.facility === facilityId)
+    // First filter by facility if facilityFilter is provided
+    let patients = facilityFilter !== 'all'
+      ? allPatients.filter(patient => patient.facility === parseInt(facilityFilter))
       : allPatients;
     
     // Then apply search filter
@@ -61,7 +70,7 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
     if (currentPage !== 1) {
       setCurrentPage(1);
     }
-  }, [allPatients, searchQuery, facilityId]);
+  }, [allPatients, searchQuery, facilityFilter]);
   
   // Update paginated data when filtered data or page changes
   useEffect(() => {
@@ -140,13 +149,31 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
         </Button>
       </div>
       
-      {/* Search input */}
-      <div className="w-full max-w-sm">
-        <SearchInput
-          placeholder="Search patients..."
-          value={searchQuery}
-          onChange={setSearchQuery}
-        />
+      {/* Search and filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="w-full sm:w-64">
+          <SearchInput
+            placeholder="Search patients..."
+            value={searchQuery}
+            onChange={setSearchQuery}
+          />
+        </div>
+        
+        <div className="w-full sm:w-64">
+          <Select value={facilityFilter} onValueChange={setFacilityFilter}>
+            <SelectTrigger className="bg-muted/50 border-none focus-visible:ring-1">
+              <SelectValue placeholder="Filter by facility" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Facilities</SelectItem>
+              {facilities.map(facility => (
+                <SelectItem key={facility.id} value={facility.id.toString()}>
+                  {facility.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {paginatedPatients.length === 0 ? (

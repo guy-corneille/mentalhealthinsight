@@ -171,25 +171,15 @@ const FacilityList: React.FC = () => {
   if (filteredFacilities.length === 0) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="flex justify-between items-center">
-          <FacilitySearchFilters 
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            typeFilter={typeFilter}
-            setTypeFilter={setTypeFilter}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            onClearFilters={handleClearFilters}
-          />
-          
-          <Button 
-            onClick={() => navigate('/facilities/add')}
-            className="bg-healthiq-600 hover:bg-healthiq-700"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add Facility
-          </Button>
-        </div>
+        <FacilitySearchFilters 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          onClearFilters={handleClearFilters}
+        />
         
         <EmptyFacilityState 
           hasFilters={hasFilters} 
@@ -201,25 +191,15 @@ const FacilityList: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex justify-between items-center">
-        <FacilitySearchFilters 
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          typeFilter={typeFilter}
-          setTypeFilter={setTypeFilter}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          onClearFilters={handleClearFilters}
-        />
-        
-        <Button 
-          onClick={() => navigate('/facilities/add')}
-          className="bg-healthiq-600 hover:bg-healthiq-700"
-        >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Add Facility
-        </Button>
-      </div>
+      <FacilitySearchFilters 
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        typeFilter={typeFilter}
+        setTypeFilter={setTypeFilter}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        onClearFilters={handleClearFilters}
+      />
       
       {viewMode === 'grid' ? (
         <FacilityGridView 

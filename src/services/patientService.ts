@@ -1,4 +1,3 @@
-
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -258,5 +257,7 @@ export const useDeletePatient = () => {
     },
   });
 };
+
+export { useFacilities } from '@/services/facilityService';
 
 export default patientService;

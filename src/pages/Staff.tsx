@@ -14,7 +14,6 @@ const Staff: React.FC = () => {
           </p>
         </div>
         
-        {/* Staff list component - already has its own Add button */}
         <StaffList />
       </div>
     </Layout>
