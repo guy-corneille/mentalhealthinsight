@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 
 import FacilityGridView from './views/FacilityGridView';
 import FacilityListView from './views/FacilityListView';
@@ -8,11 +9,14 @@ import FacilityTableView from './views/FacilityTableView';
 import FacilitySearchFilters from './FacilitySearchFilters';
 import EmptyFacilityState from './EmptyFacilityState';
 import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from 'lucide-react';
 import { useFacilities, useDeleteFacility, Facility } from '@/services/facilityService';
 
 const FacilityList: React.FC = () => {
   // Hook for displaying toast notifications
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   // State for view and filtering options
   const [viewMode, setViewMode] = useState('grid');
@@ -136,15 +140,25 @@ const FacilityList: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <FacilitySearchFilters 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        typeFilter={typeFilter}
-        setTypeFilter={setTypeFilter}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        onClearFilters={handleClearFilters}
-      />
+      <div className="flex justify-between items-center">
+        <FacilitySearchFilters 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          typeFilter={typeFilter}
+          setTypeFilter={setTypeFilter}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          onClearFilters={handleClearFilters}
+        />
+        
+        <Button 
+          onClick={() => navigate('/facilities/add')}
+          className="bg-healthiq-600 hover:bg-healthiq-700"
+        >
+          <PlusIcon className="h-4 w-4 mr-2" />
+          Add Facility
+        </Button>
+      </div>
       
       {filteredFacilities.length === 0 ? (
         <EmptyFacilityState 

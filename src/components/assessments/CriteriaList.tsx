@@ -1,34 +1,34 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { Plus, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription 
-} from '@/components/ui/card';
-import CriterionItem from './criteria/CriterionItem';
-
-interface Indicator {
-  id: number;
-  name: string;
-  weight: number;
-}
-
-interface Criterion {
-  id: number;
-  name: string;
-  description: string;
-  standard: string;
-  weight: number;
-  indicators: Indicator[];
-  type: 'assessment' | 'audit';
-}
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
+import { Badge } from "@/components/ui/badge";
+import { 
+  PlusIcon, 
+  SearchIcon, 
+  ClipboardListIcon,
+  EditIcon,
+  Trash2Icon,
+  ArrowUpDownIcon
+} from 'lucide-react';
+import { 
+  useAssessmentCriteria, 
+  useDeleteAssessmentCriteria, 
+  AssessmentCriteria 
+} from '@/services/criteriaService';
 
 interface CriteriaListProps {
   criteriaType: 'assessment' | 'audit';
@@ -36,219 +36,270 @@ interface CriteriaListProps {
 
 const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
   const navigate = useNavigate();
-  const [criteria, setCriteria] = useState<Criterion[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [expandedCriteria, setExpandedCriteria] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  const { toast } = useToast();
+  
+  // State for search and filtering
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [filteredCriteria, setFilteredCriteria] = useState<AssessmentCriteria[]>([]);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof AssessmentCriteria;
+    direction: 'asc' | 'desc';
+  }>({ key: 'name', direction: 'asc' });
+  
+  // Fetch criteria using React Query
+  const { data: criteria, isLoading, error } = useAssessmentCriteria(criteriaType);
+  
+  // Delete criteria mutation
+  const deleteCriteriaMutation = useDeleteAssessmentCriteria();
+  
+  // Filter and sort criteria when data changes
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get('http://localhost:8000/api/criteria/', {
-          params: { search: searchTerm, type: criteriaType },
-        });
-        console.log('API Response:', response.data);
-        setCriteria(response.data || []);
-      } catch (error) {
-        console.error('Error fetching criteria:', error);
-        setCriteria([]);
-      } finally {
-        setLoading(false);
+    if (!criteria) return;
+    
+    let results = [...criteria];
+    
+    // Apply category filter
+    if (categoryFilter !== 'all') {
+      results = results.filter(criterion => 
+        criterion.category.toLowerCase() === categoryFilter.toLowerCase()
+      );
+    }
+    
+    // Apply search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(criterion => 
+        criterion.name.toLowerCase().includes(query) ||
+        criterion.description?.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply sorting
+    results.sort((a, b) => {
+      const aValue = a[sortConfig.key] || '';
+      const bValue = b[sortConfig.key] || '';
+      
+      if (aValue < bValue) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
       }
-    };
-    
-    // For now, let's use mock data for development
-    // Different mock data based on the criteriaType
-    const getMockData = (): Criterion[] => {
-      if (criteriaType === 'audit') {
-        return [
-          {
-            id: 1,
-            name: 'Facility Infrastructure',
-            description: 'Physical structure and resources available at the facility',
-            standard: 'WHO-AIMS 2.0',
-            weight: 25,
-            type: 'audit',
-            indicators: [
-              { id: 1, name: 'Building Condition', weight: 40 },
-              { id: 2, name: 'Equipment Availability', weight: 30 },
-              { id: 3, name: 'Medication Supply', weight: 30 }
-            ]
-          },
-          {
-            id: 2,
-            name: 'Staff Competency',
-            description: 'Skills and qualifications of the mental health professionals',
-            standard: 'ISO 9001',
-            weight: 35,
-            type: 'audit',
-            indicators: [
-              { id: 4, name: 'Education Level', weight: 25 },
-              { id: 5, name: 'Years of Experience', weight: 25 },
-              { id: 6, name: 'Continued Education', weight: 25 },
-              { id: 7, name: 'Patient Feedback', weight: 25 }
-            ]
-          },
-          {
-            id: 3,
-            name: 'Treatment Outcomes',
-            description: 'Effectiveness of mental health interventions provided',
-            standard: 'Custom',
-            weight: 40,
-            type: 'audit',
-            indicators: [
-              { id: 8, name: 'Symptom Reduction', weight: 50 },
-              { id: 9, name: 'Functional Improvement', weight: 30 },
-              { id: 10, name: 'Readmission Rate', weight: 20 }
-            ]
-          }
-        ];
-      } else {
-        return [
-          {
-            id: 4,
-            name: 'Depression Evaluation',
-            description: 'Assessment criteria for evaluating depression symptoms and severity',
-            standard: 'PHQ-9',
-            weight: 30,
-            type: 'assessment',
-            indicators: [
-              { id: 11, name: 'Depressed Mood', weight: 25 },
-              { id: 12, name: 'Loss of Interest', weight: 25 },
-              { id: 13, name: 'Sleep Disturbance', weight: 15 },
-              { id: 14, name: 'Fatigue', weight: 15 },
-              { id: 15, name: 'Appetite Changes', weight: 10 },
-              { id: 16, name: 'Concentration Issues', weight: 10 }
-            ]
-          },
-          {
-            id: 5,
-            name: 'Anxiety Assessment',
-            description: 'Evaluation of anxiety symptoms and their impact on daily functioning',
-            standard: 'GAD-7',
-            weight: 25,
-            type: 'assessment',
-            indicators: [
-              { id: 17, name: 'Nervousness', weight: 20 },
-              { id: 18, name: 'Worry Control', weight: 20 },
-              { id: 19, name: 'Restlessness', weight: 20 },
-              { id: 20, name: 'Irritability', weight: 20 },
-              { id: 21, name: 'Fear', weight: 20 }
-            ]
-          },
-          {
-            id: 6,
-            name: 'Cognitive Function',
-            description: 'Assessment of cognitive abilities and impairments',
-            standard: 'Custom',
-            weight: 20,
-            type: 'assessment',
-            indicators: [
-              { id: 22, name: 'Memory', weight: 25 },
-              { id: 23, name: 'Attention', weight: 25 },
-              { id: 24, name: 'Problem Solving', weight: 25 },
-              { id: 25, name: 'Decision Making', weight: 25 }
-            ]
-          },
-          {
-            id: 7,
-            name: 'Social Functioning',
-            description: 'Evaluation of social relationships and community integration',
-            standard: 'Custom',
-            weight: 15,
-            type: 'assessment',
-            indicators: [
-              { id: 26, name: 'Interpersonal Relationships', weight: 34 },
-              { id: 27, name: 'Social Engagement', weight: 33 },
-              { id: 28, name: 'Community Participation', weight: 33 }
-            ]
-          }
-        ];
+      if (aValue > bValue) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
       }
-    };
+      return 0;
+    });
     
-    // Instead of calling the API, we'll use the mock data for now
-    setTimeout(() => {
-      setCriteria(getMockData());
-      setLoading(false);
-    }, 500);
-    
-    // Uncomment this to use the actual API
-    // fetchData();
-  }, [searchTerm, criteriaType]);
-
-  const toggleExpand = (id: number) => {
-    setExpandedCriteria(expandedCriteria === id ? null : id);
+    setFilteredCriteria(results);
+  }, [criteria, searchQuery, categoryFilter, sortConfig]);
+  
+  // Handler for sorting
+  const handleSort = (key: keyof AssessmentCriteria) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
+    }));
   };
-
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this criterion?')) {
-      try {
-        // Mock deletion
-        setCriteria(criteria.filter(c => c.id !== id));
-      } catch (error) {
-        console.error('Error deleting criterion:', error);
-        alert('Failed to delete criterion. Please try again.');
-      }
+  
+  // Handler for deleting a criterion
+  const handleDelete = (id: number, name: string) => {
+    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
+      deleteCriteriaMutation.mutate(id, {
+        onSuccess: () => {
+          toast({
+            title: "Criterion Deleted",
+            description: `"${name}" has been removed.`,
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: `Failed to delete "${name}". Please try again.`,
+            variant: "destructive",
+          });
+          console.error("Delete error:", error);
+        }
+      });
     }
   };
-
+  
+  // Category badge styling
+  const getCategoryBadgeStyle = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'clinical':
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+      case 'facility':
+        return 'bg-purple-100 text-purple-800 hover:bg-purple-200';
+      case 'administrative':
+        return 'bg-amber-100 text-amber-800 hover:bg-amber-200';
+      case 'ethical':
+        return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200';
+      default:
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+    }
+  };
+  
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Spinner size="lg" />
+        <p className="ml-2 text-muted-foreground">Loading criteria...</p>
+      </div>
+    );
+  }
+  
+  // Show error state
+  if (error) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-rose-500 mb-2">Error loading criteria</p>
+        <p className="text-muted-foreground">{(error as Error).message || 'Unknown error occurred'}</p>
+      </div>
+    );
+  }
+  
+  // Get unique categories for the filter
+  const categories = criteria
+    ? ['all', ...new Set(criteria.map(item => item.category.toLowerCase()))]
+    : ['all'];
+  
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle>{criteriaType === 'assessment' ? 'Patient Assessment Criteria' : 'Facility Audit Criteria'}</CardTitle>
-            <CardDescription>
-              {criteriaType === 'assessment' 
-                ? 'Define and manage criteria for evaluating patient mental health'
-                : 'Define and manage criteria for evaluating mental health facilities'
-              }
-            </CardDescription>
-          </div>
-          <Button asChild>
-            <Link to={`/criteria/add?type=${criteriaType}`} className="flex items-center gap-1">
-              <Plus size={16} />
-              Add New
-            </Link>
-          </Button>
-        </div>
-        <div className="pt-4">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-1 items-center gap-2">
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              type="text"
               placeholder="Search criteria..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.filter(cat => cat !== 'all').map(category => (
+                <SelectItem key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="text-center py-8">Loading criteria...</div>
-        ) : criteria.length > 0 ? (
-          <div className="space-y-4">
-            {criteria.map((criterion) => (
-              <CriterionItem 
-                key={criterion.id}
-                criterion={criterion}
-                isExpanded={expandedCriteria === criterion.id}
-                onToggleExpand={() => toggleExpand(criterion.id)}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            No {criteriaType} criteria found. Create a new criterion to get started.
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        
+        <Button 
+          onClick={() => navigate('/criteria/add')}
+          className="bg-healthiq-600 hover:bg-healthiq-700"
+        >
+          <PlusIcon className="h-4 w-4 mr-2" />
+          Add Criterion
+        </Button>
+      </div>
+      
+      {filteredCriteria.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center">
+            <ClipboardListIcon className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
+            <h3 className="mt-4 text-lg font-semibold">No criteria found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {searchQuery || categoryFilter !== 'all' 
+                ? 'Try adjusting your search or filter criteria.'
+                : 'Get started by adding a new evaluation criterion.'}
+            </p>
+            {(searchQuery || categoryFilter !== 'all') && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearchQuery('');
+                  setCategoryFilter('all');
+                }}
+                className="mt-4"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle>{criteriaType === 'assessment' ? 'Assessment' : 'Audit'} Criteria</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead 
+                    className="cursor-pointer hover:text-primary"
+                    onClick={() => handleSort('name')}
+                  >
+                    <div className="flex items-center">
+                      Name
+                      {sortConfig.key === 'name' && (
+                        <ArrowUpDownIcon className="ml-1 h-4 w-4" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:text-primary"
+                    onClick={() => handleSort('category')}
+                  >
+                    <div className="flex items-center">
+                      Category
+                      {sortConfig.key === 'category' && (
+                        <ArrowUpDownIcon className="ml-1 h-4 w-4" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Indicators</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCriteria.map(criterion => (
+                  <TableRow key={criterion.id}>
+                    <TableCell className="font-medium">{criterion.name}</TableCell>
+                    <TableCell>
+                      <Badge className={getCategoryBadgeStyle(criterion.category)}>
+                        {criterion.category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      {criterion.description}
+                    </TableCell>
+                    <TableCell>{criterion.indicators?.length || 0}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => navigate(`/criteria/edit/${criterion.id}`)}
+                        >
+                          <EditIcon className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => handleDelete(criterion.id, criterion.name)}
+                        >
+                          <Trash2Icon className="h-4 w-4 text-rose-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

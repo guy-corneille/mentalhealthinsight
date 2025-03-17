@@ -1,59 +1,109 @@
 
-import React, { useState } from 'react';
-import { 
-  SearchIcon,
-  PlusIcon,
-  FilterIcon,
-  FileTextIcon,
-  MoreHorizontalIcon
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from "@/hooks/use-toast";
+import { Spinner } from "@/components/ui/spinner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import PatientDetails from "./PatientDetails";
-import { usePatients, Patient } from '@/services/patientService';
-import { Spinner } from "@/components/ui/spinner";
-import { useToast } from "@/hooks/use-toast";
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { 
+  PlusIcon, 
+  SearchIcon, 
+  FilterIcon, 
+  UserIcon,
+  EditIcon,
+  Trash2Icon,
+  XIcon,
+  CheckIcon
+} from 'lucide-react';
+import { usePatients, useDeletePatient, Patient } from '@/services/patientService';
 
 const PatientList: React.FC = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  
+  // State for search and filtering
   const [searchQuery, setSearchQuery] = useState('');
-
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
+  
   // Fetch patients using React Query
   const { data: patients, isLoading, error } = usePatients();
-
-  // Filter patients based on search query
-  const filteredPatients = patients && searchQuery
-    ? patients.filter(patient => 
-        patient.patient_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.diagnosis.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        patient.facility_name?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : patients;
-
-  const openPatientDetails = (patientId: string) => {
-    setSelectedPatientId(patientId);
-    setDetailsOpen(true);
+  
+  // Delete patient mutation
+  const deletePatientMutation = useDeletePatient();
+  
+  // Filter patients when data changes
+  useEffect(() => {
+    if (!patients) return;
+    
+    let results = [...patients];
+    
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      results = results.filter(patient => 
+        patient.status.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+    
+    // Apply search query
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(patient => 
+        patient.patient_id.toLowerCase().includes(query) ||
+        patient.diagnosis.toLowerCase().includes(query)
+      );
+    }
+    
+    setFilteredPatients(results);
+  }, [patients, searchQuery, statusFilter]);
+  
+  // Handler for deleting a patient
+  const handleDelete = (id: number, patientId: string) => {
+    if (window.confirm(`Are you sure you want to delete patient ${patientId}?`)) {
+      deletePatientMutation.mutate(id, {
+        onSuccess: () => {
+          toast({
+            title: "Patient Deleted",
+            description: `Patient ${patientId} has been removed.`,
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: `Failed to delete patient. Please try again.`,
+            variant: "destructive",
+          });
+          console.error("Delete error:", error);
+        }
+      });
+    }
   };
-
+  
+  // Handle status badge styling
+  const getStatusBadgeStyle = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200';
+      case 'discharged':
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+      case 'transferred':
+        return 'bg-amber-100 text-amber-800 hover:bg-amber-200';
+      default:
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+    }
+  };
+  
   // Show loading state
   if (isLoading) {
     return (
@@ -63,7 +113,7 @@ const PatientList: React.FC = () => {
       </div>
     );
   }
-
+  
   // Show error state
   if (error) {
     return (
@@ -73,39 +123,73 @@ const PatientList: React.FC = () => {
       </div>
     );
   }
-
+  
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div className="flex items-center relative w-full sm:w-64">
-          <SearchIcon className="h-4 w-4 absolute left-3 text-muted-foreground" />
-          <Input 
-            placeholder="Search patients..." 
-            className="pl-9 bg-muted/50 border-none focus-visible:ring-1"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-1 items-center gap-2">
+          <div className="relative flex-1">
+            <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search patients..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="discharged">Discharged</SelectItem>
+              <SelectItem value="transferred">Transferred</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" className="border-none bg-muted/50">
-            <FilterIcon className="h-4 w-4 mr-2" />
-            Filter
-          </Button>
-          
-          <Button className="bg-healthiq-600 hover:bg-healthiq-700">
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add Patient
-          </Button>
-        </div>
+        <Button 
+          onClick={() => navigate('/patients/add')}
+          className="bg-healthiq-600 hover:bg-healthiq-700"
+        >
+          <PlusIcon className="h-4 w-4 mr-2" />
+          Add Patient
+        </Button>
       </div>
       
-      <div className="bg-card rounded-lg border shadow-sm overflow-hidden animate-scale-in">
-        <div className="overflow-x-auto">
+      {filteredPatients.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center">
+            <UserIcon className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
+            <h3 className="mt-4 text-lg font-semibold">No patients found</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {searchQuery || statusFilter !== 'all' 
+                ? 'Try adjusting your search or filter criteria.'
+                : 'Get started by adding a new patient.'}
+            </p>
+            {(searchQuery || statusFilter !== 'all') && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                }}
+                className="mt-4"
+              >
+                Clear Filters
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[100px]">ID</TableHead>
+                <TableHead>Patient ID</TableHead>
                 <TableHead>Age</TableHead>
                 <TableHead>Diagnosis</TableHead>
                 <TableHead>Facility</TableHead>
@@ -115,72 +199,42 @@ const PatientList: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPatients && filteredPatients.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
-                    <p className="text-muted-foreground">No patients found</p>
-                    {searchQuery && (
-                      <Button
-                        variant="link"
-                        onClick={() => setSearchQuery('')}
-                        className="mt-2"
+              {filteredPatients.map(patient => (
+                <TableRow key={patient.id}>
+                  <TableCell className="font-medium">{patient.patient_id}</TableCell>
+                  <TableCell>{patient.age}</TableCell>
+                  <TableCell>{patient.diagnosis}</TableCell>
+                  <TableCell>{patient.facility_name}</TableCell>
+                  <TableCell>{new Date(patient.admission_date).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <Badge className={getStatusBadgeStyle(patient.status)}>
+                      {patient.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => navigate(`/patients/edit/${patient.id}`)}
                       >
-                        Clear search
+                        <EditIcon className="h-4 w-4" />
                       </Button>
-                    )}
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleDelete(patient.id, patient.patient_id)}
+                      >
+                        <Trash2Icon className="h-4 w-4 text-rose-500" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ) : (
-                filteredPatients?.map((patient) => (
-                  <TableRow key={patient.id}>
-                    <TableCell className="font-medium">{patient.patient_id}</TableCell>
-                    <TableCell>{patient.age}</TableCell>
-                    <TableCell>{patient.diagnosis}</TableCell>
-                    <TableCell>{patient.facility_name}</TableCell>
-                    <TableCell>{new Date(patient.admission_date).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <Badge className={
-                        patient.status === 'Active' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-                        patient.status === 'Discharged' ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 
-                        'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                      }>
-                        {patient.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontalIcon className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Patient Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => openPatientDetails(patient.patient_id)}>
-                            <FileTextIcon className="h-4 w-4 mr-2" />
-                            View Records
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>Update Status</DropdownMenuItem>
-                          <DropdownMenuItem>Add Assessment</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-rose-600">Remove</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
-        </div>
-      </div>
-      
-      <PatientDetails 
-        open={detailsOpen}
-        onOpenChange={setDetailsOpen}
-        patientId={selectedPatientId}
-      />
+        </Card>
+      )}
     </div>
   );
 };
