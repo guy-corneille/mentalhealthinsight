@@ -1,18 +1,24 @@
 
 import { UserRole } from '../types/auth';
 
-// This hook handles user authorization logic
-// It's been simplified to allow all actions without restrictions
+/**
+ * Hook for handling user authorization
+ * 
+ * Currently simplified to allow all actions without restrictions.
+ * Will be updated later with proper role-based authorization.
+ */
 export const useAuthorization = () => {
-  // Mock permission checker - always returns true
+  // Permission checker - currently always returns true
+  // Will be updated with proper role-based checks
   const hasPermission = (permission: string): boolean => {
-    console.log(`Permission check for: ${permission} - Always allowed`);
+    console.log(`Permission check for: ${permission} - Authorization checks disabled`);
     return true;
   };
 
-  // Mock route access checker - always returns true
+  // Route access checker - currently always returns true
+  // Will be updated with proper role-based checks
   const canAccessRoute = (route: string): boolean => {
-    console.log(`Route access check for: ${route} - Always allowed`);
+    console.log(`Route access check for: ${route} - Authorization checks disabled`);
     return true;
   };
 
@@ -70,7 +76,7 @@ export const useAuthorization = () => {
   return {
     hasPermission,
     canAccessRoute,
-    role: 'admin' as UserRole, // Always return admin role
+    role: 'admin' as UserRole, // Always return admin role for now
     getUserPermissions,
     getAccessLevelLabel,
     getFormattedUserPermissions

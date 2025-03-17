@@ -70,11 +70,12 @@ def register_user(request):
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def logout_view(request):
     """Logout a user by invalidating their token"""
     try:
-        request.user.auth_token.delete()
+        if hasattr(request.user, 'auth_token'):
+            request.user.auth_token.delete()
         return Response({'message': 'Successfully logged out.'}, status=status.HTTP_200_OK)
     except Exception as e:
         logger.error(f"Logout error: {str(e)}")
@@ -86,6 +87,7 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 100
 
 class UserViewSet(viewsets.ModelViewSet):
+    """API endpoints for managing users"""
     queryset = User.objects.all()
     serializer_class = UserSerializer
     pagination_class = StandardResultsSetPagination
@@ -93,14 +95,18 @@ class UserViewSet(viewsets.ModelViewSet):
     filterset_fields = ['role', 'is_active']
     search_fields = ['username', 'email', 'display_name']
     ordering_fields = ['date_joined', 'username', 'display_name']
+    permission_classes = [AllowAny]  # Allow any user to access these endpoints
     
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'])
     def me(self, request):
         """Get the current logged in user"""
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
+        if request.user.is_authenticated:
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data)
+        return Response({'detail': 'Not authenticated'}, status=status.HTTP_200_OK)
 
 class PendingUserViewSet(viewsets.ModelViewSet):
+    """API endpoints for managing pending user registrations"""
     queryset = PendingUser.objects.all()
     serializer_class = PendingUserSerializer
     pagination_class = StandardResultsSetPagination
@@ -108,6 +114,7 @@ class PendingUserViewSet(viewsets.ModelViewSet):
     filterset_fields = ['role', 'status']
     search_fields = ['username', 'email', 'display_name']
     ordering_fields = ['request_date', 'username']
+    permission_classes = [AllowAny]  # Allow any user to access these endpoints
     
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
@@ -153,6 +160,7 @@ class PendingUserViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_200_OK)
 
 class FacilityViewSet(viewsets.ModelViewSet):
+    """API endpoints for managing facilities"""
     queryset = Facility.objects.all()
     serializer_class = FacilitySerializer
     pagination_class = StandardResultsSetPagination
@@ -160,6 +168,7 @@ class FacilityViewSet(viewsets.ModelViewSet):
     filterset_fields = ['facility_type', 'district', 'province', 'status']
     search_fields = ['name', 'address', 'contact_name']
     ordering_fields = ['name', 'capacity', 'created_at']
+    permission_classes = [AllowAny]  # Allow any user to access these endpoints
     
     @action(detail=True, methods=['get'])
     def staff(self, request, pk=None):
@@ -186,6 +195,7 @@ class FacilityViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class StaffMemberViewSet(viewsets.ModelViewSet):
+    """API endpoints for managing staff members"""
     queryset = StaffMember.objects.all()
     serializer_class = StaffMemberSerializer
     pagination_class = StandardResultsSetPagination
@@ -193,6 +203,7 @@ class StaffMemberViewSet(viewsets.ModelViewSet):
     filterset_fields = ['facility', 'position', 'department', 'status']
     search_fields = ['name', 'email', 'phone']
     ordering_fields = ['name', 'join_date', 'created_at']
+    permission_classes = [AllowAny]  # Allow any user to access these endpoints
     
     @action(detail=True, methods=['get'])
     def qualifications(self, request, pk=None):
@@ -203,6 +214,7 @@ class StaffMemberViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class AssessmentCriteriaViewSet(viewsets.ModelViewSet):
+    """API endpoints for managing assessment criteria"""
     queryset = AssessmentCriteria.objects.all()
     serializer_class = AssessmentCriteriaSerializer
     pagination_class = StandardResultsSetPagination
@@ -210,6 +222,7 @@ class AssessmentCriteriaViewSet(viewsets.ModelViewSet):
     filterset_fields = ['category']
     search_fields = ['name', 'description']
     ordering_fields = ['name', 'created_at']
+    permission_classes = [AllowAny]  # Allow any user to access these endpoints
     
     @action(detail=True, methods=['get'])
     def indicators(self, request, pk=None):
@@ -220,6 +233,7 @@ class AssessmentCriteriaViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class PatientViewSet(viewsets.ModelViewSet):
+    """API endpoints for managing patients"""
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
     pagination_class = StandardResultsSetPagination
@@ -227,6 +241,7 @@ class PatientViewSet(viewsets.ModelViewSet):
     filterset_fields = ['facility', 'gender', 'status']
     search_fields = ['first_name', 'last_name', 'national_id', 'phone']
     ordering_fields = ['registration_date', 'last_name', 'first_name']
+    permission_classes = [AllowAny]  # Allow any user to access these endpoints
     
     @action(detail=True, methods=['get'])
     def assessments(self, request, pk=None):
@@ -237,6 +252,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class AssessmentViewSet(viewsets.ModelViewSet):
+    """API endpoints for managing assessments"""
     queryset = Assessment.objects.all()
     serializer_class = AssessmentSerializer
     pagination_class = StandardResultsSetPagination
@@ -244,6 +260,7 @@ class AssessmentViewSet(viewsets.ModelViewSet):
     filterset_fields = ['facility', 'patient', 'evaluator', 'criteria']
     search_fields = ['notes']
     ordering_fields = ['assessment_date', 'score']
+    permission_classes = [AllowAny]  # Allow any user to access these endpoints
     
     @action(detail=True, methods=['get'])
     def indicator_scores(self, request, pk=None):
@@ -254,6 +271,7 @@ class AssessmentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class AuditViewSet(viewsets.ModelViewSet):
+    """API endpoints for managing audits"""
     queryset = Audit.objects.all()
     serializer_class = AuditSerializer
     pagination_class = StandardResultsSetPagination
@@ -261,6 +279,7 @@ class AuditViewSet(viewsets.ModelViewSet):
     filterset_fields = ['facility', 'auditor', 'status']
     search_fields = ['notes']
     ordering_fields = ['audit_date', 'overall_score']
+    permission_classes = [AllowAny]  # Allow any user to access these endpoints
     
     @action(detail=True, methods=['get'])
     def criteria_scores(self, request, pk=None):
@@ -271,6 +290,7 @@ class AuditViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 class ReportViewSet(viewsets.ModelViewSet):
+    """API endpoints for managing reports"""
     queryset = Report.objects.all()
     serializer_class = ReportSerializer
     pagination_class = StandardResultsSetPagination
@@ -278,6 +298,7 @@ class ReportViewSet(viewsets.ModelViewSet):
     filterset_fields = ['report_type', 'generated_by']
     search_fields = ['title', 'description']
     ordering_fields = ['generated_at', 'title']
+    permission_classes = [AllowAny]  # Allow any user to access these endpoints
     
     @action(detail=False, methods=['post'])
     def generate_facility_report(self, request):
