@@ -61,10 +61,7 @@ export const StaffListProvider: React.FC<StaffListProviderProps> = ({
     data: facilityStaff, 
     isLoading: isLoadingFacilityStaff,
     error: facilityStaffError
-  } = useStaffByFacility(selectedFacilityId as number, {
-    // Only run this query if we have a facility selected
-    enabled: facilityFilter !== 'all',
-  });
+  } = useStaffByFacility(selectedFacilityId as number);
   
   // Determine which staff data to use
   const staffData = facilityFilter !== 'all' ? facilityStaff : allStaff;
