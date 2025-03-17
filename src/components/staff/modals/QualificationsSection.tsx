@@ -54,7 +54,7 @@ const QualificationsSection: React.FC<QualificationsSectionProps> = ({
           </div>
         )}
         <div className="flex flex-wrap gap-2">
-          {fields.map((field, index) => (
+          {fields.map((field: any, index) => (
             <Badge key={field.id} variant="secondary" className="flex items-center gap-1">
               {field.qualification}
               {!disabled && (

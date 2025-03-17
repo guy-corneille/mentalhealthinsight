@@ -40,21 +40,23 @@ const patientService = {
    * Get all patients
    * @returns Promise with patient data
    */
-  getAllPatients: async (): Promise<Patient[]> => {
+  getAllPatients: async () => {
     console.log('Fetching all patients from API');
     try {
-      const response = await api.get<PaginatedResponse<Patient> | Patient[]>('/patients/');
+      const response = await api.get('/patients/');
       
       console.log('API response for patients:', response);
       
-      // Check if response is an array or has a results property
-      if (Array.isArray(response)) {
-        return response;
-      } else if (response && 'results' in response) {
-        return response.results;
+      // Fix the type error by checking the structure of the response
+      if (response && typeof response === 'object') {
+        if (Array.isArray(response)) {
+          return response;
+        } else if (response.results && Array.isArray(response.results)) {
+          return response.results;
+        }
       }
       
-      console.warn('Invalid API response for patients:', response);
+      console.warn('Invalid API response format for patients:', response);
       return [];
     } catch (error) {
       console.error('Error fetching patients:', error);

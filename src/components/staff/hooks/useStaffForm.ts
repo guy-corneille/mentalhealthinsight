@@ -1,27 +1,25 @@
 
 import { useState, useEffect } from 'react';
-import { StaffMemberDisplay } from '@/services/staffService';
+import { StaffMember, StaffQualification } from '@/services/staff/types';
 import { useFacilities } from '@/services/facilityService';
 import { useToast } from '@/hooks/use-toast';
 
 export const useStaffForm = (
-  staffData: StaffMemberDisplay | null,
+  staffData: StaffMember | null,
   isOpen: boolean
 ) => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<Partial<StaffMemberDisplay>>({
+  const [formData, setFormData] = useState<Partial<StaffMember>>({
     name: '',
     position: '',
     department: '',
-    facilityId: 1,
-    facilityName: '',
-    joinDate: new Date().toISOString().split('T')[0],
+    facility: 1,
+    facility_name: '',
+    join_date: new Date().toISOString().split('T')[0],
     status: 'Active' as const,
     qualifications: [],
-    contact: {
-      email: '',
-      phone: ''
-    }
+    email: '',
+    phone: ''
   });
   
   const [newQualification, setNewQualification] = useState('');
@@ -36,12 +34,13 @@ export const useStaffForm = (
         name: staffData.name,
         position: staffData.position,
         department: staffData.department,
-        facilityId: staffData.facilityId,
-        facilityName: staffData.facilityName,
-        joinDate: staffData.joinDate,
+        facility: staffData.facility,
+        facility_name: staffData.facility_name,
+        join_date: staffData.join_date,
         status: staffData.status,
-        qualifications: [...staffData.qualifications],
-        contact: { ...staffData.contact }
+        qualifications: [...(staffData.qualifications || [])],
+        email: staffData.email,
+        phone: staffData.phone
       });
     } else {
       // Use first facility from the API if available
@@ -51,15 +50,13 @@ export const useStaffForm = (
         name: '',
         position: '',
         department: '',
-        facilityId: defaultFacility.id,
-        facilityName: defaultFacility.name,
-        joinDate: new Date().toISOString().split('T')[0],
+        facility: defaultFacility.id,
+        facility_name: defaultFacility.name,
+        join_date: new Date().toISOString().split('T')[0],
         status: 'Active' as const,
         qualifications: [],
-        contact: {
-          email: '',
-          phone: ''
-        }
+        email: '',
+        phone: ''
       });
     }
     setNewQualification('');
@@ -67,19 +64,7 @@ export const useStaffForm = (
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
-    if (name.includes('.')) {
-      const [parent, child] = name.split('.');
-      setFormData({
-        ...formData,
-        [parent]: {
-          ...formData[parent as keyof typeof formData] as Record<string, unknown>,
-          [child]: value
-        }
-      });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleFacilityChange = (value: string) => {
@@ -88,8 +73,8 @@ export const useStaffForm = (
     if (facility) {
       setFormData({
         ...formData,
-        facilityId,
-        facilityName: facility.name
+        facility: facilityId,
+        facility_name: facility.name
       });
     }
   };
@@ -103,9 +88,10 @@ export const useStaffForm = (
 
   const addQualification = () => {
     if (newQualification.trim() && formData.qualifications) {
+      const newQual: StaffQualification = { qualification: newQualification.trim() };
       setFormData({
         ...formData,
-        qualifications: [...formData.qualifications, newQualification.trim()]
+        qualifications: [...(formData.qualifications || []), newQual]
       });
       setNewQualification('');
     }
@@ -150,7 +136,7 @@ export const useStaffForm = (
       return false;
     }
     
-    if (!formData.contact?.email) {
+    if (!formData.email) {
       toast({
         title: "Validation Error",
         description: "Email is required",
@@ -159,7 +145,7 @@ export const useStaffForm = (
       return false;
     }
     
-    if (!formData.contact?.phone) {
+    if (!formData.phone) {
       toast({
         title: "Validation Error",
         description: "Phone is required",
@@ -172,15 +158,9 @@ export const useStaffForm = (
   };
 
   // Prepare data for backend
-  const prepareDataForSubmission = (): Partial<StaffMemberDisplay> => {
+  const prepareDataForSubmission = (): Partial<StaffMember> => {
     return {
       ...formData,
-      // Set facility to facilityId for the backend
-      facility: formData.facilityId,
-      // Map frontend fields to backend field names
-      contact_email: formData.contact?.email,
-      contact_phone: formData.contact?.phone,
-      join_date: formData.joinDate
     };
   };
 
