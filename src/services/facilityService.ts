@@ -31,6 +31,14 @@ export interface Facility {
   score?: number;
 }
 
+// Define API response for paginated data
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 // Helper function to transform backend facility data to frontend format
 export const transformFacility = (facility: Facility): Facility => {
   return {
@@ -58,11 +66,11 @@ const facilityService = {
   getAllFacilities: async (): Promise<Facility[]> => {
     console.log('Fetching all facilities from API');
     // API endpoint for getting all facilities
-    const response = await api.get<Facility[]>('/facilities/');
+    const response = await api.get<PaginatedResponse<Facility>>('/facilities/');
     
     // Transform the data for frontend use
-    return Array.isArray(response) 
-      ? response.map(transformFacility)
+    return Array.isArray(response.results) 
+      ? response.results.map(transformFacility)
       : [];
   },
 

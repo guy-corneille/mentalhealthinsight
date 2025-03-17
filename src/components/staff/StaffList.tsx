@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   UserIcon, 
@@ -40,22 +39,14 @@ import {
 } from "@/components/ui/select";
 import StaffModal from './StaffModal';
 import { useToast } from "@/hooks/use-toast";
-
-interface StaffMember {
-  id: string;
-  name: string;
-  position: string;
-  department: string;
-  facilityId: number;
-  facilityName: string;
-  joinDate: string;
-  status: 'Active' | 'On Leave' | 'Former';
-  qualifications: string[];
-  contact: {
-    email: string;
-    phone: string;
-  };
-}
+import { 
+  useStaff, 
+  useStaffByFacility, 
+  useDeleteStaff, 
+  StaffMemberDisplay 
+} from '@/services/staffService';
+import { useFacilities } from '@/services/facilityService';
+import { Spinner } from "@/components/ui/spinner";
 
 interface StaffListProps {
   showFacilityFilter?: boolean;
@@ -65,110 +56,35 @@ interface StaffListProps {
 const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facilityId }) => {
   const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
-  const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null);
+  const [currentStaff, setCurrentStaff] = useState<StaffMemberDisplay | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [facilityFilter, setFacilityFilter] = useState<string>(facilityId ? facilityId.toString() : 'all');
-  
-  // Mock facilities data
-  const facilities = [
-    { id: 1, name: 'Central Hospital' },
-    { id: 2, name: 'Eastern District Clinic' },
-    { id: 3, name: 'Northern Community Center' },
-    { id: 4, name: 'Southern District Hospital' },
-  ];
-  
-  // Mock staff data
-  const [staff, setStaff] = useState<StaffMember[]>([
-    { 
-      id: 'S-1001', 
-      name: 'Dr. Jean Mutabazi', 
-      position: 'Lead Psychiatrist', 
-      department: 'Psychiatry',
-      facilityId: 1,
-      facilityName: 'Central Hospital',
-      joinDate: '2020-01-15',
-      status: 'Active',
-      qualifications: ['MD', 'Ph.D. Psychiatry', 'Clinical Psychology Cert.'],
-      contact: {
-        email: 'j.mutabazi@centralhospital.rw',
-        phone: '+250 782 123 456'
-      }
-    },
-    { 
-      id: 'S-1002', 
-      name: 'Dr. Marie Uwase', 
-      position: 'Senior Psychologist', 
-      department: 'Clinical Psychology',
-      facilityId: 1,
-      facilityName: 'Central Hospital',
-      joinDate: '2021-03-22',
-      status: 'Active',
-      qualifications: ['Ph.D. Clinical Psychology', 'CBT Certification'],
-      contact: {
-        email: 'm.uwase@centralhospital.rw',
-        phone: '+250 782 765 432'
-      }
-    },
-    { 
-      id: 'S-1003', 
-      name: 'Joseph Ndayishimiye', 
-      position: 'Mental Health Nurse', 
-      department: 'Nursing',
-      facilityId: 2,
-      facilityName: 'Eastern District Clinic',
-      joinDate: '2019-11-10',
-      status: 'On Leave',
-      qualifications: ['BSN', 'Mental Health Nursing Cert.'],
-      contact: {
-        email: 'j.ndayishimiye@eastern.rw',
-        phone: '+250 788 234 567'
-      }
-    },
-    { 
-      id: 'S-1004', 
-      name: 'Alice Mukamana', 
-      position: 'Counselor', 
-      department: 'Counseling',
-      facilityId: 1,
-      facilityName: 'Central Hospital',
-      joinDate: '2022-05-18',
-      status: 'Active',
-      qualifications: ['Masters in Counseling', 'Trauma Therapy Cert.'],
-      contact: {
-        email: 'a.mukamana@centralhospital.rw',
-        phone: '+250 788 123 789'
-      }
-    },
-    { 
-      id: 'S-1005', 
-      name: 'Eric Mugisha', 
-      position: 'Psychotherapist', 
-      department: 'Therapy',
-      facilityId: 2,
-      facilityName: 'Eastern District Clinic',
-      joinDate: '2021-08-12',
-      status: 'Active',
-      qualifications: ['Masters in Psychology', 'CBT Specialization'],
-      contact: {
-        email: 'e.mugisha@eastern.rw',
-        phone: '+250 788 456 789'
-      }
-    },
-  ]);
+  const [filteredStaff, setFilteredStaff] = useState<StaffMemberDisplay[]>([]);
 
-  // Filtered staff based on search and facility filter
-  const [filteredStaff, setFilteredStaff] = useState<StaffMember[]>(staff);
+  // Fetch staff using React Query
+  const { data: allStaff, isLoading: isLoadingAllStaff, error: staffError } = useStaff();
+  
+  // If facilityId is provided, fetch staff for that facility
+  const { data: facilityStaff, isLoading: isLoadingFacilityStaff } = useStaffByFacility(
+    facilityId || (facilityFilter !== 'all' ? parseInt(facilityFilter) : 0)
+  );
 
-  // Apply filters when search query or facility filter changes
+  // Fetch facilities for the filter dropdown
+  const { data: facilities } = useFacilities();
+  
+  // Mutation for deleting a staff member
+  const deleteStaffMutation = useDeleteStaff();
+
+  // Determine which staff data to use
+  const staffData = facilityId || facilityFilter !== 'all' ? facilityStaff : allStaff;
+  const isLoading = facilityId || facilityFilter !== 'all' ? isLoadingFacilityStaff : isLoadingAllStaff;
+
+  // Apply filters when search query changes
   useEffect(() => {
-    let results = [...staff];
+    if (!staffData) return;
     
-    // Apply facility filter
-    if (facilityFilter !== 'all') {
-      const facilityIdNum = parseInt(facilityFilter);
-      results = results.filter(member => member.facilityId === facilityIdNum);
-    }
+    let results = [...staffData];
     
     // Apply search query filter
     if (searchQuery) {
@@ -182,7 +98,7 @@ const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facil
     }
     
     setFilteredStaff(results);
-  }, [staff, searchQuery, facilityFilter]);
+  }, [staffData, searchQuery]);
 
   // Initialize facility filter from prop if provided
   useEffect(() => {
@@ -197,56 +113,62 @@ const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facil
     setModalOpen(true);
   };
 
-  const handleEditStaff = (staff: StaffMember) => {
+  const handleEditStaff = (staff: StaffMemberDisplay) => {
     setCurrentStaff(staff);
     setIsEditing(true);
     setModalOpen(true);
   };
 
-  const handleDeleteStaff = (staffId: string) => {
+  const handleDeleteStaff = (staffId: number) => {
     if (window.confirm('Are you sure you want to remove this staff member?')) {
-      setStaff(staff.filter(s => s.id !== staffId));
-      toast({
-        title: "Staff Removed",
-        description: "The staff member has been removed successfully.",
+      deleteStaffMutation.mutate(staffId, {
+        onSuccess: () => {
+          toast({
+            title: "Staff Removed",
+            description: "The staff member has been removed successfully.",
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: `Failed to delete staff member: ${(error as Error).message}`,
+            variant: "destructive",
+          });
+        }
       });
     }
   };
 
-  const handleSaveStaff = (staffData: Partial<StaffMember>) => {
-    if (isEditing && currentStaff) {
-      // Update existing staff
-      setStaff(staff.map(s => 
-        s.id === currentStaff.id ? { ...currentStaff, ...staffData } as StaffMember : s
-      ));
-      toast({
-        title: "Staff Updated",
-        description: "Staff information has been updated successfully.",
-      });
-    } else {
-      // Add new staff
-      const newStaff: StaffMember = {
-        id: `S-${1000 + staff.length + 1}`,
-        name: staffData.name || '',
-        position: staffData.position || '',
-        department: staffData.department || '',
-        facilityId: staffData.facilityId || 0,
-        facilityName: staffData.facilityName || '',
-        joinDate: staffData.joinDate || new Date().toISOString().split('T')[0],
-        status: staffData.status || 'Active',
-        qualifications: staffData.qualifications || [],
-        contact: staffData.contact || { email: '', phone: '' },
-      };
-      
-      setStaff([...staff, newStaff]);
-      toast({
-        title: "Staff Added",
-        description: "New staff member has been added successfully.",
-      });
-    }
-    
+  const handleSaveStaff = (staffData: Partial<StaffMemberDisplay>) => {
+    // This will be implemented when the staff modal is updated
     setModalOpen(false);
+    toast({
+      title: isEditing ? "Staff Updated" : "Staff Added",
+      description: isEditing 
+        ? "Staff information has been updated successfully."
+        : "New staff member has been added successfully.",
+    });
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Spinner size="lg" />
+        <p className="ml-2 text-muted-foreground">Loading staff...</p>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (staffError) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-rose-500 mb-2">Error loading staff</p>
+        <p className="text-muted-foreground">{(staffError as Error).message || 'Unknown error occurred'}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

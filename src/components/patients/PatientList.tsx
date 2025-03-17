@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { 
-  UserIcon, 
   SearchIcon,
   PlusIcon,
   FilterIcon,
@@ -28,74 +27,52 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import PatientDetails from "./PatientDetails";
+import { usePatients, Patient } from '@/services/patientService';
+import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/hooks/use-toast";
 
 const PatientList: React.FC = () => {
+  const { toast } = useToast();
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const patients = [
-    { 
-      id: 'P-1001', 
-      age: 28, 
-      diagnosis: 'Major Depressive Disorder', 
-      facility: 'Central Hospital',
-      admissionDate: '2023-03-10',
-      status: 'Active'
-    },
-    { 
-      id: 'P-1002', 
-      age: 35, 
-      diagnosis: 'Generalized Anxiety Disorder', 
-      facility: 'Eastern District Clinic',
-      admissionDate: '2023-02-15',
-      status: 'Active'
-    },
-    { 
-      id: 'P-1003', 
-      age: 42, 
-      diagnosis: 'Bipolar Disorder', 
-      facility: 'Northern Community Center',
-      admissionDate: '2023-04-22',
-      status: 'Active'
-    },
-    { 
-      id: 'P-1004', 
-      age: 19, 
-      diagnosis: 'Panic Disorder', 
-      facility: 'Western Mental Health Center',
-      admissionDate: '2023-01-05',
-      status: 'Discharged'
-    },
-    { 
-      id: 'P-1005', 
-      age: 56, 
-      diagnosis: 'Post-Traumatic Stress Disorder', 
-      facility: 'Central Hospital',
-      admissionDate: '2023-05-12',
-      status: 'Active'
-    },
-    { 
-      id: 'P-1006', 
-      age: 31, 
-      diagnosis: 'Obsessive-Compulsive Disorder', 
-      facility: 'Southern District Hospital',
-      admissionDate: '2023-04-03',
-      status: 'Active'
-    },
-    { 
-      id: 'P-1007', 
-      age: 24, 
-      diagnosis: 'Schizophrenia', 
-      facility: 'Eastern District Clinic',
-      admissionDate: '2023-02-28',
-      status: 'Transferred'
-    },
-  ];
+  // Fetch patients using React Query
+  const { data: patients, isLoading, error } = usePatients();
+
+  // Filter patients based on search query
+  const filteredPatients = patients && searchQuery
+    ? patients.filter(patient => 
+        patient.patient_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient.diagnosis.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient.facility_name?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : patients;
 
   const openPatientDetails = (patientId: string) => {
     setSelectedPatientId(patientId);
     setDetailsOpen(true);
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-12">
+        <Spinner size="lg" />
+        <p className="ml-2 text-muted-foreground">Loading patients...</p>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-rose-500 mb-2">Error loading patients</p>
+        <p className="text-muted-foreground">{(error as Error).message || 'Unknown error occurred'}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -104,7 +81,9 @@ const PatientList: React.FC = () => {
           <SearchIcon className="h-4 w-4 absolute left-3 text-muted-foreground" />
           <Input 
             placeholder="Search patients..." 
-            className="pl-9 bg-muted/50 border-none focus-visible:ring-1" 
+            className="pl-9 bg-muted/50 border-none focus-visible:ring-1"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
@@ -136,45 +115,62 @@ const PatientList: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {patients.map((patient) => (
-                <TableRow key={patient.id}>
-                  <TableCell className="font-medium">{patient.id}</TableCell>
-                  <TableCell>{patient.age}</TableCell>
-                  <TableCell>{patient.diagnosis}</TableCell>
-                  <TableCell>{patient.facility}</TableCell>
-                  <TableCell>{new Date(patient.admissionDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge className={
-                      patient.status === 'Active' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-                      patient.status === 'Discharged' ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 
-                      'bg-amber-50 text-amber-600 hover:bg-amber-100'
-                    }>
-                      {patient.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontalIcon className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuLabel>Patient Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openPatientDetails(patient.id)}>
-                          <FileTextIcon className="h-4 w-4 mr-2" />
-                          View Records
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>Update Status</DropdownMenuItem>
-                        <DropdownMenuItem>Add Assessment</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-rose-600">Remove</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+              {filteredPatients && filteredPatients.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    <p className="text-muted-foreground">No patients found</p>
+                    {searchQuery && (
+                      <Button
+                        variant="link"
+                        onClick={() => setSearchQuery('')}
+                        className="mt-2"
+                      >
+                        Clear search
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filteredPatients?.map((patient) => (
+                  <TableRow key={patient.id}>
+                    <TableCell className="font-medium">{patient.patient_id}</TableCell>
+                    <TableCell>{patient.age}</TableCell>
+                    <TableCell>{patient.diagnosis}</TableCell>
+                    <TableCell>{patient.facility_name}</TableCell>
+                    <TableCell>{new Date(patient.admission_date).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge className={
+                        patient.status === 'Active' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
+                        patient.status === 'Discharged' ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 
+                        'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                      }>
+                        {patient.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontalIcon className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Patient Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => openPatientDetails(patient.patient_id)}>
+                            <FileTextIcon className="h-4 w-4 mr-2" />
+                            View Records
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>Update Status</DropdownMenuItem>
+                          <DropdownMenuItem>Add Assessment</DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-rose-600">Remove</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
