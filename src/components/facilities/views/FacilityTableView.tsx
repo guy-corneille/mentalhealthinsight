@@ -12,16 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-interface Facility {
-  id: number;
-  name: string;
-  location: string;
-  type: string;
-  capacity: number;
-  lastAudit: string;
-  score: number;
-}
+import { Facility } from '@/services/facilityService';
 
 interface FacilityTableViewProps {
   facilities: Facility[];
@@ -31,6 +22,10 @@ interface FacilityTableViewProps {
   sortDirection: 'asc' | 'desc';
 }
 
+/**
+ * Table view for facilities
+ * Displays facilities in a tabular format with sortable columns
+ */
 const FacilityTableView: React.FC<FacilityTableViewProps> = ({ 
   facilities, 
   onDelete, 
@@ -40,6 +35,7 @@ const FacilityTableView: React.FC<FacilityTableViewProps> = ({
 }) => {
   const navigate = useNavigate();
 
+  // Helper to render the appropriate sort icon
   const getSortIcon = (column: string) => {
     if (sortColumn !== column) return <ArrowUpDownIcon className="h-4 w-4 text-muted-foreground" />;
     return sortDirection === 'asc' 
@@ -113,11 +109,11 @@ const FacilityTableView: React.FC<FacilityTableViewProps> = ({
               <TableCell>{facility.capacity}</TableCell>
               <TableCell>
                 <Badge className={
-                  facility.score >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-                  facility.score >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
+                  (facility.score || 0) >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
+                  (facility.score || 0) >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
                   'bg-rose-50 text-rose-600 hover:bg-rose-100'
                 }>
-                  {facility.score}%
+                  {facility.score || 0}%
                 </Badge>
               </TableCell>
               <TableCell>

@@ -4,22 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import { BuildingIcon, MapPinIcon, EyeIcon, EditIcon, Trash2Icon } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-interface Facility {
-  id: number;
-  name: string;
-  location: string;
-  type: string;
-  capacity: number;
-  lastAudit: string;
-  score: number;
-}
+import { Facility } from '@/services/facilityService';
 
 interface FacilityListViewProps {
   facilities: Facility[];
   onDelete: (id: number, name: string) => void;
 }
 
+/**
+ * List view for facilities
+ * Displays facilities in a list layout with detailed information
+ */
 const FacilityListView: React.FC<FacilityListViewProps> = ({ facilities, onDelete }) => {
   const navigate = useNavigate();
 
@@ -51,14 +46,16 @@ const FacilityListView: React.FC<FacilityListViewProps> = ({ facilities, onDelet
             </div>
             <div className="px-3 py-1 bg-muted/50 rounded-md">
               <p className="text-xs text-muted-foreground">Last Audit</p>
-              <p className="font-medium">{new Date(facility.lastAudit).toLocaleDateString()}</p>
+              <p className="font-medium">
+                {facility.lastAudit ? new Date(facility.lastAudit).toLocaleDateString() : 'None'}
+              </p>
             </div>
             <Badge className={
-              facility.score >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-              facility.score >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
+              (facility.score || 0) >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
+              (facility.score || 0) >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
               'bg-rose-50 text-rose-600 hover:bg-rose-100'
             }>
-              {facility.score}%
+              {facility.score || 0}%
             </Badge>
           </div>
           

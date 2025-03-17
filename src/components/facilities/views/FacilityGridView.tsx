@@ -13,22 +13,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface Facility {
-  id: number;
-  name: string;
-  location: string;
-  type: string;
-  capacity: number;
-  lastAudit: string;
-  score: number;
-}
+import { Facility } from '@/services/facilityService';
 
 interface FacilityGridViewProps {
   facilities: Facility[];
   onDelete: (id: number, name: string) => void;
 }
 
+/**
+ * Grid view for facilities
+ * Displays facilities in a card grid layout
+ */
 const FacilityGridView: React.FC<FacilityGridViewProps> = ({ facilities, onDelete }) => {
   const navigate = useNavigate();
 
@@ -52,11 +47,11 @@ const FacilityGridView: React.FC<FacilityGridViewProps> = ({ facilities, onDelet
                   </div>
                 </div>
                 <Badge className={
-                  facility.score >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-                  facility.score >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
+                  (facility.score || 0) >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
+                  (facility.score || 0) >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
                   'bg-rose-50 text-rose-600 hover:bg-rose-100'
                 }>
-                  {facility.score}%
+                  {facility.score || 0}%
                 </Badge>
               </div>
               
@@ -74,7 +69,7 @@ const FacilityGridView: React.FC<FacilityGridViewProps> = ({ facilities, onDelet
               <div className="flex items-center justify-between mt-4 pt-4 border-t">
                 <div className="flex items-center text-sm text-muted-foreground">
                   <CalendarIcon className="h-3 w-3 mr-1" />
-                  Last audit: {new Date(facility.lastAudit).toLocaleDateString()}
+                  Last audit: {facility.lastAudit ? new Date(facility.lastAudit).toLocaleDateString() : 'None'}
                 </div>
                 
                 <DropdownMenu>
