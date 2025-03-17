@@ -1,62 +1,115 @@
 
-import { MockUser, PendingUser } from '../types/auth';
+/**
+ * This file is deprecated and retained only for backward compatibility.
+ * Use the API services instead for real data.
+ */
 
-export const MOCK_USERS: MockUser[] = [
+import { toast } from 'sonner';
+
+console.warn('Using mock data instead of API data. This is deprecated. Update your code to use the API services.');
+toast.warning('Using mock data. Connect to the API for real data.');
+
+export const mockUsers = [
   {
     id: '1',
-    username: 'superuser',
-    email: 'super.user@mentalhealthiq.com',
-    password: 'password123',
-    role: 'superuser',
-    displayName: 'Super User'
+    name: 'John Doe',
+    email: 'john@example.com',
+    role: 'admin',
+    department: 'IT',
+    status: 'active',
+    lastLogin: '2023-05-15T10:30:00',
   },
   {
     id: '2',
-    username: 'admin',
-    email: 'admin@mentalhealthiq.com',
-    password: 'password123',
-    role: 'admin',
-    displayName: 'Admin User'
-  },
-  {
-    id: '3',
-    username: 'evaluator',
-    email: 'evaluator@mentalhealthiq.com',
-    password: 'password123',
+    name: 'Jane Smith',
+    email: 'jane@example.com',
     role: 'evaluator',
-    displayName: 'Health Evaluator'
+    department: 'Clinical',
+    status: 'active',
+    lastLogin: '2023-05-14T14:45:00',
+  },
+];
+
+export const mockStaff = [
+  {
+    id: 'S-1001',
+    name: 'Dr. Alice Johnson',
+    position: 'Psychiatrist',
+    department: 'Psychiatry',
+    facility: 1,
+    facility_name: 'Northern Hospital 1',
+    join_date: '2021-03-15',
+    status: 'Active',
+    email: 'alice.johnson@example.com',
+    phone: '+1234567890',
+    qualifications: [
+      { id: 1, qualification: 'MD' },
+      { id: 2, qualification: 'Board Certified in Psychiatry' }
+    ]
   },
   {
-    id: '4',
-    username: 'viewer',
-    email: 'viewer@mentalhealthiq.com',
-    password: 'password123',
-    role: 'viewer',
-    displayName: 'Viewer User'
+    id: 'S-1002',
+    name: 'Robert Wilson',
+    position: 'Therapist',
+    department: 'Therapy',
+    facility: 1,
+    facility_name: 'Northern Hospital 1',
+    join_date: '2020-07-22',
+    status: 'Active',
+    email: 'robert.wilson@example.com',
+    phone: '+1987654321',
+    qualifications: [
+      { id: 3, qualification: 'MSW' },
+      { id: 4, qualification: 'Licensed Clinical Social Worker' }
+    ]
   }
 ];
 
-export const INITIAL_PENDING_USERS: PendingUser[] = [
+export const mockPatients = [
   {
-    id: '101',
-    username: 'newadmin',
-    email: 'new.admin@mentalhealthiq.com',
-    password: 'password123',
-    role: 'admin',
-    displayName: 'New Admin',
-    phoneNumber: '+1 (555) 123-4567',
-    status: 'pending',
-    requestDate: new Date('2023-09-15')
+    id: 'P-1001',
+    first_name: 'Michael',
+    last_name: 'Brown',
+    date_of_birth: '1985-08-12',
+    gender: 'M',
+    address: '123 Main St, City A',
+    phone: '+1122334455',
+    email: 'michael.brown@example.com',
+    national_id: 'ID12345678',
+    status: 'Active',
+    facility: 1,
+    facility_name: 'Northern Hospital 1',
+    registration_date: '2022-02-15',
+    emergency_contact_name: 'Emma Brown',
+    emergency_contact_phone: '+1567890123',
+    notes: 'Regular therapy sessions'
   },
   {
-    id: '102',
-    username: 'newevaluator',
-    email: 'new.evaluator@mentalhealthiq.com',
-    password: 'password123',
-    role: 'evaluator',
-    displayName: 'New Evaluator',
-    phoneNumber: '+1 (555) 987-6543',
-    status: 'pending',
-    requestDate: new Date('2023-09-16')
+    id: 'P-1002',
+    first_name: 'Sarah',
+    last_name: 'Davis',
+    date_of_birth: '1990-04-25',
+    gender: 'F',
+    address: '456 Oak Ave, City B',
+    phone: '+1213141516',
+    email: 'sarah.davis@example.com',
+    national_id: 'ID87654321',
+    status: 'Active',
+    facility: 2,
+    facility_name: 'Eastern Clinic 1',
+    registration_date: '2022-03-10',
+    emergency_contact_name: 'James Davis',
+    emergency_contact_phone: '+1617181920',
+    notes: 'Monthly check-ins'
   }
 ];
+
+export const getMockStaff = () => {
+  console.warn('Using mock staff data - consider using the staffService API instead');
+  return Promise.resolve(mockStaff);
+};
+
+export const getMockPatients = () => {
+  console.warn('Using mock patient data - consider using the patientService API instead');
+  return Promise.resolve(mockPatients);
+};

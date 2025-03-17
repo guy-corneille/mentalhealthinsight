@@ -1,93 +1,69 @@
 
 import React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter,
-  DialogDescription
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { StaffMemberDisplay } from '@/services/staffService';
-import { useStaffForm } from '../hooks/useStaffForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import StaffModalForm from './StaffModalForm';
+import { useStaffMember, useCreateStaffMember, useUpdateStaffMember, StaffMember } from '@/services/staffService';
 
 interface StaffModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  staffData: StaffMemberDisplay | null;
-  isEditing: boolean;
-  onSave: (staffData: Partial<StaffMemberDisplay>) => void;
+  staffId: string | null;
+  viewOnly?: boolean;
+  onClose: (success?: boolean, message?: string) => void;
 }
 
-const StaffModal: React.FC<StaffModalProps> = ({ 
-  open, 
-  onOpenChange, 
-  staffData, 
-  isEditing, 
-  onSave 
-}) => {
-  const {
-    formData,
-    newQualification,
-    setNewQualification,
-    facilities,
-    handleInputChange,
-    handleFacilityChange,
-    handleStatusChange,
-    addQualification,
-    removeQualification,
-    validateForm,
-    prepareDataForSubmission
-  } = useStaffForm(staffData, open);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
+const StaffModal: React.FC<StaffModalProps> = ({ staffId, viewOnly = false, onClose }) => {
+  const { data: staffMember, isLoading, isError, error } = useStaffMember(staffId || '');
+  const createStaffMutation = useCreateStaffMember();
+  const updateStaffMutation = useUpdateStaffMember(staffId || '');
+  
+  const isCreating = !staffId;
+  const title = isCreating ? 'Add Staff Member' : viewOnly ? 'Staff Member Details' : 'Edit Staff Member';
+  
+  const handleSubmit = async (data: Partial<StaffMember>) => {
+    try {
+      if (isCreating) {
+        await createStaffMutation.mutateAsync(data);
+        onClose(true, 'Staff member added successfully');
+      } else if (staffId) {
+        await updateStaffMutation.mutateAsync(data);
+        onClose(true, 'Staff member updated successfully');
+      }
+    } catch (error) {
+      console.error('Error saving staff member:', error);
+      onClose(false, `Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-    
-    // Prepare data for backend and save
-    const staffPayload = prepareDataForSubmission();
-    onSave(staffPayload);
   };
 
+  const isSubmitting = createStaffMutation.isPending || updateStaffMutation.isPending;
+
+  // Show loading or error states when fetching staff data
+  let content;
+  if (isLoading && !isCreating) {
+    content = <div className="py-10 text-center">Loading staff member data...</div>;
+  } else if (isError && !isCreating) {
+    content = (
+      <div className="py-10 text-center text-red-600">
+        Error loading staff data: {error instanceof Error ? error.message : 'Unknown error'}
+      </div>
+    );
+  } else {
+    content = (
+      <StaffModalForm
+        staffMember={staffMember || null}
+        viewOnly={viewOnly}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        onCancel={() => onClose()}
+      />
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>{isEditing ? 'Edit Staff Member' : 'Add New Staff Member'}</DialogTitle>
-            <DialogDescription>
-              {isEditing ? 'Update the details for this staff member.' : 'Fill in the details to add a new staff member.'}
-            </DialogDescription>
-          </DialogHeader>
-          
-          <StaffModalForm
-            formData={formData}
-            newQualification={newQualification}
-            setNewQualification={setNewQualification}
-            handleInputChange={handleInputChange}
-            handleFacilityChange={handleFacilityChange}
-            handleStatusChange={handleStatusChange}
-            addQualification={addQualification}
-            removeQualification={removeQualification}
-            facilities={facilities}
-          />
-          
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit">Save</Button>
-          </DialogFooter>
-        </form>
+    <Dialog open={true} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        {content}
       </DialogContent>
     </Dialog>
   );

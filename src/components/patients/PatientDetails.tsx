@@ -1,237 +1,356 @@
 
 import React from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { ClipboardCheckIcon, CalendarIcon, BuildingIcon, BarChart3Icon } from 'lucide-react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { useCreatePatient, useUpdatePatient, Patient } from '@/services/patientService';
+import { useFacilities } from '@/services/facilityService';
+
+// Define form schema with zod
+const patientSchema = z.object({
+  first_name: z.string().min(2, 'First name is required'),
+  last_name: z.string().min(2, 'Last name is required'),
+  date_of_birth: z.string().min(1, 'Date of birth is required'),
+  gender: z.string().min(1, 'Gender is required'),
+  address: z.string().min(1, 'Address is required'),
+  phone: z.string().optional(),
+  email: z.string().email('Invalid email format').optional().or(z.literal('')),
+  national_id: z.string().optional(),
+  status: z.string().min(1, 'Status is required'),
+  facility: z.number().int().positive('Facility is required'),
+  registration_date: z.string().min(1, 'Registration date is required'),
+  emergency_contact_name: z.string().optional(),
+  emergency_contact_phone: z.string().optional(),
+  notes: z.string().optional(),
+});
 
 interface PatientDetailsProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  patientId: string | null;
+  patient: Patient | null;
+  viewOnly?: boolean;
+  isOpen: boolean;
+  onClose: (success?: boolean, message?: string) => void;
 }
 
-const PatientDetails: React.FC<PatientDetailsProps> = ({ open, onOpenChange, patientId }) => {
-  // Mock patient data - In a real app, fetch this based on patientId
-  const patient = {
-    id: patientId || 'P-1001',
-    name: 'Anonymous Patient',
-    age: 28,
-    gender: 'Male',
-    diagnosis: 'Major Depressive Disorder',
-    facility: 'Central Hospital',
-    admissionDate: '2023-03-10',
-    status: 'Active',
-    treatingDoctor: 'Dr. Jean Mutabazi',
-    assessments: [
-      { date: '2023-03-10', score: 72, type: 'Initial Evaluation' },
-      { date: '2023-04-15', score: 78, type: 'Follow-up' },
-      { date: '2023-05-20', score: 85, type: 'Progress Check' },
-    ],
-    medications: [
-      { name: 'Sertraline', dosage: '50mg', frequency: 'Once daily' },
-      { name: 'Lorazepam', dosage: '1mg', frequency: 'As needed' },
-    ],
-    therapySessions: [
-      { date: '2023-03-15', type: 'CBT', notes: 'Initial session, established rapport' },
-      { date: '2023-03-22', type: 'CBT', notes: 'Discussed coping strategies' },
-      { date: '2023-04-05', type: 'Group Therapy', notes: 'Participated in group discussion' },
-      { date: '2023-04-19', type: 'CBT', notes: 'Reviewed progress on coping strategies' },
-    ]
+const PatientDetails: React.FC<PatientDetailsProps> = ({ patient, viewOnly = false, isOpen, onClose }) => {
+  const { data: facilities, isLoading: isLoadingFacilities } = useFacilities();
+  const createPatientMutation = useCreatePatient();
+  const updatePatientMutation = useUpdatePatient(patient?.id || '');
+  
+  const isCreating = !patient;
+  const title = isCreating ? 'Add Patient' : viewOnly ? 'Patient Details' : 'Edit Patient';
+  
+  const form = useForm<z.infer<typeof patientSchema>>({
+    resolver: zodResolver(patientSchema),
+    defaultValues: patient ? {
+      ...patient,
+      facility: Number(patient.facility), // Ensure facility is a number
+    } : {
+      first_name: '',
+      last_name: '',
+      date_of_birth: new Date().toISOString().split('T')[0],
+      gender: 'M',
+      address: '',
+      status: 'Active',
+      registration_date: new Date().toISOString().split('T')[0],
+      facility: undefined as unknown as number,
+    },
+  });
+
+  const onSubmit = async (data: z.infer<typeof patientSchema>) => {
+    try {
+      if (isCreating) {
+        await createPatientMutation.mutateAsync(data);
+        onClose(true, 'Patient added successfully');
+      } else if (patient) {
+        await updatePatientMutation.mutateAsync(data);
+        onClose(true, 'Patient updated successfully');
+      }
+    } catch (error) {
+      console.error('Error saving patient:', error);
+    }
   };
 
-  if (!patientId) return null;
+  const isSubmitting = createPatientMutation.isPending || updatePatientMutation.isPending;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto">
-        <SheetHeader className="pb-4">
-          <SheetTitle className="text-2xl">{patient.name}</SheetTitle>
-          <SheetDescription className="flex items-center gap-2">
-            ID: {patient.id} · {patient.age} years · {patient.gender}
-            <Badge className={
-              patient.status === 'Active' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-              'bg-amber-50 text-amber-600 hover:bg-amber-100'
-            }>
-              {patient.status}
-            </Badge>
-          </SheetDescription>
-        </SheetHeader>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
         
-        <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="assessments">Assessments</TabsTrigger>
-            <TabsTrigger value="treatments">Treatments</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="overview" className="space-y-4 mt-4">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
             <div className="grid grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-medium">Diagnosis</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p>{patient.diagnosis}</p>
-                </CardContent>
-              </Card>
+              <FormField
+                control={form.control}
+                name="first_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={viewOnly} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-medium">Treating Doctor</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p>{patient.treatingDoctor}</p>
-                </CardContent>
-              </Card>
+              <FormField
+                control={form.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={viewOnly} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
             
-            <Card>
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <BuildingIcon className="h-4 w-4" />
-                  Facility Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <p>Current Facility: {patient.facility}</p>
-                <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                  <CalendarIcon className="h-4 w-4" />
-                  Admission Date: {new Date(patient.admissionDate).toLocaleDateString()}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="date_of_birth"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date of Birth</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} disabled={viewOnly} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="gender"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gender</FormLabel>
+                    <Select
+                      disabled={viewOnly}
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="M">Male</SelectItem>
+                        <SelectItem value="F">Female</SelectItem>
+                        <SelectItem value="O">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             
-            <Card>
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3Icon className="h-4 w-4" />
-                  Progress Overview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-medium">Treatment Progress</span>
-                      <span className="text-sm font-medium">{patient.assessments[patient.assessments.length - 1].score}%</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2.5">
-                      <div 
-                        className="bg-healthiq-600 h-2.5 rounded-full" 
-                        style={{ width: `${patient.assessments[patient.assessments.length - 1].score}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm mt-2">
-                    Latest assessment on {new Date(patient.assessments[patient.assessments.length - 1].date).toLocaleDateString()}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="assessments" className="space-y-4 mt-4">
-            <Card>
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <ClipboardCheckIcon className="h-4 w-4" />
-                  Assessment History
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="space-y-3 divide-y">
-                  {patient.assessments.map((assessment, idx) => (
-                    <div key={idx} className={`${idx > 0 ? 'pt-3' : ''}`}>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium">{assessment.type}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(assessment.date).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Badge
-                          className={
-                            assessment.score >= 80 ? 'bg-emerald-50 text-emerald-600' :
-                            assessment.score >= 60 ? 'bg-amber-50 text-amber-600' :
-                            'bg-rose-50 text-rose-600'
-                          }
-                        >
-                          {assessment.score}%
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <Button variant="outline" className="w-full mt-4">
-                  <ClipboardCheckIcon className="h-4 w-4 mr-2" />
-                  Add New Assessment
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} disabled={viewOnly} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={viewOnly} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} disabled={viewOnly} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      disabled={viewOnly}
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Discharged">Discharged</SelectItem>
+                        <SelectItem value="Referred">Referred</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="facility"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Facility</FormLabel>
+                    <Select
+                      disabled={viewOnly || isLoadingFacilities}
+                      onValueChange={(value) => field.onChange(Number(value))}
+                      value={field.value?.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder={isLoadingFacilities ? "Loading..." : "Select facility"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {facilities?.map((facility) => (
+                          <SelectItem key={facility.id} value={facility.id.toString()}>
+                            {facility.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="registration_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Registration Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} disabled={viewOnly} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="national_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>National ID</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={viewOnly} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="emergency_contact_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Emergency Contact Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={viewOnly} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="emergency_contact_phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Emergency Contact Phone</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled={viewOnly} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} disabled={viewOnly} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onClose()}>
+                Cancel
+              </Button>
+              {!viewOnly && (
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving...' : isCreating ? 'Add Patient' : 'Update Patient'}
                 </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="treatments" className="space-y-4 mt-4">
-            <Card>
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-sm font-medium">Current Medications</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="space-y-2">
-                  {patient.medications.map((med, idx) => (
-                    <div key={idx} className="flex justify-between">
-                      <div>
-                        <p className="font-medium">{med.name}</p>
-                        <p className="text-sm text-muted-foreground">{med.dosage}</p>
-                      </div>
-                      <Badge variant="outline">{med.frequency}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-sm font-medium">Therapy Sessions</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="space-y-3 divide-y">
-                  {patient.therapySessions.map((session, idx) => (
-                    <div key={idx} className={`${idx > 0 ? 'pt-3' : ''}`}>
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-medium">{session.type}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {new Date(session.date).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-sm mt-1">{session.notes}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-        
-        <div className="flex justify-between mt-6">
-          <Button variant="outline">Edit Patient</Button>
-          <Button>Add New Record</Button>
-        </div>
-      </SheetContent>
-    </Sheet>
+              )}
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

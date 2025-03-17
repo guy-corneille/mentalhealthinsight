@@ -1,90 +1,71 @@
 
 import React from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { UserIcon, BuildingIcon } from 'lucide-react';
-import { Button } from "@/components/ui/button";
 import StaffActions from './StaffActions';
-import { useStaffListContext } from './StaffListContext';
+import { StaffMember } from '@/services/staffService';
 
-const StaffTable: React.FC = () => {
-  const { filteredStaff, searchQuery, facilityFilter, setSearchQuery, setFacilityFilter } = useStaffListContext();
+interface StaffTableProps {
+  staff: StaffMember[];
+  onEdit: (staffId: string) => void;
+  onView: (staffId: string) => void;
+}
 
+const StaffTable: React.FC<StaffTableProps> = ({ staff, onEdit, onView }) => {
   return (
-    <div className="bg-card rounded-lg border shadow-sm overflow-hidden animate-scale-in">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Position</TableHead>
+            <TableHead>Department</TableHead>
+            <TableHead>Facility</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Join Date</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {staff.length === 0 ? (
             <TableRow>
-              <TableHead className="w-[180px]">Name</TableHead>
-              <TableHead>Position</TableHead>
-              <TableHead>Department</TableHead>
-              <TableHead>Facility</TableHead>
-              <TableHead>Join Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableCell colSpan={8} className="h-24 text-center">
+                No staff members found.
+              </TableCell>
             </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredStaff.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  <div className="flex flex-col items-center justify-center text-muted-foreground">
-                    <UserIcon className="h-10 w-10 mb-2 opacity-20" />
-                    <p>No staff members found</p>
-                    {(searchQuery || facilityFilter !== 'all') && (
-                      <Button
-                        variant="link"
-                        onClick={() => {
-                          setSearchQuery('');
-                          setFacilityFilter('all');
-                        }}
-                        className="mt-2"
-                      >
-                        Clear filters
-                      </Button>
-                    )}
-                  </div>
+          ) : (
+            staff.map((staffMember) => (
+              <TableRow key={staffMember.id}>
+                <TableCell className="font-medium">{staffMember.name}</TableCell>
+                <TableCell>{staffMember.position}</TableCell>
+                <TableCell>{staffMember.department}</TableCell>
+                <TableCell>{staffMember.facility_name || `Facility ${staffMember.facility}`}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      staffMember.status === "Active" ? "default" :
+                      staffMember.status === "On Leave" ? "secondary" : 
+                      "outline"
+                    }
+                  >
+                    {staffMember.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>{staffMember.email}</TableCell>
+                <TableCell>{new Date(staffMember.join_date).toLocaleDateString()}</TableCell>
+                <TableCell className="text-right">
+                  <StaffActions 
+                    staff={staffMember} 
+                    onEdit={onEdit} 
+                    onView={onView} 
+                  />
                 </TableCell>
               </TableRow>
-            ) : (
-              filteredStaff.map((member) => (
-                <TableRow key={member.id}>
-                  <TableCell className="font-medium">{member.name}</TableCell>
-                  <TableCell>{member.position}</TableCell>
-                  <TableCell>{member.department}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center">
-                      <BuildingIcon className="h-4 w-4 mr-1 text-muted-foreground" />
-                      {member.facilityName}
-                    </div>
-                  </TableCell>
-                  <TableCell>{new Date(member.joinDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge className={
-                      member.status === 'Active' ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-                      member.status === 'On Leave' ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
-                      'bg-rose-50 text-rose-600 hover:bg-rose-100'
-                    }>
-                      {member.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <StaffActions staff={member} />
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 };

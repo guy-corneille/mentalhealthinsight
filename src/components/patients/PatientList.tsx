@@ -1,239 +1,170 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from "@/hooks/use-toast";
-import { Spinner } from "@/components/ui/spinner";
+import React, { useState } from 'react';
+import { usePatients, Patient, useDeletePatient } from '@/services/patientService';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { 
-  PlusIcon, 
-  SearchIcon, 
-  FilterIcon, 
-  UserIcon,
-  EditIcon,
-  Trash2Icon,
-  XIcon,
-  CheckIcon
-} from 'lucide-react';
-import { usePatients, useDeletePatient, Patient } from '@/services/patientService';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, PlusIcon, Edit, Trash, Eye } from "lucide-react";
+import { toast } from "sonner";
+import PatientDetails from './PatientDetails';
 
-const PatientList: React.FC = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  // State for search and filtering
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  
-  // Fetch patients using React Query
-  const { data: patients, isLoading, error } = usePatients();
-  
-  // Delete patient mutation
+interface PatientListProps {
+  facilityId?: number;
+}
+
+const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
+  const { data: patients, isLoading, isError, error } = usePatients();
   const deletePatientMutation = useDeletePatient();
-  
-  // Filter patients when data changes
-  useEffect(() => {
-    if (!patients) return;
-    
-    let results = [...patients];
-    
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      results = results.filter(patient => 
-        patient.status.toLowerCase() === statusFilter.toLowerCase()
-      );
-    }
-    
-    // Apply search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      results = results.filter(patient => 
-        patient.patient_id.toLowerCase().includes(query) ||
-        patient.diagnosis.toLowerCase().includes(query)
-      );
-    }
-    
-    setFilteredPatients(results);
-  }, [patients, searchQuery, statusFilter]);
-  
-  // Handler for deleting a patient
-  const handleDelete = (id: number, patientId: string) => {
-    if (window.confirm(`Are you sure you want to delete patient ${patientId}?`)) {
-      deletePatientMutation.mutate(id, {
-        onSuccess: () => {
-          toast({
-            title: "Patient Deleted",
-            description: `Patient ${patientId} has been removed.`,
-          });
-        },
-        onError: (error) => {
-          toast({
-            title: "Error",
-            description: `Failed to delete patient. Please try again.`,
-            variant: "destructive",
-          });
-          console.error("Delete error:", error);
-        }
-      });
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [isViewOnly, setIsViewOnly] = useState(false);
+
+  const handleAddPatient = () => {
+    setSelectedPatient(null);
+    setIsViewOnly(false);
+    setIsDetailsOpen(true);
+  };
+
+  const handleEditPatient = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setIsViewOnly(false);
+    setIsDetailsOpen(true);
+  };
+
+  const handleViewPatient = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setIsViewOnly(true);
+    setIsDetailsOpen(true);
+  };
+
+  const handleDeletePatient = async (patient: Patient) => {
+    if (confirm(`Are you sure you want to delete patient ${patient.first_name} ${patient.last_name}?`)) {
+      try {
+        await deletePatientMutation.mutateAsync(patient.id);
+        toast.success(`Patient deleted successfully`);
+      } catch (error) {
+        console.error('Error deleting patient:', error);
+        toast.error(`Failed to delete patient: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   };
-  
-  // Handle status badge styling
-  const getStatusBadgeStyle = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200';
-      case 'discharged':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
-      case 'transferred':
-        return 'bg-amber-100 text-amber-800 hover:bg-amber-200';
-      default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
+
+  const handleCloseDetails = (success?: boolean, message?: string) => {
+    setIsDetailsOpen(false);
+    if (success && message) {
+      toast.success(message);
     }
   };
-  
-  // Show loading state
+
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-12">
-        <Spinner size="lg" />
-        <p className="ml-2 text-muted-foreground">Loading patients...</p>
+    return <div className="flex justify-center p-8">
+      <div className="flex items-center gap-2">
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-healthiq-600 border-t-transparent"></div>
+        <p>Loading patients...</p>
       </div>
-    );
+    </div>;
   }
-  
-  // Show error state
-  if (error) {
-    return (
-      <div className="py-12 text-center">
-        <p className="text-rose-500 mb-2">Error loading patients</p>
-        <p className="text-muted-foreground">{(error as Error).message || 'Unknown error occurred'}</p>
-      </div>
-    );
+
+  if (isError) {
+    return <div className="bg-red-50 p-4 rounded-md text-red-800">
+      <p>Error loading patients: {error instanceof Error ? error.message : 'Unknown error'}</p>
+    </div>;
   }
-  
+
+  // Filter patients by facility if facilityId is provided
+  const filteredPatients = facilityId 
+    ? (patients || []).filter(patient => patient.facility === facilityId)
+    : (patients || []);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex flex-1 items-center gap-2">
-          <div className="relative flex-1">
-            <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search patients..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-          </div>
-          
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="discharged">Discharged</SelectItem>
-              <SelectItem value="transferred">Transferred</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <Button 
-          onClick={() => navigate('/patients/add')}
-          className="bg-healthiq-600 hover:bg-healthiq-700"
-        >
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold">Patients</h2>
+        <Button onClick={handleAddPatient} className="bg-healthiq-600 hover:bg-healthiq-700">
           <PlusIcon className="h-4 w-4 mr-2" />
           Add Patient
         </Button>
       </div>
-      
+
       {filteredPatients.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center">
-            <UserIcon className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-            <h3 className="mt-4 text-lg font-semibold">No patients found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {searchQuery || statusFilter !== 'all' 
-                ? 'Try adjusting your search or filter criteria.'
-                : 'Get started by adding a new patient.'}
-            </p>
-            {(searchQuery || statusFilter !== 'all') && (
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('all');
-                }}
-                className="mt-4"
-              >
-                Clear Filters
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <div className="text-center p-8 border rounded-md bg-gray-50">
+          <p className="text-gray-500">No patients found</p>
+        </div>
       ) : (
-        <Card>
+        <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Patient ID</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Diagnosis</TableHead>
-                <TableHead>Facility</TableHead>
-                <TableHead>Admission Date</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>ID</TableHead>
+                <TableHead>Gender</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Facility</TableHead>
+                <TableHead>Registration Date</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPatients.map(patient => (
+              {filteredPatients.map((patient) => (
                 <TableRow key={patient.id}>
-                  <TableCell className="font-medium">{patient.patient_id}</TableCell>
-                  <TableCell>{patient.age}</TableCell>
-                  <TableCell>{patient.diagnosis}</TableCell>
-                  <TableCell>{patient.facility_name}</TableCell>
-                  <TableCell>{new Date(patient.admission_date).toLocaleDateString()}</TableCell>
+                  <TableCell className="font-medium">{`${patient.first_name} ${patient.last_name}`}</TableCell>
+                  <TableCell>{patient.id}</TableCell>
+                  <TableCell>{patient.gender}</TableCell>
                   <TableCell>
-                    <Badge className={getStatusBadgeStyle(patient.status)}>
+                    <Badge variant={
+                      patient.status === 'Active' ? 'default' :
+                      patient.status === 'Discharged' ? 'secondary' :
+                      'outline'
+                    }>
                       {patient.status}
                     </Badge>
                   </TableCell>
+                  <TableCell>{patient.facility_name || `Facility ${patient.facility}`}</TableCell>
+                  <TableCell>{new Date(patient.registration_date).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => navigate(`/patients/edit/${patient.id}`)}
-                      >
-                        <EditIcon className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={() => handleDelete(patient.id, patient.patient_id)}
-                      >
-                        <Trash2Icon className="h-4 w-4 text-rose-500" />
-                      </Button>
-                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleViewPatient(patient)}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditPatient(patient)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDeletePatient(patient)} 
+                          disabled={deletePatientMutation.isPending}
+                          className="text-red-600"
+                        >
+                          <Trash className="mr-2 h-4 w-4" />
+                          {deletePatientMutation.isPending ? 'Deleting...' : 'Delete'}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </Card>
+        </div>
+      )}
+
+      {isDetailsOpen && (
+        <PatientDetails
+          patient={selectedPatient}
+          viewOnly={isViewOnly}
+          onClose={handleCloseDetails}
+          isOpen={isDetailsOpen}
+        />
       )}
     </div>
   );

@@ -2,79 +2,28 @@
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-// Define types for staff data
+// Define types for the staff data
+export interface StaffQualification {
+  id?: number;
+  qualification: string;
+  staff?: string;
+}
+
 export interface StaffMember {
-  id: number;
+  id: string;
   name: string;
   position: string;
   department: string;
-  facility: number; // Foreign key to facility
-  facility_name?: string; // Added for frontend display
+  facility: number;
+  facility_name?: string;
   join_date: string;
-  status: 'Active' | 'On Leave' | 'Former';
-  qualifications?: string[];
-  contact_email?: string;
-  contact_phone?: string;
+  status: string;
+  email: string;
+  phone: string;
+  qualifications?: StaffQualification[];
   created_at?: string;
   updated_at?: string;
 }
-
-// Interface for frontend display with additional properties
-export interface StaffMemberDisplay extends StaffMember {
-  facilityId: number;
-  facilityName: string;
-  joinDate: string;
-  contact: {
-    email: string;
-    phone: string;
-  };
-}
-
-// Define API response for paginated data
-interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
-
-// Transform API staff data to frontend format
-const transformStaffMember = (staff: StaffMember): StaffMemberDisplay => {
-  return {
-    ...staff,
-    // Map backend fields to frontend fields
-    facilityId: staff.facility,
-    facilityName: staff.facility_name || 'Unknown Facility',
-    joinDate: staff.join_date,
-    // Structure contact information
-    contact: {
-      email: staff.contact_email || '',
-      phone: staff.contact_phone || '',
-    },
-    // Ensure qualifications is always an array
-    qualifications: staff.qualifications || [],
-  };
-};
-
-// Transform frontend data to API format
-const transformToApiFormat = (staffData: Partial<StaffMemberDisplay>): Partial<StaffMember> => {
-  const apiData: Partial<StaffMember> = {
-    ...staffData,
-    // Map frontend fields to backend fields
-    facility: staffData.facilityId || staffData.facility,
-    join_date: staffData.joinDate || staffData.join_date,
-    contact_email: staffData.contact?.email || staffData.contact_email,
-    contact_phone: staffData.contact?.phone || staffData.contact_phone,
-  };
-  
-  // Remove frontend-specific properties
-  delete (apiData as any).facilityId;
-  delete (apiData as any).facilityName;
-  delete (apiData as any).joinDate;
-  delete (apiData as any).contact;
-  
-  return apiData;
-};
 
 /**
  * Staff Service
@@ -85,75 +34,149 @@ const staffService = {
    * Get all staff members
    * @returns Promise with staff data
    */
-  getAllStaff: async (): Promise<StaffMemberDisplay[]> => {
+  getAllStaff: async (): Promise<StaffMember[]> => {
     console.log('Fetching all staff from API');
-    const response = await api.get<PaginatedResponse<StaffMember>>('/staff/');
-    
-    return Array.isArray(response.results) 
-      ? response.results.map(transformStaffMember)
-      : [];
+    try {
+      const response = await api.get<any>('/staff/');
+      
+      console.log('API response for staff:', response);
+      
+      if (response && Array.isArray(response.results)) {
+        return response.results;
+      } else if (Array.isArray(response)) {
+        return response;
+      }
+      
+      console.warn('Invalid API response for staff:', response);
+      return [];
+    } catch (error) {
+      console.error('Error fetching staff:', error);
+      throw error;
+    }
   },
-  
+
   /**
-   * Get staff members for a specific facility
-   * @param facilityId The facility ID
-   * @returns Promise with staff data
+   * Get staff members by facility
+   * @param facilityId Facility ID
+   * @returns Promise with staff data for a specific facility
    */
-  getStaffByFacility: async (facilityId: number): Promise<StaffMemberDisplay[]> => {
-    console.log(`Fetching staff for facility ID ${facilityId} from API`);
-    const response = await api.get<PaginatedResponse<StaffMember>>(`/staff/?facility=${facilityId}`);
-    
-    return Array.isArray(response.results) 
-      ? response.results.map(transformStaffMember)
-      : [];
+  getStaffByFacility: async (facilityId: number): Promise<StaffMember[]> => {
+    console.log(`Fetching staff for facility ${facilityId} from API`);
+    try {
+      const response = await api.get<any>(`/facilities/${facilityId}/staff/`);
+      
+      console.log(`API response for facility ${facilityId} staff:`, response);
+      
+      if (Array.isArray(response)) {
+        return response;
+      } else if (response && Array.isArray(response.results)) {
+        return response.results;
+      }
+      
+      console.warn(`Invalid API response for facility ${facilityId} staff:`, response);
+      return [];
+    } catch (error) {
+      console.error(`Error fetching staff for facility ${facilityId}:`, error);
+      throw error;
+    }
   },
 
   /**
    * Get a single staff member by ID
    * @param id Staff ID
-   * @returns Promise with staff data
+   * @returns Promise with staff member data
    */
-  getStaffById: async (id: number): Promise<StaffMemberDisplay> => {
-    console.log(`Fetching staff with ID ${id} from API`);
-    const response = await api.get<StaffMember>(`/staff/${id}/`);
-    
-    return transformStaffMember(response);
+  getStaffById: async (id: string): Promise<StaffMember> => {
+    console.log(`Fetching staff member with ID ${id} from API`);
+    try {
+      const response = await api.get<StaffMember>(`/staff/${id}/`);
+      
+      console.log(`API response for staff ${id}:`, response);
+      
+      return response;
+    } catch (error) {
+      console.error(`Error fetching staff ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
    * Create a new staff member
    * @param staffData Staff data to create
-   * @returns Promise with created staff
+   * @returns Promise with created staff member
    */
-  createStaff: async (staffData: Partial<StaffMemberDisplay>): Promise<StaffMemberDisplay> => {
-    console.log('Creating new staff via API', staffData);
-    const apiData = transformToApiFormat(staffData);
-    const response = await api.post<StaffMember>('/staff/', apiData);
-    
-    return transformStaffMember(response);
+  createStaffMember: async (staffData: Partial<StaffMember>): Promise<StaffMember> => {
+    console.log('Creating new staff member via API', staffData);
+    try {
+      const response = await api.post<StaffMember>('/staff/', staffData);
+      
+      console.log('API response for create staff:', response);
+      
+      return response;
+    } catch (error) {
+      console.error('Error creating staff member:', error);
+      throw error;
+    }
   },
 
   /**
    * Update an existing staff member
    * @param id Staff ID
    * @param staffData Updated staff data
-   * @returns Promise with updated staff
+   * @returns Promise with updated staff member
    */
-  updateStaff: async (id: number, staffData: Partial<StaffMemberDisplay>): Promise<StaffMemberDisplay> => {
-    console.log(`Updating staff with ID ${id} via API`, staffData);
-    const apiData = transformToApiFormat(staffData);
-    const response = await api.put<StaffMember>(`/staff/${id}/`, apiData);
-    
-    return transformStaffMember(response);
+  updateStaffMember: async (id: string, staffData: Partial<StaffMember>): Promise<StaffMember> => {
+    console.log(`Updating staff member with ID ${id} via API`, staffData);
+    try {
+      const response = await api.put<StaffMember>(`/staff/${id}/`, staffData);
+      
+      console.log(`API response for update staff ${id}:`, response);
+      
+      return response;
+    } catch (error) {
+      console.error(`Error updating staff ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
    * Delete a staff member
    * @param id Staff ID to delete
+   * @returns Promise with success message
    */
-  deleteStaff: async (id: number): Promise<void> => {
-    console.log(`Deleting staff with ID ${id} via API`);
-    await api.delete(`/staff/${id}/`);
+  deleteStaffMember: async (id: string): Promise<void> => {
+    console.log(`Deleting staff member with ID ${id} via API`);
+    try {
+      await api.delete(`/staff/${id}/`);
+      console.log(`Successfully deleted staff ${id}`);
+    } catch (error) {
+      console.error(`Error deleting staff ${id}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get qualifications for a staff member
+   * @param id Staff ID
+   * @returns Promise with qualifications data
+   */
+  getStaffQualifications: async (id: string): Promise<StaffQualification[]> => {
+    console.log(`Fetching qualifications for staff member ${id} from API`);
+    try {
+      const response = await api.get<StaffQualification[]>(`/staff/${id}/qualifications/`);
+      
+      console.log(`API response for staff ${id} qualifications:`, response);
+      
+      if (Array.isArray(response)) {
+        return response;
+      }
+      
+      console.warn(`Invalid API response for staff ${id} qualifications:`, response);
+      return [];
+    } catch (error) {
+      console.error(`Error fetching qualifications for staff ${id}:`, error);
+      throw error;
+    }
   },
 };
 
@@ -165,7 +188,7 @@ const staffService = {
 export const useStaff = () => {
   return useQuery({
     queryKey: ['staff'],
-    queryFn: staffService.getAllStaff
+    queryFn: staffService.getAllStaff,
   });
 };
 
@@ -179,7 +202,7 @@ export const useStaffByFacility = (facilityId: number) => {
 };
 
 // Hook for fetching a single staff member
-export const useStaffMember = (id: number) => {
+export const useStaffMember = (id: string) => {
   return useQuery({
     queryKey: ['staff', id],
     queryFn: () => staffService.getStaffById(id),
@@ -188,26 +211,26 @@ export const useStaffMember = (id: number) => {
 };
 
 // Hook for creating a staff member
-export const useCreateStaff = () => {
+export const useCreateStaffMember = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (staffData: Partial<StaffMemberDisplay>) => 
-      staffService.createStaff(staffData),
+    mutationFn: (staffData: Partial<StaffMember>) => 
+      staffService.createStaffMember(staffData),
     onSuccess: () => {
-      // Invalidate staff queries to refetch the list
+      // Invalidate staff query to refetch the list
       queryClient.invalidateQueries({ queryKey: ['staff'] });
     },
   });
 };
 
 // Hook for updating a staff member
-export const useUpdateStaff = (id: number) => {
+export const useUpdateStaffMember = (id: string) => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (staffData: Partial<StaffMemberDisplay>) => 
-      staffService.updateStaff(id, staffData),
+    mutationFn: (staffData: Partial<StaffMember>) => 
+      staffService.updateStaffMember(id, staffData),
     onSuccess: () => {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['staff'] });
@@ -217,13 +240,13 @@ export const useUpdateStaff = (id: number) => {
 };
 
 // Hook for deleting a staff member
-export const useDeleteStaff = () => {
+export const useDeleteStaffMember = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id: number) => staffService.deleteStaff(id),
+    mutationFn: (id: string) => staffService.deleteStaffMember(id),
     onSuccess: () => {
-      // Invalidate staff queries to refetch the list
+      // Invalidate staff query to refetch the list
       queryClient.invalidateQueries({ queryKey: ['staff'] });
     },
   });

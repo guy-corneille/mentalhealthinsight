@@ -2,19 +2,24 @@
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-// Define types for patient data
+// Define types for the patient data
 export interface Patient {
-  id: number;
-  patient_id: string; // The display ID (P-XXXX format)
+  id: string;
   first_name: string;
   last_name: string;
-  age: number;
-  gender: 'M' | 'F' | 'O';
-  diagnosis: string;
-  facility: number; // Foreign key to facility
-  facility_name?: string; // Added for frontend display
-  admission_date: string;
-  status: 'Active' | 'Discharged' | 'Transferred' | 'Inactive';
+  date_of_birth: string;
+  gender: string;
+  address: string;
+  phone?: string;
+  email?: string;
+  national_id?: string;
+  status: string;
+  facility: number;
+  facility_name?: string;
+  registration_date: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  notes?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -27,24 +32,6 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
-// Transform API patient data to frontend format
-const transformPatient = (patient: any): Patient => {
-  // Calculate age from date_of_birth
-  const birthDate = patient.date_of_birth ? new Date(patient.date_of_birth) : null;
-  const today = new Date();
-  const age = birthDate 
-    ? Math.floor((today.getTime() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000)) 
-    : 0;
-    
-  return {
-    ...patient,
-    age,
-    patient_id: patient.id || '', // Use the ID from backend as patient_id
-    diagnosis: patient.notes || 'Not specified', // Use notes as diagnosis temporarily
-    admission_date: patient.registration_date || new Date().toISOString().split('T')[0],
-  };
-};
-
 /**
  * Patient Service
  * Handles all API operations related to patients
@@ -56,25 +43,49 @@ const patientService = {
    */
   getAllPatients: async (): Promise<Patient[]> => {
     console.log('Fetching all patients from API');
-    const response = await api.get<PaginatedResponse<any>>('/patients/');
-    
-    return Array.isArray(response.results) 
-      ? response.results.map(transformPatient)
-      : [];
+    try {
+      const response = await api.get<PaginatedResponse<Patient>>('/patients/');
+      
+      console.log('API response for patients:', response);
+      
+      if (response && Array.isArray(response.results)) {
+        return response.results;
+      } else if (Array.isArray(response)) {
+        return response;
+      }
+      
+      console.warn('Invalid API response for patients:', response);
+      return [];
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+      throw error;
+    }
   },
-  
+
   /**
-   * Get patients for a specific facility
-   * @param facilityId The facility ID
-   * @returns Promise with patient data
+   * Get patients by facility
+   * @param facilityId Facility ID
+   * @returns Promise with patients data for a specific facility
    */
   getPatientsByFacility: async (facilityId: number): Promise<Patient[]> => {
-    console.log(`Fetching patients for facility ID ${facilityId} from API`);
-    const response = await api.get<PaginatedResponse<any>>(`/patients/?facility=${facilityId}`);
-    
-    return Array.isArray(response.results) 
-      ? response.results.map(transformPatient)
-      : [];
+    console.log(`Fetching patients for facility ${facilityId} from API`);
+    try {
+      const response = await api.get<Patient[]>(`/facilities/${facilityId}/patients/`);
+      
+      console.log(`API response for facility ${facilityId} patients:`, response);
+      
+      if (Array.isArray(response)) {
+        return response;
+      } else if (response && Array.isArray(response.results)) {
+        return response.results;
+      }
+      
+      console.warn(`Invalid API response for facility ${facilityId} patients:`, response);
+      return [];
+    } catch (error) {
+      console.error(`Error fetching patients for facility ${facilityId}:`, error);
+      throw error;
+    }
   },
 
   /**
@@ -82,11 +93,18 @@ const patientService = {
    * @param id Patient ID
    * @returns Promise with patient data
    */
-  getPatientById: async (id: number): Promise<Patient> => {
+  getPatientById: async (id: string): Promise<Patient> => {
     console.log(`Fetching patient with ID ${id} from API`);
-    const response = await api.get<any>(`/patients/${id}/`);
-    
-    return transformPatient(response);
+    try {
+      const response = await api.get<Patient>(`/patients/${id}/`);
+      
+      console.log(`API response for patient ${id}:`, response);
+      
+      return response;
+    } catch (error) {
+      console.error(`Error fetching patient ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
@@ -96,25 +114,16 @@ const patientService = {
    */
   createPatient: async (patientData: Partial<Patient>): Promise<Patient> => {
     console.log('Creating new patient via API', patientData);
-    
-    // Transform frontend data to backend format
-    const backendData = {
-      first_name: patientData.first_name,
-      last_name: patientData.last_name,
-      date_of_birth: new Date(Date.now() - (patientData.age || 30) * 365.25 * 24 * 60 * 60 * 1000)
-        .toISOString().split('T')[0], // Calculate approx birth date from age
-      gender: patientData.gender,
-      facility: patientData.facility,
-      status: patientData.status,
-      registration_date: patientData.admission_date,
-      notes: patientData.diagnosis,
-      address: '', // Required field
-      phone: '',   // Required field
-    };
-    
-    const response = await api.post<any>('/patients/', backendData);
-    
-    return transformPatient(response);
+    try {
+      const response = await api.post<Patient>('/patients/', patientData);
+      
+      console.log('API response for create patient:', response);
+      
+      return response;
+    } catch (error) {
+      console.error('Error creating patient:', error);
+      throw error;
+    }
   },
 
   /**
@@ -123,35 +132,34 @@ const patientService = {
    * @param patientData Updated patient data
    * @returns Promise with updated patient
    */
-  updatePatient: async (id: number, patientData: Partial<Patient>): Promise<Patient> => {
+  updatePatient: async (id: string, patientData: Partial<Patient>): Promise<Patient> => {
     console.log(`Updating patient with ID ${id} via API`, patientData);
-    
-    // Get current patient data to avoid overwriting fields
-    const currentPatient = await patientService.getPatientById(id);
-    
-    // Transform frontend data to backend format
-    const backendData = {
-      first_name: patientData.first_name || currentPatient.first_name,
-      last_name: patientData.last_name || currentPatient.last_name,
-      gender: patientData.gender || currentPatient.gender,
-      facility: patientData.facility || currentPatient.facility,
-      status: patientData.status || currentPatient.status,
-      registration_date: patientData.admission_date || currentPatient.admission_date,
-      notes: patientData.diagnosis || currentPatient.diagnosis,
-    };
-    
-    const response = await api.patch<any>(`/patients/${id}/`, backendData);
-    
-    return transformPatient(response);
+    try {
+      const response = await api.put<Patient>(`/patients/${id}/`, patientData);
+      
+      console.log(`API response for update patient ${id}:`, response);
+      
+      return response;
+    } catch (error) {
+      console.error(`Error updating patient ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
    * Delete a patient
    * @param id Patient ID to delete
+   * @returns Promise with success message
    */
-  deletePatient: async (id: number): Promise<void> => {
+  deletePatient: async (id: string): Promise<void> => {
     console.log(`Deleting patient with ID ${id} via API`);
-    await api.delete(`/patients/${id}/`);
+    try {
+      await api.delete(`/patients/${id}/`);
+      console.log(`Successfully deleted patient ${id}`);
+    } catch (error) {
+      console.error(`Error deleting patient ${id}:`, error);
+      throw error;
+    }
   },
 };
 
@@ -163,7 +171,7 @@ const patientService = {
 export const usePatients = () => {
   return useQuery({
     queryKey: ['patients'],
-    queryFn: patientService.getAllPatients
+    queryFn: patientService.getAllPatients,
   });
 };
 
@@ -177,7 +185,7 @@ export const usePatientsByFacility = (facilityId: number) => {
 };
 
 // Hook for fetching a single patient
-export const usePatient = (id: number) => {
+export const usePatient = (id: string) => {
   return useQuery({
     queryKey: ['patient', id],
     queryFn: () => patientService.getPatientById(id),
@@ -193,14 +201,14 @@ export const useCreatePatient = () => {
     mutationFn: (patientData: Partial<Patient>) => 
       patientService.createPatient(patientData),
     onSuccess: () => {
-      // Invalidate patients queries to refetch the list
+      // Invalidate patients query to refetch the list
       queryClient.invalidateQueries({ queryKey: ['patients'] });
     },
   });
 };
 
 // Hook for updating a patient
-export const useUpdatePatient = (id: number) => {
+export const useUpdatePatient = (id: string) => {
   const queryClient = useQueryClient();
   
   return useMutation({
@@ -219,9 +227,9 @@ export const useDeletePatient = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id: number) => patientService.deletePatient(id),
+    mutationFn: (id: string) => patientService.deletePatient(id),
     onSuccess: () => {
-      // Invalidate patients queries to refetch the list
+      // Invalidate patients query to refetch the list
       queryClient.invalidateQueries({ queryKey: ['patients'] });
     },
   });

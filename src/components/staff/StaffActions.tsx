@@ -1,113 +1,56 @@
 
 import React from 'react';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { 
-  MoreHorizontalIcon,
-  UserXIcon,
-  UserCheckIcon,
-  PencilIcon 
-} from "lucide-react";
-import { StaffMemberDisplay, useDeleteStaff, useUpdateStaff } from '@/services/staffService';
-import { useToast } from "@/hooks/use-toast";
-import { useStaffListContext } from './StaffListContext';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Edit, Trash, EyeIcon } from "lucide-react";
+import { useDeleteStaffMember } from "@/services/staffService";
+import { toast } from "sonner";
 
 interface StaffActionsProps {
-  staff: StaffMemberDisplay;
+  staff: {
+    id: string;
+    name: string;
+  };
+  onEdit: (staffId: string) => void;
+  onView: (staffId: string) => void;
 }
 
-const StaffActions: React.FC<StaffActionsProps> = ({ staff }) => {
-  const { toast } = useToast();
-  const { setCurrentStaff, setIsEditing, setModalOpen } = useStaffListContext();
-  
-  // Mutation for deleting a staff member
-  const deleteStaffMutation = useDeleteStaff();
+const StaffActions: React.FC<StaffActionsProps> = ({ staff, onEdit, onView }) => {
+  const deleteStaffMutation = useDeleteStaffMember();
 
-  const handleEditStaff = () => {
-    setCurrentStaff(staff);
-    setIsEditing(true);
-    setModalOpen(true);
-  };
-
-  const handleDeleteStaff = () => {
-    if (window.confirm('Are you sure you want to remove this staff member?')) {
-      deleteStaffMutation.mutate(staff.id, {
-        onSuccess: () => {
-          toast({
-            title: "Staff Removed",
-            description: "The staff member has been removed successfully.",
-          });
-        },
-        onError: (error) => {
-          toast({
-            title: "Error",
-            description: `Failed to delete staff member: ${(error as Error).message}`,
-            variant: "destructive",
-          });
-        }
-      });
-    }
-  };
-  
-  const handleToggleStatus = () => {
-    const newStatus = staff.status === 'Active' ? 'On Leave' : 'Active';
-    
-    // Create a new update mutation for this staff member
-    const updateStaffMutation = useUpdateStaff(staff.id);
-    
-    // Update the staff member's status
-    updateStaffMutation.mutate(
-      { status: newStatus },
-      {
-        onSuccess: () => {
-          toast({
-            title: "Status Updated",
-            description: `Staff status changed to ${newStatus}`,
-          });
-        },
-        onError: (error) => {
-          toast({
-            title: "Error", 
-            description: `Failed to update status: ${(error as Error).message}`,
-            variant: "destructive",
-          });
-        }
+  const handleDelete = async () => {
+    if (confirm(`Are you sure you want to delete ${staff.name}?`)) {
+      try {
+        await deleteStaffMutation.mutateAsync(staff.id);
+        toast.success(`Staff member ${staff.name} deleted successfully`);
+      } catch (error) {
+        console.error("Error deleting staff:", error);
+        toast.error(`Failed to delete staff member: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-    );
+    }
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <MoreHorizontalIcon className="h-4 w-4" />
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuLabel>Staff Actions</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleEditStaff}>
-          <PencilIcon className="h-4 w-4 mr-2" />
-          Edit Details
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => onView(staff.id)}>
+          <EyeIcon className="mr-2 h-4 w-4" />
+          View
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleToggleStatus}>
-          <UserCheckIcon className="h-4 w-4 mr-2" />
-          Toggle Status
+        <DropdownMenuItem onClick={() => onEdit(staff.id)}>
+          <Edit className="mr-2 h-4 w-4" />
+          Edit
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={handleDeleteStaff}
-          className="text-rose-600"
-        >
-          <UserXIcon className="h-4 w-4 mr-2" />
-          Remove
+        <DropdownMenuItem onClick={handleDelete} disabled={deleteStaffMutation.isPending} className="text-red-600">
+          <Trash className="mr-2 h-4 w-4" />
+          {deleteStaffMutation.isPending ? 'Deleting...' : 'Delete'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

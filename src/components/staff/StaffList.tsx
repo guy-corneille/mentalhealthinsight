@@ -1,98 +1,78 @@
 
-import React from 'react';
-import { StaffMemberDisplay, useCreateStaff, useUpdateStaff } from '@/services/staffService';
-import { useToast } from "@/hooks/use-toast";
-import StaffModal from './modals/StaffModal';
-import { StaffListProvider, useStaffListContext } from './StaffListContext';
-import StaffFilters from './StaffFilters';
+import React, { useState } from 'react';
+import { useStaff } from '@/services/staffService';
 import StaffTable from './StaffTable';
+import StaffModal from './modals/StaffModal';
 import LoadingState from './LoadingState';
 import ErrorState from './ErrorState';
+import { Button } from '@/components/ui/button';
+import { PlusIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
-interface StaffListProps {
-  showFacilityFilter?: boolean;
-  facilityId?: number;
-}
+const StaffList: React.FC = () => {
+  const { data: staff, isLoading, isError, error } = useStaff();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+  const [viewOnly, setViewOnly] = useState(false);
 
-const StaffListContent: React.FC = () => {
-  const { toast } = useToast();
-  const { isLoading, error, currentStaff, isEditing, modalOpen, setModalOpen } = useStaffListContext();
-  
-  // Mutation for creating a staff member
-  const createStaffMutation = useCreateStaff();
+  if (isLoading) {
+    return <LoadingState message="Loading staff members..." />;
+  }
 
-  const handleSaveStaff = (staffData: Partial<StaffMemberDisplay>) => {
-    if (isEditing && currentStaff) {
-      // Update existing staff
-      const updateStaffMutation = useUpdateStaff(currentStaff.id);
-      updateStaffMutation.mutate(staffData, {
-        onSuccess: () => {
-          setModalOpen(false);
-          toast({
-            title: "Staff Updated",
-            description: "Staff information has been updated successfully."
-          });
-        },
-        onError: (error) => {
-          toast({
-            title: "Error",
-            description: `Failed to update staff: ${(error as Error).message}`,
-            variant: "destructive"
-          });
-        }
-      });
-    } else {
-      // Create new staff
-      createStaffMutation.mutate(staffData, {
-        onSuccess: () => {
-          setModalOpen(false);
-          toast({
-            title: "Staff Added",
-            description: "New staff member has been added successfully."
-          });
-        },
-        onError: (error) => {
-          toast({
-            title: "Error",
-            description: `Failed to add staff: ${(error as Error).message}`,
-            variant: "destructive"
-          });
-        }
-      });
+  if (isError) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return <ErrorState message={`Failed to load staff members: ${errorMessage}`} />;
+  }
+
+  const handleAddStaff = () => {
+    setSelectedStaffId(null);
+    setViewOnly(false);
+    setIsModalOpen(true);
+  };
+
+  const handleEditStaff = (staffId: string) => {
+    setSelectedStaffId(staffId);
+    setViewOnly(false);
+    setIsModalOpen(true);
+  };
+
+  const handleViewStaff = (staffId: string) => {
+    setSelectedStaffId(staffId);
+    setViewOnly(true);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = (success?: boolean, message?: string) => {
+    setIsModalOpen(false);
+    if (success && message) {
+      toast.success(message);
     }
   };
 
-  // Show loading state
-  if (isLoading) {
-    return <LoadingState />;
-  }
-
-  // Show error state
-  if (error) {
-    return <ErrorState error={error} />;
-  }
-
   return (
-    <div className="space-y-6 animate-fade-in">
-      <StaffFilters showFacilityFilter={true} />
-      <StaffTable />
-      
-      <StaffModal 
-        open={modalOpen} 
-        onOpenChange={setModalOpen}
-        staffData={currentStaff}
-        isEditing={isEditing}
-        onSave={handleSaveStaff}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold">Staff Members</h2>
+        <Button onClick={handleAddStaff} className="bg-healthiq-600 hover:bg-healthiq-700">
+          <PlusIcon className="h-4 w-4 mr-2" />
+          Add Staff Member
+        </Button>
+      </div>
+
+      <StaffTable 
+        staff={staff || []} 
+        onEdit={handleEditStaff} 
+        onView={handleViewStaff} 
       />
-    </div>
-  );
-};
 
-const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facilityId }) => {
-  return (
-    <StaffListProvider facilityId={facilityId} showFacilityFilter={showFacilityFilter}>
-      <StaffListContent />
-    </StaffListProvider>
+      {isModalOpen && (
+        <StaffModal
+          staffId={selectedStaffId}
+          viewOnly={viewOnly}
+          onClose={handleCloseModal}
+        />
+      )}
+    </div>
   );
 };
 

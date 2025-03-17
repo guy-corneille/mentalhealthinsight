@@ -1,5 +1,6 @@
 
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import { toast } from 'sonner';
 
 // Define interface for API error responses
 interface ApiErrorResponse {
@@ -43,6 +44,19 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     console.log(`Successful response from: ${response.config.url}`, response.data);
+    // Show toast for successful create/update/delete operations
+    if (
+      (response.config.method === 'post' || 
+       response.config.method === 'put' || 
+       response.config.method === 'patch' || 
+       response.config.method === 'delete') &&
+      !response.config.url?.includes('login') && 
+      !response.config.url?.includes('logout')
+    ) {
+      const action = response.config.method === 'post' ? 'created' : 
+                     response.config.method === 'delete' ? 'deleted' : 'updated';
+      toast.success(`Item successfully ${action}`);
+    }
     return response.data;  // Return data directly
   },
   (error: AxiosError) => {
@@ -63,6 +77,9 @@ api.interceptors.response.use(
       (responseData?.non_field_errors && responseData.non_field_errors[0]) ||
       (error.message as string) || 
       'An unknown error occurred';
+    
+    // Show toast notification for API errors
+    toast.error(`Error: ${errorMessage}`);
     
     const apiError = new Error(errorMessage);
     
