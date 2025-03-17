@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePatients, Patient, useDeletePatient } from '@/services/patientService';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -8,18 +8,75 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { MoreHorizontal, PlusIcon, Edit, Trash, Eye } from "lucide-react";
 import { toast } from "sonner";
 import PatientDetails from './PatientDetails';
+import SearchInput from '@/components/common/SearchInput';
+import PaginationControls from '@/components/common/PaginationControls';
 
 interface PatientListProps {
   facilityId?: number;
 }
 
 const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
-  const { data: patients, isLoading, isError, error } = usePatients();
+  // Data fetching
+  const { data: allPatients, isLoading, isError, error } = usePatients();
   const deletePatientMutation = useDeletePatient();
+  
+  // Modal state
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [isViewOnly, setIsViewOnly] = useState(false);
+  
+  // Search and pagination state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
+  const [paginatedPatients, setPaginatedPatients] = useState<Patient[]>([]);
+  
+  // Pagination settings
+  const itemsPerPage = 10;
+  
+  // Apply facility filter and search query
+  useEffect(() => {
+    if (!allPatients) return;
+    
+    // First filter by facility if facilityId is provided
+    let patients = facilityId 
+      ? allPatients.filter(patient => patient.facility === facilityId)
+      : allPatients;
+    
+    // Then apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      patients = patients.filter(patient => 
+        `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(query) ||
+        patient.id.toLowerCase().includes(query) ||
+        patient.gender.toLowerCase().includes(query) ||
+        patient.status.toLowerCase().includes(query) ||
+        (patient.facility_name && patient.facility_name.toLowerCase().includes(query))
+      );
+    }
+    
+    setFilteredPatients(patients);
+    
+    // Reset to first page when filter changes
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [allPatients, searchQuery, facilityId]);
+  
+  // Update paginated data when filtered data or page changes
+  useEffect(() => {
+    if (!filteredPatients) return;
+    
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedItems = filteredPatients.slice(startIndex, startIndex + itemsPerPage);
+    
+    setPaginatedPatients(paginatedItems);
+  }, [filteredPatients, currentPage]);
+  
+  // Calculate total pages
+  const totalPages = Math.ceil((filteredPatients?.length || 0) / itemsPerPage);
 
+  // Modal handlers
   const handleAddPatient = () => {
     setSelectedPatient(null);
     setIsViewOnly(false);
@@ -57,6 +114,7 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
     }
   };
 
+  // Loading and error states
   if (isLoading) {
     return <div className="flex justify-center p-8">
       <div className="flex items-center gap-2">
@@ -72,11 +130,6 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
     </div>;
   }
 
-  // Filter patients by facility if facilityId is provided
-  const filteredPatients = facilityId 
-    ? (patients || []).filter(patient => patient.facility === facilityId)
-    : (patients || []);
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -86,8 +139,17 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
           Add Patient
         </Button>
       </div>
+      
+      {/* Search input */}
+      <div className="w-full max-w-sm">
+        <SearchInput
+          placeholder="Search patients..."
+          value={searchQuery}
+          onChange={setSearchQuery}
+        />
+      </div>
 
-      {filteredPatients.length === 0 ? (
+      {paginatedPatients.length === 0 ? (
         <div className="text-center p-8 border rounded-md bg-gray-50">
           <p className="text-gray-500">No patients found</p>
         </div>
@@ -106,7 +168,7 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPatients.map((patient) => (
+              {paginatedPatients.map((patient) => (
                 <TableRow key={patient.id}>
                   <TableCell className="font-medium">{`${patient.first_name} ${patient.last_name}`}</TableCell>
                   <TableCell>{patient.id}</TableCell>
@@ -156,6 +218,15 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
             </TableBody>
           </Table>
         </div>
+      )}
+      
+      {/* Show pagination controls if we have enough items */}
+      {totalPages > 1 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
 
       {isDetailsOpen && (
