@@ -2,7 +2,14 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Trash } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 
 interface Indicator {
   id?: number;
@@ -13,7 +20,7 @@ interface Indicator {
 interface IndicatorItemProps {
   indicator: Indicator;
   index: number;
-  onIndicatorChange: (index: number, field: keyof Indicator, value: string | number) => void;
+  onIndicatorChange: (index: number, field: 'name' | 'weight', value: string | number) => void;
   onRemoveIndicator: (index: number) => void;
   showRemoveButton: boolean;
 }
@@ -25,37 +32,44 @@ const IndicatorItem: React.FC<IndicatorItemProps> = ({
   onRemoveIndicator,
   showRemoveButton
 }) => {
+  const weightOptions = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+  
   return (
-    <div className="p-4 border rounded-md space-y-4">
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Indicator Name</label>
+    <div className="flex items-center gap-4 py-2 border-b border-gray-100">
+      <div className="flex-1">
         <Input
           value={indicator.name}
           onChange={(e) => onIndicatorChange(index, 'name', e.target.value)}
-          required
+          placeholder="Indicator name"
         />
       </div>
-      <div className="space-y-2">
-        <label className="block text-sm font-medium">Weight (0-100)</label>
-        <Input
-          type="number"
-          value={indicator.weight}
-          onChange={(e) => onIndicatorChange(index, 'weight', parseFloat(e.target.value))}
-          min="0"
-          max="100"
-          step="0.1"
-          required
-        />
-      </div>
-      {showRemoveButton && (
-        <Button 
-          type="button" 
-          onClick={() => onRemoveIndicator(index)} 
-          variant="destructive"
-          size="sm"
-          className="mt-2"
+      
+      <div className="w-32">
+        <Select
+          value={indicator.weight.toString()}
+          onValueChange={(value) => onIndicatorChange(index, 'weight', parseFloat(value))}
         >
-          <Trash size={16} className="mr-1" /> Remove
+          <SelectTrigger>
+            <SelectValue placeholder="Weight" />
+          </SelectTrigger>
+          <SelectContent>
+            {weightOptions.map((weight) => (
+              <SelectItem key={weight} value={weight.toString()}>
+                {weight.toFixed(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {showRemoveButton && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={() => onRemoveIndicator(index)}
+        >
+          <Trash2 className="h-4 w-4 text-rose-500" />
         </Button>
       )}
     </div>

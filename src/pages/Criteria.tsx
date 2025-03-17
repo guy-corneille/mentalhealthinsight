@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import CriteriaList from '@/components/assessments/CriteriaList';
@@ -14,8 +14,24 @@ const Criteria: React.FC = () => {
   // Check if we're on the add or edit page
   const isFormPage = location.pathname.includes('/add') || location.pathname.includes('/edit');
   
+  // Get type from URL if it's in the query parameters
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const typeParam = params.get('type');
+    if (typeParam === 'assessment' || typeParam === 'audit') {
+      setCriteriaType(typeParam);
+    }
+  }, [location.search]);
+  
   const handleTypeChange = (type: 'assessment' | 'audit') => {
     setCriteriaType(type);
+    // If on the form page, update the URL to include the type
+    if (location.pathname.includes('/add')) {
+      navigate(`/criteria/add?type=${type}`);
+    } else if (!isFormPage) {
+      // Reset search and filters when changing tabs
+      navigate(`/criteria?type=${type}`);
+    }
   };
   
   return (

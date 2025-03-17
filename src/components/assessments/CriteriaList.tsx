@@ -133,6 +133,8 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
         return 'bg-amber-100 text-amber-800 hover:bg-amber-200';
       case 'ethical':
         return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200';
+      case 'quality improvement':
+        return 'bg-teal-100 text-teal-800 hover:bg-teal-200';
       default:
         return 'bg-gray-100 text-gray-800 hover:bg-gray-200';
     }
@@ -193,11 +195,11 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
         </div>
         
         <Button 
-          onClick={() => navigate('/criteria/add')}
+          onClick={() => navigate(`/criteria/add?type=${criteriaType}`)}
           className="bg-healthiq-600 hover:bg-healthiq-700"
         >
           <PlusIcon className="h-4 w-4 mr-2" />
-          Add Criterion
+          Add {criteriaType === 'assessment' ? 'Assessment' : 'Audit'} Criterion
         </Button>
       </div>
       
@@ -209,7 +211,7 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
             <p className="mt-2 text-sm text-muted-foreground">
               {searchQuery || categoryFilter !== 'all' 
                 ? 'Try adjusting your search or filter criteria.'
-                : 'Get started by adding a new evaluation criterion.'}
+                : `Get started by adding a new ${criteriaType} criterion.`}
             </p>
             {(searchQuery || categoryFilter !== 'all') && (
               <Button 

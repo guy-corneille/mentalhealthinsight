@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Define interfaces for assessment criteria data
 export interface Indicator {
-  id: number;
+  id?: number;
   name: string;
   weight: number;
 }
@@ -118,11 +118,12 @@ export const useAssessmentCriteria = (type: 'assessment' | 'audit' = 'assessment
 };
 
 // Hook for fetching a single criterion
-export const useAssessmentCriterion = (id: number) => {
+export const useAssessmentCriterion = (id: number, options = {}) => {
   return useQuery({
     queryKey: ['criterion', id],
     queryFn: () => criteriaService.getCriterionById(id),
     enabled: !!id, // Only run query if id is provided
+    ...options
   });
 };
 
