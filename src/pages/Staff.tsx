@@ -5,13 +5,13 @@ import StaffList from '@/components/staff/StaffList';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from 'lucide-react';
 import StaffModal from '@/components/staff/modals/StaffModal';
-import { StaffMemberDisplay } from '@/services/staffService';
+import { StaffMember } from '@/services/staffService';
 
 const Staff: React.FC = () => {
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
-  const [editStaffMember, setEditStaffMember] = useState<StaffMemberDisplay | null>(null);
+  const [editStaffMember, setEditStaffMember] = useState<StaffMember | null>(null);
   
-  const handleEditStaff = (staff: StaffMemberDisplay) => {
+  const handleEditStaff = (staff: StaffMember) => {
     setEditStaffMember(staff);
   };
   
@@ -20,7 +20,7 @@ const Staff: React.FC = () => {
     setEditStaffMember(null);
   };
 
-  const handleSaveStaff = (staffData: Partial<StaffMemberDisplay>) => {
+  const handleSaveStaff = (staffData: Partial<StaffMember>) => {
     // This function will be implemented by StaffModal's internal logic
     // We just need to close the modal after saving
     handleCloseModal();
@@ -46,20 +46,9 @@ const Staff: React.FC = () => {
           </Button>
         </div>
         
-        <StaffList 
-          showFacilityFilter={true} 
-        />
+        <StaffList />
         
-        {/* Staff Modal for Add/Edit */}
-        {(isAddStaffModalOpen || editStaffMember) && (
-          <StaffModal 
-            open={isAddStaffModalOpen || !!editStaffMember}
-            onOpenChange={handleCloseModal}
-            staffData={editStaffMember}
-            isEditing={!!editStaffMember}
-            onSave={handleSaveStaff}
-          />
-        )}
+        {/* Staff Modal is handled by StaffList component */}
       </div>
     </Layout>
   );

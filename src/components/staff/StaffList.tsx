@@ -16,7 +16,7 @@ const StaffList: React.FC = () => {
   const [viewOnly, setViewOnly] = useState(false);
 
   if (isLoading) {
-    return <LoadingState message="Loading staff members..." />;
+    return <div className="py-10 text-center">Loading staff members...</div>;
   }
 
   if (isError) {

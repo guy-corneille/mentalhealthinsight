@@ -1,4 +1,3 @@
-
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -23,6 +22,11 @@ export interface StaffMember {
   qualifications?: StaffQualification[];
   created_at?: string;
   updated_at?: string;
+}
+
+// An interface for display purposes with renamed fields to match the UI
+export interface StaffMemberDisplay extends Omit<StaffMember, 'facility_name'> {
+  facilityName: string;
 }
 
 /**

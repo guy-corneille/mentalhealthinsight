@@ -1,11 +1,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { StaffMemberDisplay, useStaff, useStaffByFacility } from '@/services/staffService';
+import { StaffMember, useStaff, useStaffByFacility } from '@/services/staffService';
 import { useFacilities } from '@/services/facilityService';
 
 interface StaffListContextType {
-  staffData: StaffMemberDisplay[] | undefined;
-  filteredStaff: StaffMemberDisplay[];
+  staffData: StaffMember[] | undefined;
+  filteredStaff: StaffMember[];
   isLoading: boolean;
   error: Error | null;
   searchQuery: string;
@@ -13,8 +13,8 @@ interface StaffListContextType {
   facilityFilter: string;
   setFacilityFilter: (facilityId: string) => void;
   facilities: Array<{ id: number; name: string }>;
-  currentStaff: StaffMemberDisplay | null;
-  setCurrentStaff: (staff: StaffMemberDisplay | null) => void;
+  currentStaff: StaffMember | null;
+  setCurrentStaff: (staff: StaffMember | null) => void;
   isEditing: boolean;
   setIsEditing: (isEditing: boolean) => void;
   modalOpen: boolean;
@@ -44,8 +44,8 @@ export const StaffListProvider: React.FC<StaffListProviderProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [facilityFilter, setFacilityFilter] = useState<string>(facilityId ? facilityId.toString() : 'all');
-  const [filteredStaff, setFilteredStaff] = useState<StaffMemberDisplay[]>([]);
-  const [currentStaff, setCurrentStaff] = useState<StaffMemberDisplay | null>(null);
+  const [filteredStaff, setFilteredStaff] = useState<StaffMember[]>([]);
+  const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -77,7 +77,7 @@ export const StaffListProvider: React.FC<StaffListProviderProps> = ({
         member.name.toLowerCase().includes(query) ||
         member.position.toLowerCase().includes(query) ||
         member.department.toLowerCase().includes(query) ||
-        member.facilityName.toLowerCase().includes(query)
+        (member.facility_name && member.facility_name.toLowerCase().includes(query))
       );
     }
     

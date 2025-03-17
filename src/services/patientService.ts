@@ -1,4 +1,3 @@
-
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -44,14 +43,15 @@ const patientService = {
   getAllPatients: async (): Promise<Patient[]> => {
     console.log('Fetching all patients from API');
     try {
-      const response = await api.get<PaginatedResponse<Patient>>('/patients/');
+      const response = await api.get<PaginatedResponse<Patient> | Patient[]>('/patients/');
       
       console.log('API response for patients:', response);
       
-      if (response && Array.isArray(response.results)) {
-        return response.results;
-      } else if (Array.isArray(response)) {
+      // Check if response is an array or has a results property
+      if (Array.isArray(response)) {
         return response;
+      } else if (response && 'results' in response) {
+        return response.results;
       }
       
       console.warn('Invalid API response for patients:', response);
