@@ -20,6 +20,12 @@ const Staff: React.FC = () => {
     setEditStaffMember(null);
   };
 
+  const handleSaveStaff = (staffData: Partial<StaffMemberDisplay>) => {
+    // This function will be implemented by StaffModal's internal logic
+    // We just need to close the modal after saving
+    handleCloseModal();
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
@@ -42,7 +48,6 @@ const Staff: React.FC = () => {
         
         <StaffList 
           showFacilityFilter={true} 
-          onEditStaff={handleEditStaff}
         />
         
         {/* Staff Modal for Add/Edit */}
@@ -50,7 +55,9 @@ const Staff: React.FC = () => {
           <StaffModal 
             open={isAddStaffModalOpen || !!editStaffMember}
             onOpenChange={handleCloseModal}
-            staffMember={editStaffMember}
+            staffData={editStaffMember}
+            isEditing={!!editStaffMember}
+            onSave={handleSaveStaff}
           />
         )}
       </div>

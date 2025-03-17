@@ -147,7 +147,7 @@ const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facil
   const handleToggleStatus = (member: StaffMemberDisplay) => {
     const newStatus = member.status === 'Active' ? 'On Leave' : 'Active';
     
-    // Create a new update mutation specifically for this ID
+    // Create a new update mutation for this staff member
     const updateStaffMutation = useUpdateStaff(member.id);
     
     // Update the staff member's status
