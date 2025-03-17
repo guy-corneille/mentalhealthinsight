@@ -13,18 +13,22 @@ interface CriteriaFormProps {
   criteriaType?: 'assessment' | 'audit';
 }
 
+// Define the allowed category and purpose types to match what CriteriaFormFields expects
+type CriteriaCategory = 'Clinical' | 'Facility' | 'Administrative' | 'Ethical' | 'Quality Improvement';
+type CriteriaPurpose = 'Assessment' | 'Audit';
+
 const CriteriaForm: React.FC<CriteriaFormProps> = ({ criteriaType }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   
-  // Form state
+  // Form state with proper types
   const [formData, setFormData] = React.useState({
     name: '',
-    category: 'Clinical' as const,
+    category: 'Clinical' as CriteriaCategory, // Explicitly type this
     description: '',
-    purpose: criteriaType === 'audit' ? 'Audit' as const : 'Assessment' as const,
+    purpose: criteriaType === 'audit' ? 'Audit' as CriteriaPurpose : 'Assessment' as CriteriaPurpose,
     indicators: [{ name: '', weight: 1.0 }]
   });
 
@@ -45,9 +49,9 @@ const CriteriaForm: React.FC<CriteriaFormProps> = ({ criteriaType }) => {
     if (criterion) {
       setFormData({
         name: criterion.name,
-        category: criterion.category as 'Clinical' | 'Facility' | 'Administrative' | 'Ethical' | 'Quality Improvement',
+        category: criterion.category as CriteriaCategory, // Cast to the correct type
         description: criterion.description || '',
-        purpose: criterion.purpose || 'Assessment' as const,
+        purpose: criterion.purpose || 'Assessment' as CriteriaPurpose,
         indicators: criterion.indicators?.length 
           ? criterion.indicators 
           : [{ name: '', weight: 1.0 }]
@@ -60,9 +64,14 @@ const CriteriaForm: React.FC<CriteriaFormProps> = ({ criteriaType }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleIndicatorChange = (index: number, field: 'name' | 'weight', value: string | number) => {
+  // Fix for the indicator change handler to properly type the field and value
+  const handleIndicatorChange = (index: number, field: keyof typeof formData.indicators[0], value: string | number) => {
     const newIndicators = [...formData.indicators];
-    newIndicators[index][field] = value;
+    if (field === 'name' && typeof value === 'string') {
+      newIndicators[index].name = value;
+    } else if (field === 'weight' && typeof value === 'number') {
+      newIndicators[index].weight = value;
+    }
     setFormData(prev => ({ ...prev, indicators: newIndicators }));
   };
 
