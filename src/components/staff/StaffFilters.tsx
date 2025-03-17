@@ -51,9 +51,15 @@ const StaffFilters: React.FC<StaffFiltersProps> = ({ showFacilityFilter = true }
           />
         </div>
         
-        {showFacilityFilter && (
+        {showFacilityFilter && facilities && facilities.length > 0 && (
           <div className="w-full sm:w-64">
-            <Select value={facilityFilter} onValueChange={setFacilityFilter}>
+            <Select 
+              value={facilityFilter} 
+              onValueChange={(value) => {
+                console.log("Setting facility filter to:", value);
+                setFacilityFilter(value);
+              }}
+            >
               <SelectTrigger className="bg-muted/50 border-none focus-visible:ring-1">
                 <SelectValue placeholder="All Facilities" />
               </SelectTrigger>

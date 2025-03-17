@@ -49,53 +49,63 @@ export const StaffListProvider: React.FC<StaffListProviderProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
-  // Fetch staff using React Query
-  const { data: allStaff, isLoading: isLoadingAllStaff, error: staffError } = useStaff();
-  
-  // If facilityId is provided, fetch staff for that facility
-  const { data: facilityStaff, isLoading: isLoadingFacilityStaff } = useStaffByFacility(
-    facilityId || (facilityFilter !== 'all' ? parseInt(facilityFilter) : 0)
-  );
-
   // Fetch facilities for the filter dropdown
-  const { data: facilities = [] } = useFacilities();
+  const { data: facilities = [], isLoading: facilitiesLoading } = useFacilities();
+  
+  // Determine which staff data to use based on filter
+  const { data: allStaff, isLoading: isLoadingAllStaff, error: allStaffError } = useStaff();
+  
+  // If a specific facility is selected, fetch staff for that facility
+  const selectedFacilityId = facilityFilter !== 'all' ? parseInt(facilityFilter) : undefined;
+  const { 
+    data: facilityStaff, 
+    isLoading: isLoadingFacilityStaff,
+    error: facilityStaffError
+  } = useStaffByFacility(selectedFacilityId as number, {
+    // Only run this query if we have a facility selected
+    enabled: facilityFilter !== 'all',
+  });
   
   // Determine which staff data to use
-  const staffData = facilityId || facilityFilter !== 'all' ? facilityStaff : allStaff;
-  const isLoading = facilityId || facilityFilter !== 'all' ? isLoadingFacilityStaff : isLoadingAllStaff;
+  const staffData = facilityFilter !== 'all' ? facilityStaff : allStaff;
+  const isLoading = (facilityFilter !== 'all' ? isLoadingFacilityStaff : isLoadingAllStaff) || facilitiesLoading;
+  const error = facilityFilter !== 'all' ? facilityStaffError : allStaffError;
 
-  // Apply filters when search query changes
+  // Apply filters when data or search query changes
   useEffect(() => {
-    if (!staffData) return;
+    if (!staffData) {
+      setFilteredStaff([]);
+      return;
+    }
     
+    // Apply search filter
     let results = [...staffData];
     
-    // Apply search query filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       results = results.filter(member => 
-        member.name.toLowerCase().includes(query) ||
-        member.position.toLowerCase().includes(query) ||
-        member.department.toLowerCase().includes(query) ||
-        (member.facility_name && member.facility_name.toLowerCase().includes(query))
+        (member.name && member.name.toLowerCase().includes(query)) || 
+        (member.position && member.position.toLowerCase().includes(query)) || 
+        (member.department && member.department.toLowerCase().includes(query)) ||
+        (member.facility_name && member.facility_name.toLowerCase().includes(query)) ||
+        (member.email && member.email.toLowerCase().includes(query))
       );
     }
     
+    console.log("Filtered staff:", results.length, "from total:", staffData.length);
     setFilteredStaff(results);
   }, [staffData, searchQuery]);
 
-  // Initialize facility filter from prop if provided
+  // Debug when facility filter changes
   useEffect(() => {
-    if (facilityId) {
-      setFacilityFilter(facilityId.toString());
-    }
-  }, [facilityId]);
+    console.log("Facility filter changed to:", facilityFilter);
+  }, [facilityFilter]);
 
   const value = {
     staffData,
     filteredStaff,
     isLoading,
-    error: staffError as Error | null,
+    error: error as Error | null,
     searchQuery,
     setSearchQuery,
     facilityFilter,
