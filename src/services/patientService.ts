@@ -31,6 +31,9 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
+// Define a type for response that could be either an array or paginated
+type ApiResponse<T> = T[] | PaginatedResponse<T>;
+
 /**
  * Patient Service
  * Handles all API operations related to patients
@@ -43,21 +46,19 @@ const patientService = {
   getAllPatients: async () => {
     console.log('Fetching all patients from API');
     try {
-      const response = await api.get('/patients/');
+      const response = await api.get<ApiResponse<Patient>>('/patients/');
       
       console.log('API response for patients:', response);
       
-      // Fix the type error by checking the structure of the response
-      if (response && typeof response === 'object') {
-        if (Array.isArray(response)) {
-          return response;
-        } else if (response.results && Array.isArray(response.results)) {
-          return response.results;
-        }
+      // Handle different response formats with proper type checking
+      if (Array.isArray(response)) {
+        return response as Patient[];
+      } else if (response && typeof response === 'object' && 'results' in response) {
+        return (response as PaginatedResponse<Patient>).results;
       }
       
       console.warn('Invalid API response format for patients:', response);
-      return [];
+      return [] as Patient[];
     } catch (error) {
       console.error('Error fetching patients:', error);
       throw error;
@@ -72,14 +73,14 @@ const patientService = {
   getPatientsByFacility: async (facilityId: number): Promise<Patient[]> => {
     console.log(`Fetching patients for facility ${facilityId} from API`);
     try {
-      const response = await api.get<Patient[]>(`/facilities/${facilityId}/patients/`);
+      const response = await api.get<ApiResponse<Patient>>(`/facilities/${facilityId}/patients/`);
       
       console.log(`API response for facility ${facilityId} patients:`, response);
       
       if (Array.isArray(response)) {
         return response;
-      } else if (response && Array.isArray(response.results)) {
-        return response.results;
+      } else if (response && typeof response === 'object' && 'results' in response) {
+        return (response as PaginatedResponse<Patient>).results;
       }
       
       console.warn(`Invalid API response for facility ${facilityId} patients:`, response);
