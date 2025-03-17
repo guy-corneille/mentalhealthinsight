@@ -2,6 +2,12 @@
 import api from '../api';
 import { StaffMember, StaffQualification } from './types';
 
+// Generate a unique staff ID with format S-XXXX
+const generateStaffId = (): string => {
+  const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit number
+  return `S-${randomNum}`;
+};
+
 /**
  * Staff API Service
  * Handles all API operations related to staff members
@@ -85,7 +91,14 @@ const staffApiService = {
   createStaffMember: async (staffData: Partial<StaffMember>): Promise<StaffMember> => {
     console.log('Creating new staff member via API', staffData);
     try {
-      const response = await api.post<StaffMember>('/staff/', staffData);
+      // Generate an ID if not provided
+      const dataWithId = {
+        ...staffData,
+        id: staffData.id || generateStaffId(),
+      };
+      
+      console.log('Sending staff data with ID:', dataWithId);
+      const response = await api.post<StaffMember>('/staff/', dataWithId);
       
       console.log('API response for create staff:', response);
       
@@ -105,7 +118,14 @@ const staffApiService = {
   updateStaffMember: async (id: string, staffData: Partial<StaffMember>): Promise<StaffMember> => {
     console.log(`Updating staff member with ID ${id} via API`, staffData);
     try {
-      const response = await api.put<StaffMember>(`/staff/${id}/`, staffData);
+      // Always include the ID in the request body as well
+      const dataWithId = { 
+        ...staffData,
+        id: id  // Ensure ID is included in the request body
+      };
+      
+      console.log(`Sending updated staff data with ID:`, dataWithId);
+      const response = await api.put<StaffMember>(`/staff/${id}/`, dataWithId);
       
       console.log(`API response for update staff ${id}:`, response);
       

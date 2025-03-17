@@ -1,3 +1,4 @@
+
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -33,6 +34,12 @@ interface PaginatedResponse<T> {
 
 // Define a type for response that could be either an array or paginated
 type ApiResponse<T> = T[] | PaginatedResponse<T>;
+
+// Generate a unique patient ID with format P-XXXX
+const generatePatientId = (): string => {
+  const randomNum = Math.floor(1000 + Math.random() * 9000); // 4-digit number
+  return `P-${randomNum}`;
+};
 
 /**
  * Patient Service
@@ -118,7 +125,14 @@ const patientService = {
   createPatient: async (patientData: Partial<Patient>): Promise<Patient> => {
     console.log('Creating new patient via API', patientData);
     try {
-      const response = await api.post<Patient>('/patients/', patientData);
+      // Generate a patient ID if not provided
+      const dataWithId = {
+        ...patientData,
+        id: patientData.id || generatePatientId(),
+      };
+      
+      console.log('Sending patient data with ID:', dataWithId);
+      const response = await api.post<Patient>('/patients/', dataWithId);
       
       console.log('API response for create patient:', response);
       
@@ -138,7 +152,14 @@ const patientService = {
   updatePatient: async (id: string, patientData: Partial<Patient>): Promise<Patient> => {
     console.log(`Updating patient with ID ${id} via API`, patientData);
     try {
-      const response = await api.put<Patient>(`/patients/${id}/`, patientData);
+      // Always include the ID in the request body
+      const dataWithId = {
+        ...patientData,
+        id: id,
+      };
+      
+      console.log(`Sending updated patient data with ID:`, dataWithId);
+      const response = await api.put<Patient>(`/patients/${id}/`, dataWithId);
       
       console.log(`API response for update patient ${id}:`, response);
       

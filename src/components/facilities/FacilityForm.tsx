@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -8,6 +7,7 @@ import {
   CalendarIcon,
   SaveIcon,
   ArrowLeftIcon,
+  GlobeIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,12 +29,18 @@ interface FacilityFormProps {
   isEdit?: boolean;
 }
 
+const prepareWebsiteInput = (url: string): string => {
+  if (!url || url.trim() === '') return '';
+  
+  // Strip http:// or https:// for display in the form
+  return url.replace(/^https?:\/\//, '');
+};
+
 const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Use React Query hooks for API operations
   const facilityId = id ? parseInt(id) : 0;
   const { data: facilityData, isLoading: isFetchingFacility } = useFacility(facilityId);
   const createFacilityMutation = useCreateFacility();
@@ -59,7 +65,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
   });
 
   useEffect(() => {
-    // If editing mode and facility data loaded, populate form
     if (isEdit && facilityData) {
       console.log('Loading facility data into form:', facilityData);
       setFormData({
@@ -74,7 +79,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
         description: facilityData.description || '',
         contact_email: facilityData.contact_email || '',
         contact_phone: facilityData.contact_phone || '',
-        website: facilityData.website || '',
+        website: prepareWebsiteInput(facilityData.website || ''),
         contact_name: facilityData.contact_name || '',
       });
     }
@@ -101,7 +106,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
       return;
     }
 
-    // Prepare facility data with proper types
     const facilityPayload: Partial<Facility> = {
       ...formData,
       capacity: parseInt(formData.capacity) || 0,
@@ -110,7 +114,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
     console.log('Submitting facility data:', facilityPayload);
 
     if (isEdit && id) {
-      // Update existing facility
       updateFacilityMutation.mutate(facilityPayload, {
         onSuccess: (data) => {
           console.log('Facility updated successfully:', data);
@@ -130,7 +133,6 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
         }
       });
     } else {
-      // Create new facility
       createFacilityMutation.mutate(facilityPayload, {
         onSuccess: (data) => {
           console.log('Facility created successfully:', data);
@@ -378,14 +380,22 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
                     <Label htmlFor="website" className="text-base">
                       Website
                     </Label>
-                    <Input
-                      id="website"
-                      name="website"
-                      value={formData.website}
-                      onChange={handleInputChange}
-                      className="mt-1"
-                      placeholder="www.example.com"
-                    />
+                    <div className="flex mt-1">
+                      <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted">
+                        <GlobeIcon className="h-4 w-4 text-muted-foreground" />
+                      </span>
+                      <Input
+                        id="website"
+                        name="website"
+                        value={formData.website}
+                        onChange={handleInputChange}
+                        className="rounded-l-none"
+                        placeholder="www.example.com"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Enter without http:// or https:// (e.g., example.com)
+                    </p>
                   </div>
                 </div>
               </div>

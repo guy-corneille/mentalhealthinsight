@@ -55,6 +55,25 @@ export const transformFacility = (facility: Facility): Facility => {
 };
 
 /**
+ * Ensures a URL has proper format with protocol (http/https)
+ * @param url Website URL to format
+ * @returns Formatted URL with http:// or https:// prefix
+ */
+const formatWebsiteUrl = (url?: string): string | undefined => {
+  if (!url || url.trim() === '') {
+    return undefined;
+  }
+  
+  // If URL already has protocol, return it
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  
+  // Add https:// protocol by default
+  return `https://${url}`;
+};
+
+/**
  * Facility Service
  * Handles all API operations related to facilities
  */
@@ -117,8 +136,15 @@ const facilityService = {
   createFacility: async (facilityData: Partial<Facility>): Promise<Facility> => {
     console.log('Creating new facility via API', facilityData);
     try {
+      // Format website URL if present
+      const preparedData = {
+        ...facilityData,
+        website: formatWebsiteUrl(facilityData.website),
+      };
+      
+      console.log('Sending facility data with formatted website:', preparedData);
       // API endpoint for creating a facility
-      const response = await api.post<Facility>('/facilities/', facilityData);
+      const response = await api.post<Facility>('/facilities/', preparedData);
       
       console.log('API response for create facility:', response);
       
@@ -138,8 +164,15 @@ const facilityService = {
   updateFacility: async (id: number, facilityData: Partial<Facility>): Promise<Facility> => {
     console.log(`Updating facility with ID ${id} via API`, facilityData);
     try {
+      // Format website URL if present
+      const preparedData = {
+        ...facilityData,
+        website: formatWebsiteUrl(facilityData.website),
+      };
+      
+      console.log(`Sending updated facility data with formatted website:`, preparedData);
       // API endpoint for updating a facility
-      const response = await api.put<Facility>(`/facilities/${id}/`, facilityData);
+      const response = await api.put<Facility>(`/facilities/${id}/`, preparedData);
       
       console.log(`API response for update facility ${id}:`, response);
       
