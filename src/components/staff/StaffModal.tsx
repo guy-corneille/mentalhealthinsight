@@ -20,29 +20,15 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { PlusIcon, XIcon } from 'lucide-react';
-
-interface StaffMember {
-  id: string;
-  name: string;
-  position: string;
-  department: string;
-  facilityId: number;
-  facilityName: string;
-  joinDate: string;
-  status: 'Active' | 'On Leave' | 'Former';
-  qualifications: string[];
-  contact: {
-    email: string;
-    phone: string;
-  };
-}
+import { StaffMemberDisplay } from '@/services/staffService';
+import { useFacilities } from '@/services/facilityService';
 
 interface StaffModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  staffData: StaffMember | null;
+  staffData: StaffMemberDisplay | null;
   isEditing: boolean;
-  onSave: (staffData: Partial<StaffMember>) => void;
+  onSave: (staffData: Partial<StaffMemberDisplay>) => void;
 }
 
 const StaffModal: React.FC<StaffModalProps> = ({ 
@@ -52,7 +38,7 @@ const StaffModal: React.FC<StaffModalProps> = ({
   isEditing, 
   onSave 
 }) => {
-  const [formData, setFormData] = useState<Partial<StaffMember>>({
+  const [formData, setFormData] = useState<Partial<StaffMemberDisplay>>({
     name: '',
     position: '',
     department: '',
@@ -69,14 +55,8 @@ const StaffModal: React.FC<StaffModalProps> = ({
   
   const [newQualification, setNewQualification] = useState('');
   
-  // Mock facilities data - In a real app, this would come from an API
-  const facilities = [
-    { id: 1, name: 'Central Hospital' },
-    { id: 2, name: 'Eastern District Clinic' },
-    { id: 3, name: 'Western Mental Health Center' },
-    { id: 4, name: 'Northern Community Center' },
-    { id: 5, name: 'Southern District Hospital' },
-  ];
+  // Get facilities from API
+  const { data: facilities = [] } = useFacilities();
 
   // Reset form when opening or changing staff to edit
   useEffect(() => {
@@ -98,7 +78,7 @@ const StaffModal: React.FC<StaffModalProps> = ({
         position: '',
         department: '',
         facilityId: 1,
-        facilityName: 'Central Hospital',
+        facilityName: facilities[0]?.name || 'Unknown Facility',
         joinDate: new Date().toISOString().split('T')[0],
         status: 'Active' as const,
         qualifications: [],
@@ -109,7 +89,7 @@ const StaffModal: React.FC<StaffModalProps> = ({
       });
     }
     setNewQualification('');
-  }, [staffData, open]);
+  }, [staffData, open, facilities]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   UserIcon, 
@@ -42,7 +43,8 @@ import { useToast } from "@/hooks/use-toast";
 import { 
   useStaff, 
   useStaffByFacility, 
-  useDeleteStaff, 
+  useDeleteStaff,
+  useUpdateStaff, 
   StaffMemberDisplay 
 } from '@/services/staffService';
 import { useFacilities } from '@/services/facilityService';
@@ -75,6 +77,9 @@ const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facil
   
   // Mutation for deleting a staff member
   const deleteStaffMutation = useDeleteStaff();
+  
+  // Mutation for updating a staff member (for status toggle)
+  const updateStaffMutation = useUpdateStaff(0); // We'll update the ID when needed
 
   // Determine which staff data to use
   const staffData = facilityId || facilityFilter !== 'all' ? facilityStaff : allStaff;
@@ -138,6 +143,33 @@ const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facil
       });
     }
   };
+  
+  const handleToggleStatus = (member: StaffMemberDisplay) => {
+    const newStatus = member.status === 'Active' ? 'On Leave' : 'Active';
+    
+    // Create a new staff mutation with the current ID
+    const updateMutation = useUpdateStaff(member.id);
+    
+    // Update the staff member's status
+    updateMutation.mutate(
+      { status: newStatus },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Status Updated",
+            description: `Staff status changed to ${newStatus}`,
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Error", 
+            description: `Failed to update status: ${(error as Error).message}`,
+            variant: "destructive",
+          });
+        }
+      }
+    );
+  };
 
   const handleSaveStaff = (staffData: Partial<StaffMemberDisplay>) => {
     // This will be implemented when the staff modal is updated
@@ -192,7 +224,7 @@ const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facil
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Facilities</SelectItem>
-                  {facilities.map(facility => (
+                  {facilities?.map(facility => (
                     <SelectItem key={facility.id} value={facility.id.toString()}>
                       {facility.name}
                     </SelectItem>
@@ -291,12 +323,7 @@ const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facil
                             <PencilIcon className="h-4 w-4 mr-2" />
                             Edit Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => {
-                            const newStatus = member.status === 'Active' ? 'On Leave' : 'Active';
-                            setStaff(staff.map(s => 
-                              s.id === member.id ? { ...s, status: newStatus } as StaffMember : s
-                            ));
-                          }}>
+                          <DropdownMenuItem onClick={() => handleToggleStatus(member)}>
                             <UserCheckIcon className="h-4 w-4 mr-2" />
                             Toggle Status
                           </DropdownMenuItem>
