@@ -1,19 +1,23 @@
+
 import { useState, useEffect } from 'react';
 import { User, PendingUser, UserRegistration } from '../types/auth';
 import authService from '../services/authService';
 import { useToast } from '@/hooks/use-toast';
 
 export function useAuthProvider() {
+  // State for storing the current user, pending users awaiting approval, and loading state
   const [user, setUser] = useState<User | null>(null);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
+    // Check if user data is stored in localStorage when component mounts
     const storedUser = localStorage.getItem('mentalhealthiq_user');
     
     if (storedUser) {
       try {
+        // Parse and set stored user if available
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
       } catch (error) {
@@ -24,6 +28,7 @@ export function useAuthProvider() {
     
     const verifyToken = async () => {
       try {
+        // Verify the token if it exists in localStorage
         if (localStorage.getItem('mentalhealthiq_token')) {
           const currentUser = await authService.getCurrentUser();
           setUser(currentUser);
@@ -42,11 +47,13 @@ export function useAuthProvider() {
     verifyToken();
   }, []);
 
+  // Login function - fixed to only pass username as per authService update
   const login = async (username: string, password: string): Promise<User> => {
     setIsLoading(true);
     
     try {
-      const userResponse = await authService.login(username, password);
+      // Call authService.login with just the username parameter
+      const userResponse = await authService.login(username);
       setUser(userResponse);
       localStorage.setItem('mentalhealthiq_user', JSON.stringify(userResponse));
       
