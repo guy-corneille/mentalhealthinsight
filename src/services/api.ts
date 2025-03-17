@@ -1,5 +1,5 @@
 
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
 // Define interface for API error responses
 interface ApiErrorResponse {
@@ -11,53 +11,49 @@ interface ApiErrorResponse {
 }
 
 // Create a base API instance with common configuration
+// This is where API requests are configured
 const api = axios.create({
+  // Base URL for all API requests - adjust this to match your backend
   baseURL: 'http://localhost:8000/api',
+  
+  // Default headers for all requests
   headers: {
     'Content-Type': 'application/json',
   },
+  
+  // Set timeout to prevent hanging requests
   timeout: 10000, // 10 seconds timeout
 });
 
-// Request interceptor for adding auth token
+// Request interceptor for API calls
+// This would normally add auth tokens, but we've disabled that requirement
 api.interceptors.request.use(
   (config) => {
-    // Skip adding token for login and register endpoints
-    if (config.url?.includes('/login/') || config.url?.includes('/register/')) {
-      return config;
-    }
-    
-    const token = localStorage.getItem('mentalhealthiq_token');
-    if (token) {
-      config.headers.Authorization = `Token ${token}`;  // Using Token for Django's token auth
-    }
+    console.log(`Making API request to: ${config.url}`);
+    // No longer adding auth tokens - all requests go through without authentication
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('Request interceptor error:', error);
+    return Promise.reject(error);
+  }
 );
 
-// Response interceptor for handling common errors
+// Response interceptor for handling API responses and errors
+// This processes the responses from the API
 api.interceptors.response.use(
-  (response) => response.data,  // Return data directly
+  (response) => {
+    console.log(`Successful response from: ${response.config.url}`);
+    return response.data;  // Return data directly
+  },
   (error: AxiosError) => {
+    // Log detailed error information for debugging
     console.error('API Error:', error.response?.data || error.message);
     console.error('Status:', error.response?.status);
     console.error('Request URL:', error.config?.url);
     console.error('Request Data:', error.config?.data);
     
-    // Handle authentication errors
-    if (error.response?.status === 401) {
-      // Clear token and user data only if not trying to login
-      if (!error.config?.url?.includes('/login/')) {
-        localStorage.removeItem('mentalhealthiq_token');
-        localStorage.removeItem('mentalhealthiq_user');
-        
-        // Redirect to login if not already there
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
-      }
-    }
+    // No longer handling auth errors specifically - just log and pass through
     
     // Type assertion for the error response data
     const responseData = error.response?.data as ApiErrorResponse | undefined;
@@ -71,13 +67,6 @@ api.interceptors.response.use(
       (error.message as string) || 
       'An unknown error occurred';
     
-    // Special handling for Django's token auth errors
-    if (error.config?.url?.includes('/login/') && error.response?.status === 400) {
-      if (responseData?.non_field_errors) {
-        errorMessage = responseData.non_field_errors[0];
-      }
-    }
-    
     const apiError = new Error(errorMessage);
     
     // Add status code to error object for easier handling
@@ -90,19 +79,25 @@ api.interceptors.response.use(
   }
 );
 
+// Export API methods for making different types of requests
 export default {
+  // GET request method - used for retrieving data
   get: <T>(url: string, params?: any) => 
     api.get<T, T>(url, { params }),
   
+  // POST request method - used for creating new resources
   post: <T>(url: string, data?: any, config?: AxiosRequestConfig) => 
     api.post<T, T>(url, data, config),
   
+  // PUT request method - used for updating existing resources
   put: <T>(url: string, data?: any) => 
     api.put<T, T>(url, data),
   
+  // PATCH request method - used for partial updates
   patch: <T>(url: string, data?: any) => 
     api.patch<T, T>(url, data),
   
+  // DELETE request method - used for removing resources
   delete: <T>(url: string) => 
     api.delete<T, T>(url),
 };

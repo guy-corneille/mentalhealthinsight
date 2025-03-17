@@ -1,79 +1,32 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { BrainIcon, HeartPulseIcon, AlertCircleIcon, UserPlusIcon } from 'lucide-react';
+import { BrainIcon, HeartPulseIcon, UserPlusIcon } from 'lucide-react';
 import { useNotifications } from '@/contexts/NotificationContext';
 
+// This is the login page component
+// It no longer requires authentication - just redirects to dashboard
 const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState(''); // We'll keep this for UI consistency but not use it
-  const [error, setError] = useState('');
-  const { login, isLoading } = useAuth();
+  const [username, setUsername] = useState(''); // Just for UI display
   const navigate = useNavigate();
   const { addNotification } = useNotifications();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Simplified handler - no authentication required
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     
-    if (!username) {
-      setError('Username is required');
-      return;
-    }
+    // Just display a notification
+    addNotification(
+      "Welcome!",
+      `You have entered as ${username || 'Guest'}`,
+      "success"
+    );
     
-    try {
-      console.log('Attempting login with:', { username });
-      // We still pass password to maintain the function signature but it's not used
-      const user = await login(username, password);
-      console.log('Login successful:', user);
-      
-      addNotification(
-        "Welcome back!",
-        `You have successfully logged in as ${user.displayName || user.username}`,
-        "success"
-      );
-      
-      navigate('/dashboard');
-    } catch (err) {
-      console.error('Login error:', err);
-      
-      let errorMessage = 'Invalid username. Please check your username.';
-      
-      if (err instanceof Error) {
-        // Custom error handling for specific error messages
-        if (err.message.includes('401') || err.message.includes('Unauthorized')) {
-          errorMessage = 'Authentication failed. Please check your username.';
-        } else if (err.message.includes('network') || err.message.includes('connection')) {
-          errorMessage = 'Network error. Please check your connection and try again.';
-        } else if (err.message.includes('timeout')) {
-          errorMessage = 'Request timed out. Please try again later.';
-        } else if (err.message.includes('server')) {
-          errorMessage = 'Server error. Please try again later.';
-        } else {
-          errorMessage = err.message;
-        }
-        
-        setError(errorMessage);
-        addNotification(
-          "Login failed",
-          errorMessage,
-          "error"
-        );
-      } else {
-        setError(errorMessage);
-        addNotification(
-          "Login failed",
-          errorMessage,
-          "error"
-        );
-      }
-    }
+    // Simply navigate to dashboard
+    navigate('/dashboard');
   };
 
   return (
@@ -89,56 +42,34 @@ const Login: React.FC = () => {
             MentalHealthIQ
           </CardTitle>
           <CardDescription>
-            Sign in to access the mental health facility management platform
+            Enter any username to access the platform (no authentication)
           </CardDescription>
         </CardHeader>
         
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircleIcon className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Username (Optional)</Label>
               <Input
                 id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                required
+                placeholder="Enter any username"
                 autoComplete="username"
               />
             </div>
             
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <a href="#" className="text-sm font-medium text-primary hover:text-primary/80">
-                  Forgot password?
-                </a>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password (Not required)"
-                autoComplete="current-password"
-              />
-              <p className="text-xs text-muted-foreground">
-                Note: Only username is required for this demo.
+            <div className="p-2 bg-amber-50 rounded-md border border-amber-200">
+              <p className="text-sm text-amber-800">
+                <strong>Note:</strong> Authentication has been disabled. You can enter with any username.
               </p>
             </div>
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-3">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign in'}
+            <Button type="submit" className="w-full">
+              Enter Dashboard
             </Button>
             
             <Button 

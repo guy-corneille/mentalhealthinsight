@@ -1,53 +1,20 @@
-import React, { useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useAuthorization } from '@/hooks/useAuthorization';
-import { useToast } from '@/hooks/use-toast';
-import { Spinner } from '@/components/ui/spinner';
+
+import React from 'react';
+import { useLocation } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+// This component previously handled authentication protection
+// Now it simply renders children without any auth checks
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-  const { canAccessRoute } = useAuthorization();
   const location = useLocation();
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        variant: "destructive",
-        title: "Authentication required",
-        description: "Please sign in to access this page.",
-      });
-    } else if (!isLoading && isAuthenticated && !canAccessRoute(location.pathname)) {
-      toast({
-        variant: "destructive",
-        title: "Access denied",
-        description: "You don't have permission to access this page.",
-      });
-    }
-  }, [isLoading, isAuthenticated, location.pathname, canAccessRoute, toast]);
-
-  if (isLoading) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center flex-col gap-4">
-        <Spinner size="lg" />
-        <p className="text-muted-foreground animate-pulse">Loading...</p>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  if (!canAccessRoute(location.pathname)) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
+  
+  // Log information about the route access for debugging
+  console.log(`Accessing route: ${location.pathname} - No auth required`);
+  
+  // Simply render children without any protection
   return <>{children}</>;
 };
 
