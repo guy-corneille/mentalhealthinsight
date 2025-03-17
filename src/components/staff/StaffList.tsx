@@ -2,7 +2,7 @@
 import React from 'react';
 import { StaffMemberDisplay, useCreateStaff, useUpdateStaff } from '@/services/staffService';
 import { useToast } from "@/hooks/use-toast";
-import StaffModal from './StaffModal';
+import StaffModal from './modals/StaffModal';
 import { StaffListProvider, useStaffListContext } from './StaffListContext';
 import StaffFilters from './StaffFilters';
 import StaffTable from './StaffTable';

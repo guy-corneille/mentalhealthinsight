@@ -4,7 +4,7 @@ import Layout from '@/components/layout/Layout';
 import StaffList from '@/components/staff/StaffList';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from 'lucide-react';
-import StaffModal from '@/components/staff/StaffModal';
+import StaffModal from '@/components/staff/modals/StaffModal';
 import { StaffMemberDisplay } from '@/services/staffService';
 
 const Staff: React.FC = () => {
