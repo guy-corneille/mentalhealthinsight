@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   UserIcon, 
   SearchIcon,
-  PlusIcon,
   FilterIcon,
   MoreHorizontalIcon,
   UserPlusIcon,
@@ -45,7 +44,8 @@ import {
   useStaffByFacility, 
   useDeleteStaff,
   useUpdateStaff, 
-  StaffMemberDisplay 
+  useCreateStaff,
+  StaffMemberDisplay
 } from '@/services/staffService';
 import { useFacilities } from '@/services/facilityService';
 import { Spinner } from "@/components/ui/spinner";
@@ -73,13 +73,13 @@ const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facil
   );
 
   // Fetch facilities for the filter dropdown
-  const { data: facilities } = useFacilities();
+  const { data: facilities = [] } = useFacilities();
   
   // Mutation for deleting a staff member
   const deleteStaffMutation = useDeleteStaff();
   
-  // Mutation for updating a staff member (for status toggle)
-  const updateStaffMutation = useUpdateStaff(0); // We'll update the ID when needed
+  // Mutation for creating a staff member
+  const createStaffMutation = useCreateStaff();
 
   // Determine which staff data to use
   const staffData = facilityId || facilityFilter !== 'all' ? facilityStaff : allStaff;
@@ -147,11 +147,11 @@ const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facil
   const handleToggleStatus = (member: StaffMemberDisplay) => {
     const newStatus = member.status === 'Active' ? 'On Leave' : 'Active';
     
-    // Create a new staff mutation with the current ID
-    const updateMutation = useUpdateStaff(member.id);
+    // Create a new update mutation specifically for this ID
+    const updateStaffMutation = useUpdateStaff(member.id);
     
     // Update the staff member's status
-    updateMutation.mutate(
+    updateStaffMutation.mutate(
       { status: newStatus },
       {
         onSuccess: () => {
@@ -172,14 +172,44 @@ const StaffList: React.FC<StaffListProps> = ({ showFacilityFilter = false, facil
   };
 
   const handleSaveStaff = (staffData: Partial<StaffMemberDisplay>) => {
-    // This will be implemented when the staff modal is updated
-    setModalOpen(false);
-    toast({
-      title: isEditing ? "Staff Updated" : "Staff Added",
-      description: isEditing 
-        ? "Staff information has been updated successfully."
-        : "New staff member has been added successfully.",
-    });
+    if (isEditing && currentStaff) {
+      // Update existing staff
+      const updateStaffMutation = useUpdateStaff(currentStaff.id);
+      updateStaffMutation.mutate(staffData, {
+        onSuccess: () => {
+          setModalOpen(false);
+          toast({
+            title: "Staff Updated",
+            description: "Staff information has been updated successfully."
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: `Failed to update staff: ${(error as Error).message}`,
+            variant: "destructive"
+          });
+        }
+      });
+    } else {
+      // Create new staff
+      createStaffMutation.mutate(staffData, {
+        onSuccess: () => {
+          setModalOpen(false);
+          toast({
+            title: "Staff Added",
+            description: "New staff member has been added successfully."
+          });
+        },
+        onError: (error) => {
+          toast({
+            title: "Error",
+            description: `Failed to add staff: ${(error as Error).message}`,
+            variant: "destructive"
+          });
+        }
+      });
+    }
   };
 
   // Show loading state

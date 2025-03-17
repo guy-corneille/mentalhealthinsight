@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { PlusIcon, XIcon } from 'lucide-react';
 import { StaffMemberDisplay } from '@/services/staffService';
 import { useFacilities } from '@/services/facilityService';
+import { useToast } from '@/hooks/use-toast';
 
 interface StaffModalProps {
   open: boolean;
@@ -38,12 +39,13 @@ const StaffModal: React.FC<StaffModalProps> = ({
   isEditing, 
   onSave 
 }) => {
+  const { toast } = useToast();
   const [formData, setFormData] = useState<Partial<StaffMemberDisplay>>({
     name: '',
     position: '',
     department: '',
     facilityId: 1,
-    facilityName: 'Central Hospital',
+    facilityName: '',
     joinDate: new Date().toISOString().split('T')[0],
     status: 'Active' as const,
     qualifications: [],
@@ -73,12 +75,15 @@ const StaffModal: React.FC<StaffModalProps> = ({
         contact: { ...staffData.contact }
       });
     } else {
+      // Use first facility from the API if available
+      const defaultFacility = facilities.length > 0 ? facilities[0] : { id: 1, name: 'Unknown Facility' };
+      
       setFormData({
         name: '',
         position: '',
         department: '',
-        facilityId: 1,
-        facilityName: facilities[0]?.name || 'Unknown Facility',
+        facilityId: defaultFacility.id,
+        facilityName: defaultFacility.name,
         joinDate: new Date().toISOString().split('T')[0],
         status: 'Active' as const,
         qualifications: [],
@@ -148,9 +153,74 @@ const StaffModal: React.FC<StaffModalProps> = ({
     }
   };
 
+  const validateForm = (): boolean => {
+    if (!formData.name?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Name is required",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!formData.position?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Position is required",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!formData.department?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Department is required",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!formData.contact?.email) {
+      toast({
+        title: "Validation Error",
+        description: "Email is required",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!formData.contact?.phone) {
+      toast({
+        title: "Validation Error",
+        description: "Phone is required",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    // Prepare data for backend
+    const staffPayload: Partial<StaffMemberDisplay> = {
+      ...formData,
+      // Set facility to facilityId for the backend
+      facility: formData.facilityId,
+      // Map frontend fields to backend field names
+      contact_email: formData.contact?.email,
+      contact_phone: formData.contact?.phone,
+      join_date: formData.joinDate
+    };
+    
+    onSave(staffPayload);
   };
 
   return (
@@ -213,7 +283,7 @@ const StaffModal: React.FC<StaffModalProps> = ({
               </Label>
               <Select 
                 onValueChange={handleFacilityChange} 
-                defaultValue={formData.facilityId?.toString()}
+                value={formData.facilityId?.toString()}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a facility" />
@@ -249,7 +319,7 @@ const StaffModal: React.FC<StaffModalProps> = ({
               </Label>
               <Select 
                 onValueChange={handleStatusChange} 
-                defaultValue={formData.status}
+                value={formData.status}
               >
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a status" />

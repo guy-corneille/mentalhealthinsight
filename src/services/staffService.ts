@@ -56,6 +56,26 @@ const transformStaffMember = (staff: StaffMember): StaffMemberDisplay => {
   };
 };
 
+// Transform frontend data to API format
+const transformToApiFormat = (staffData: Partial<StaffMemberDisplay>): Partial<StaffMember> => {
+  const apiData: Partial<StaffMember> = {
+    ...staffData,
+    // Map frontend fields to backend fields
+    facility: staffData.facilityId || staffData.facility,
+    join_date: staffData.joinDate || staffData.join_date,
+    contact_email: staffData.contact?.email || staffData.contact_email,
+    contact_phone: staffData.contact?.phone || staffData.contact_phone,
+  };
+  
+  // Remove frontend-specific properties
+  delete (apiData as any).facilityId;
+  delete (apiData as any).facilityName;
+  delete (apiData as any).joinDate;
+  delete (apiData as any).contact;
+  
+  return apiData;
+};
+
 /**
  * Staff Service
  * Handles all API operations related to staff members
@@ -105,9 +125,10 @@ const staffService = {
    * @param staffData Staff data to create
    * @returns Promise with created staff
    */
-  createStaff: async (staffData: Partial<StaffMember>): Promise<StaffMemberDisplay> => {
+  createStaff: async (staffData: Partial<StaffMemberDisplay>): Promise<StaffMemberDisplay> => {
     console.log('Creating new staff via API', staffData);
-    const response = await api.post<StaffMember>('/staff/', staffData);
+    const apiData = transformToApiFormat(staffData);
+    const response = await api.post<StaffMember>('/staff/', apiData);
     
     return transformStaffMember(response);
   },
@@ -118,9 +139,10 @@ const staffService = {
    * @param staffData Updated staff data
    * @returns Promise with updated staff
    */
-  updateStaff: async (id: number, staffData: Partial<StaffMember>): Promise<StaffMemberDisplay> => {
+  updateStaff: async (id: number, staffData: Partial<StaffMemberDisplay>): Promise<StaffMemberDisplay> => {
     console.log(`Updating staff with ID ${id} via API`, staffData);
-    const response = await api.put<StaffMember>(`/staff/${id}/`, staffData);
+    const apiData = transformToApiFormat(staffData);
+    const response = await api.put<StaffMember>(`/staff/${id}/`, apiData);
     
     return transformStaffMember(response);
   },
@@ -170,7 +192,7 @@ export const useCreateStaff = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (staffData: Partial<StaffMember>) => 
+    mutationFn: (staffData: Partial<StaffMemberDisplay>) => 
       staffService.createStaff(staffData),
     onSuccess: () => {
       // Invalidate staff queries to refetch the list
@@ -184,7 +206,7 @@ export const useUpdateStaff = (id: number) => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (staffData: Partial<StaffMember>) => 
+    mutationFn: (staffData: Partial<StaffMemberDisplay>) => 
       staffService.updateStaff(id, staffData),
     onSuccess: () => {
       // Invalidate relevant queries
