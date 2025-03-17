@@ -22,14 +22,13 @@ const api = axios.create({
   },
   
   // Set timeout to prevent hanging requests
-  timeout: 10000, // 10 seconds timeout
+  timeout: 15000, // 15 seconds timeout to allow for slower responses
 });
 
 // Request interceptor for API calls
-// This would normally add auth tokens, but we've disabled that requirement
 api.interceptors.request.use(
   (config) => {
-    console.log(`Making API request to: ${config.url}`);
+    console.log(`Making API request to: ${config.url}`, config.data);
     // No longer adding auth tokens - all requests go through without authentication
     return config;
   },
@@ -43,7 +42,7 @@ api.interceptors.request.use(
 // This processes the responses from the API
 api.interceptors.response.use(
   (response) => {
-    console.log(`Successful response from: ${response.config.url}`);
+    console.log(`Successful response from: ${response.config.url}`, response.data);
     return response.data;  // Return data directly
   },
   (error: AxiosError) => {
@@ -52,8 +51,6 @@ api.interceptors.response.use(
     console.error('Status:', error.response?.status);
     console.error('Request URL:', error.config?.url);
     console.error('Request Data:', error.config?.data);
-    
-    // No longer handling auth errors specifically - just log and pass through
     
     // Type assertion for the error response data
     const responseData = error.response?.data as ApiErrorResponse | undefined;

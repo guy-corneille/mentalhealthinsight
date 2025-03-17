@@ -61,9 +61,10 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
   useEffect(() => {
     // If editing mode and facility data loaded, populate form
     if (isEdit && facilityData) {
+      console.log('Loading facility data into form:', facilityData);
       setFormData({
         name: facilityData.name || '',
-        facility_type: facilityData.type || facilityData.facility_type || '',
+        facility_type: facilityData.facility_type || '',
         address: facilityData.address || '',
         city: facilityData.city || '',
         district: facilityData.district || '',
@@ -106,10 +107,13 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
       capacity: parseInt(formData.capacity) || 0,
     };
 
+    console.log('Submitting facility data:', facilityPayload);
+
     if (isEdit && id) {
       // Update existing facility
       updateFacilityMutation.mutate(facilityPayload, {
         onSuccess: (data) => {
+          console.log('Facility updated successfully:', data);
           toast({
             title: "Facility Updated",
             description: `${data.name} has been updated successfully.`,
@@ -117,6 +121,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
           navigate('/facilities');
         },
         onError: (error) => {
+          console.error('Error updating facility:', error);
           toast({
             title: "Update Failed",
             description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -128,6 +133,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
       // Create new facility
       createFacilityMutation.mutate(facilityPayload, {
         onSuccess: (data) => {
+          console.log('Facility created successfully:', data);
           toast({
             title: "Facility Created",
             description: `${data.name} has been added successfully.`,
@@ -135,6 +141,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
           navigate('/facilities');
         },
         onError: (error) => {
+          console.error('Error creating facility:', error);
           toast({
             title: "Creation Failed",
             description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,

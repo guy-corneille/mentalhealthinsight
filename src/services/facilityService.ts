@@ -65,13 +65,27 @@ const facilityService = {
    */
   getAllFacilities: async (): Promise<Facility[]> => {
     console.log('Fetching all facilities from API');
-    // API endpoint for getting all facilities
-    const response = await api.get<PaginatedResponse<Facility>>('/facilities/');
-    
-    // Transform the data for frontend use
-    return Array.isArray(response.results) 
-      ? response.results.map(transformFacility)
-      : [];
+    try {
+      // API endpoint for getting all facilities
+      const response = await api.get<PaginatedResponse<Facility>>('/facilities/');
+      
+      console.log('API response for facilities:', response);
+      
+      // Transform the data for frontend use
+      if (response && Array.isArray(response.results)) {
+        return response.results.map(transformFacility);
+      } else if (Array.isArray(response)) {
+        // Handle case where response is a direct array
+        return response.map(transformFacility);
+      }
+      
+      // Return empty array if no valid data
+      console.warn('Invalid API response for facilities:', response);
+      return [];
+    } catch (error) {
+      console.error('Error fetching facilities:', error);
+      throw error;
+    }
   },
 
   /**
@@ -81,11 +95,18 @@ const facilityService = {
    */
   getFacilityById: async (id: number): Promise<Facility> => {
     console.log(`Fetching facility with ID ${id} from API`);
-    // API endpoint for getting a specific facility
-    const response = await api.get<Facility>(`/facilities/${id}/`);
-    
-    // Transform the data for frontend use
-    return transformFacility(response);
+    try {
+      // API endpoint for getting a specific facility
+      const response = await api.get<Facility>(`/facilities/${id}/`);
+      
+      console.log(`API response for facility ${id}:`, response);
+      
+      // Transform the data for frontend use
+      return transformFacility(response);
+    } catch (error) {
+      console.error(`Error fetching facility ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
@@ -95,10 +116,17 @@ const facilityService = {
    */
   createFacility: async (facilityData: Partial<Facility>): Promise<Facility> => {
     console.log('Creating new facility via API', facilityData);
-    // API endpoint for creating a facility
-    const response = await api.post<Facility>('/facilities/', facilityData);
-    
-    return transformFacility(response);
+    try {
+      // API endpoint for creating a facility
+      const response = await api.post<Facility>('/facilities/', facilityData);
+      
+      console.log('API response for create facility:', response);
+      
+      return transformFacility(response);
+    } catch (error) {
+      console.error('Error creating facility:', error);
+      throw error;
+    }
   },
 
   /**
@@ -109,10 +137,17 @@ const facilityService = {
    */
   updateFacility: async (id: number, facilityData: Partial<Facility>): Promise<Facility> => {
     console.log(`Updating facility with ID ${id} via API`, facilityData);
-    // API endpoint for updating a facility
-    const response = await api.put<Facility>(`/facilities/${id}/`, facilityData);
-    
-    return transformFacility(response);
+    try {
+      // API endpoint for updating a facility
+      const response = await api.put<Facility>(`/facilities/${id}/`, facilityData);
+      
+      console.log(`API response for update facility ${id}:`, response);
+      
+      return transformFacility(response);
+    } catch (error) {
+      console.error(`Error updating facility ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
@@ -122,8 +157,14 @@ const facilityService = {
    */
   deleteFacility: async (id: number): Promise<void> => {
     console.log(`Deleting facility with ID ${id} via API`);
-    // API endpoint for deleting a facility
-    await api.delete(`/facilities/${id}/`);
+    try {
+      // API endpoint for deleting a facility
+      await api.delete(`/facilities/${id}/`);
+      console.log(`Successfully deleted facility ${id}`);
+    } catch (error) {
+      console.error(`Error deleting facility ${id}:`, error);
+      throw error;
+    }
   },
 };
 

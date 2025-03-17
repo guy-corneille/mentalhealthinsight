@@ -27,14 +27,24 @@ const FacilityList: React.FC = () => {
   const [filteredFacilities, setFilteredFacilities] = useState<Facility[]>([]);
   
   // Fetch facilities using React Query
-  const { data: facilities, isLoading, error } = useFacilities();
+  const { data: facilities, isLoading, error, refetch } = useFacilities();
   
   // Mutation for deleting a facility
   const deleteFacilityMutation = useDeleteFacility();
 
+  // Force a refetch when the component mounts
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
   // Apply filters and sorting when facilities, search query, or filters change
   useEffect(() => {
-    if (!facilities) return;
+    if (!facilities) {
+      console.log('No facilities data available');
+      return;
+    }
+    
+    console.log('Processing facilities for display:', facilities);
     
     let results = [...facilities];
     
@@ -76,6 +86,7 @@ const FacilityList: React.FC = () => {
       return 0;
     });
     
+    console.log('Filtered and sorted facilities:', results);
     setFilteredFacilities(results);
   }, [facilities, searchQuery, typeFilter, sortColumn, sortDirection]);
 
@@ -100,6 +111,8 @@ const FacilityList: React.FC = () => {
             title: "Facility Deleted",
             description: `${name} has been removed successfully.`,
           });
+          // Force refetch after deletion
+          refetch();
         },
         onError: (error) => {
           toast({
@@ -143,6 +156,45 @@ const FacilityList: React.FC = () => {
       <div className="py-12 text-center">
         <p className="text-rose-500 mb-2">Error loading facilities</p>
         <p className="text-muted-foreground">{(error as Error).message || 'Unknown error occurred'}</p>
+        <Button 
+          onClick={() => refetch()} 
+          variant="outline" 
+          className="mt-4"
+        >
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  // Show empty state if no facilities after filtering
+  if (filteredFacilities.length === 0) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex justify-between items-center">
+          <FacilitySearchFilters 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            typeFilter={typeFilter}
+            setTypeFilter={setTypeFilter}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            onClearFilters={handleClearFilters}
+          />
+          
+          <Button 
+            onClick={() => navigate('/facilities/add')}
+            className="bg-healthiq-600 hover:bg-healthiq-700"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Add Facility
+          </Button>
+        </div>
+        
+        <EmptyFacilityState 
+          hasFilters={hasFilters} 
+          onClearFilters={handleClearFilters} 
+        />
       </div>
     );
   }
@@ -169,12 +221,7 @@ const FacilityList: React.FC = () => {
         </Button>
       </div>
       
-      {filteredFacilities.length === 0 ? (
-        <EmptyFacilityState 
-          hasFilters={hasFilters} 
-          onClearFilters={handleClearFilters} 
-        />
-      ) : viewMode === 'grid' ? (
+      {viewMode === 'grid' ? (
         <FacilityGridView 
           facilities={filteredFacilities} 
           onDelete={handleDelete}
