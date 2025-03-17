@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +37,6 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // State for search and filtering
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [filteredCriteria, setFilteredCriteria] = useState<AssessmentCriteria[]>([]);
@@ -47,26 +45,20 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
     direction: 'asc' | 'desc';
   }>({ key: 'name', direction: 'asc' });
   
-  // Fetch criteria using React Query
   const { data: criteria, isLoading, error } = useAssessmentCriteria(criteriaType);
-  
-  // Delete criteria mutation
   const deleteCriteriaMutation = useDeleteAssessmentCriteria();
   
-  // Filter and sort criteria when data changes
   useEffect(() => {
     if (!criteria) return;
     
     let results = [...criteria];
     
-    // Apply category filter
     if (categoryFilter !== 'all') {
       results = results.filter(criterion => 
         criterion.category.toLowerCase() === categoryFilter.toLowerCase()
       );
     }
     
-    // Apply search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       results = results.filter(criterion => 
@@ -75,7 +67,6 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
       );
     }
     
-    // Apply sorting
     results.sort((a, b) => {
       const aValue = a[sortConfig.key] || '';
       const bValue = b[sortConfig.key] || '';
@@ -92,7 +83,6 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
     setFilteredCriteria(results);
   }, [criteria, searchQuery, categoryFilter, sortConfig]);
   
-  // Handler for sorting
   const handleSort = (key: keyof AssessmentCriteria) => {
     setSortConfig(current => ({
       key,
@@ -100,10 +90,9 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
     }));
   };
   
-  // Handler for deleting a criterion
-  const handleDelete = (id: number, name: string) => {
+  const handleDelete = (id: number, name: string, purpose: 'Assessment' | 'Audit') => {
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteCriteriaMutation.mutate(id, {
+      deleteCriteriaMutation.mutate({ id, purpose }, {
         onSuccess: () => {
           toast({
             title: "Criterion Deleted",
@@ -122,7 +111,6 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
     }
   };
   
-  // Category badge styling
   const getCategoryBadgeStyle = (category: string) => {
     switch (category.toLowerCase()) {
       case 'clinical':
@@ -140,7 +128,6 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
     }
   };
   
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -150,7 +137,6 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
     );
   }
   
-  // Show error state
   if (error) {
     return (
       <div className="py-12 text-center">
@@ -160,7 +146,6 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
     );
   }
   
-  // Get unique categories for the filter
   const categories = criteria
     ? ['all', ...new Set(criteria.map(item => item.category.toLowerCase()))]
     : ['all'];
@@ -288,7 +273,7 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={() => handleDelete(criterion.id, criterion.name)}
+                          onClick={() => handleDelete(criterion.id, criterion.name, criterion.purpose)}
                         >
                           <Trash2Icon className="h-4 w-4 text-rose-500" />
                         </Button>

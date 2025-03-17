@@ -14,7 +14,7 @@ export interface AssessmentCriteria {
   name: string;
   category: string;
   description: string;
-  purpose?: 'Assessment' | 'Audit';
+  purpose: 'Assessment' | 'Audit';
   indicators?: Indicator[];
   created_at?: string;
   updated_at?: string;
@@ -41,7 +41,13 @@ const criteriaService = {
   getAllCriteria: async (type: 'assessment' | 'audit'): Promise<AssessmentCriteria[]> => {
     console.log(`Fetching all ${type} criteria from API`);
     const purpose = type === 'assessment' ? 'Assessment' : 'Audit';
-    const response = await api.get<PaginatedResponse<AssessmentCriteria>>(`/assessment-criteria/?purpose=${purpose}`);
+    
+    // Use different endpoints for assessment and audit criteria
+    const endpoint = type === 'assessment' 
+      ? '/assessment-criteria/'
+      : '/audit-criteria/';
+      
+    const response = await api.get<PaginatedResponse<AssessmentCriteria>>(`${endpoint}?purpose=${purpose}`);
     
     return Array.isArray(response.results) ? response.results : [];
   },
@@ -53,6 +59,8 @@ const criteriaService = {
    */
   getCriterionById: async (id: number): Promise<AssessmentCriteria> => {
     console.log(`Fetching criterion with ID ${id} from API`);
+    // We'll determine endpoint based on purpose in the future
+    // For now, use assessment-criteria endpoint
     const response = await api.get<AssessmentCriteria>(`/assessment-criteria/${id}/`);
     
     return response;
@@ -65,7 +73,13 @@ const criteriaService = {
    */
   createCriterion: async (criterionData: Partial<AssessmentCriteria>): Promise<AssessmentCriteria> => {
     console.log('Creating new criterion via API', criterionData);
-    const response = await api.post<AssessmentCriteria>('/assessment-criteria/', criterionData);
+    
+    // Use different endpoints based on purpose
+    const endpoint = criterionData.purpose === 'Audit' 
+      ? '/audit-criteria/' 
+      : '/assessment-criteria/';
+      
+    const response = await api.post<AssessmentCriteria>(endpoint, criterionData);
     
     return response;
   },
@@ -78,28 +92,48 @@ const criteriaService = {
    */
   updateCriterion: async (id: number, criterionData: Partial<AssessmentCriteria>): Promise<AssessmentCriteria> => {
     console.log(`Updating criterion with ID ${id} via API`, criterionData);
-    const response = await api.put<AssessmentCriteria>(`/assessment-criteria/${id}/`, criterionData);
+    
+    // Use different endpoints based on purpose
+    const endpoint = criterionData.purpose === 'Audit' 
+      ? `/audit-criteria/${id}/` 
+      : `/assessment-criteria/${id}/`;
+      
+    const response = await api.put<AssessmentCriteria>(endpoint, criterionData);
     
     return response;
   },
 
   /**
    * Delete a criterion
-   * @param id Criterion ID to delete
+   * @param id Criterion ID
+   * @param purpose Whether it's an assessment or audit criterion
    */
-  deleteCriterion: async (id: number): Promise<void> => {
-    console.log(`Deleting criterion with ID ${id} via API`);
-    await api.delete(`/assessment-criteria/${id}/`);
+  deleteCriterion: async (id: number, purpose: 'Assessment' | 'Audit'): Promise<void> => {
+    console.log(`Deleting criterion with ID ${id} and purpose ${purpose} via API`);
+    
+    // Use different endpoints based on purpose
+    const endpoint = purpose === 'Audit' 
+      ? `/audit-criteria/${id}/` 
+      : `/assessment-criteria/${id}/`;
+      
+    await api.delete(endpoint);
   },
 
   /**
    * Get indicators for a specific criterion
    * @param criterionId Criterion ID
+   * @param purpose Whether it's an assessment or audit criterion
    * @returns Promise with indicators data
    */
-  getIndicators: async (criterionId: number): Promise<Indicator[]> => {
+  getIndicators: async (criterionId: number, purpose: 'Assessment' | 'Audit'): Promise<Indicator[]> => {
     console.log(`Fetching indicators for criterion ID ${criterionId} from API`);
-    const response = await api.get<Indicator[]>(`/assessment-criteria/${criterionId}/indicators/`);
+    
+    // Use different endpoints based on purpose
+    const endpoint = purpose === 'Audit' 
+      ? `/audit-criteria/${criterionId}/indicators/` 
+      : `/assessment-criteria/${criterionId}/indicators/`;
+      
+    const response = await api.get<Indicator[]>(endpoint);
     
     return Array.isArray(response) ? response : [];
   },
@@ -134,9 +168,11 @@ export const useCreateAssessmentCriteria = () => {
   return useMutation({
     mutationFn: (criterionData: Partial<AssessmentCriteria>) => 
       criteriaService.createCriterion(criterionData),
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate criteria queries to refetch the list
-      queryClient.invalidateQueries({ queryKey: ['criteria'] });
+      const purpose = data.purpose || 'Assessment';
+      const type = purpose === 'Assessment' ? 'assessment' : 'audit';
+      queryClient.invalidateQueries({ queryKey: ['criteria', type] });
     },
   });
 };
@@ -148,9 +184,11 @@ export const useUpdateAssessmentCriteria = (id: number) => {
   return useMutation({
     mutationFn: (criterionData: Partial<AssessmentCriteria>) => 
       criteriaService.updateCriterion(id, criterionData),
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['criteria'] });
+      const purpose = data.purpose || 'Assessment';
+      const type = purpose === 'Assessment' ? 'assessment' : 'audit';
+      queryClient.invalidateQueries({ queryKey: ['criteria', type] });
       queryClient.invalidateQueries({ queryKey: ['criterion', id] });
     },
   });
@@ -161,10 +199,12 @@ export const useDeleteAssessmentCriteria = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id: number) => criteriaService.deleteCriterion(id),
-    onSuccess: () => {
+    mutationFn: ({ id, purpose }: { id: number; purpose: 'Assessment' | 'Audit' }) => 
+      criteriaService.deleteCriterion(id, purpose),
+    onSuccess: (_, { purpose }) => {
       // Invalidate criteria queries to refetch the list
-      queryClient.invalidateQueries({ queryKey: ['criteria'] });
+      const type = purpose === 'Assessment' ? 'assessment' : 'audit';
+      queryClient.invalidateQueries({ queryKey: ['criteria', type] });
     },
   });
 };

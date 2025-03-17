@@ -4,11 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+type CriteriaCategory = 'Clinical' | 'Facility' | 'Administrative' | 'Ethical' | 'Quality Improvement';
+type CriteriaPurpose = 'Assessment' | 'Audit';
+
 interface CriteriaFormFieldsProps {
   name: string;
   description: string;
-  category: 'Clinical' | 'Facility' | 'Administrative' | 'Ethical' | 'Quality Improvement';
-  purpose: 'Assessment' | 'Audit';
+  category: CriteriaCategory;
+  purpose: CriteriaPurpose;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
 }
 
@@ -57,7 +60,7 @@ const CriteriaFormFields: React.FC<CriteriaFormFieldsProps> = ({
         <label htmlFor="purpose" className="block text-sm font-medium mb-1">
           Purpose *
         </label>
-        <Select name="purpose" value={purpose} onValueChange={(value) => onInputChange({ target: { name: 'purpose', value } } as any)}>
+        <Select name="purpose" value={purpose} onValueChange={(value: CriteriaPurpose) => onInputChange({ target: { name: 'purpose', value } } as any)}>
           <SelectTrigger id="purpose">
             <SelectValue placeholder="Select purpose" />
           </SelectTrigger>

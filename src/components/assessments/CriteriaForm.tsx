@@ -22,9 +22,9 @@ const CriteriaForm: React.FC<CriteriaFormProps> = ({ criteriaType }) => {
   // Form state
   const [formData, setFormData] = React.useState({
     name: '',
-    category: 'Clinical',
+    category: 'Clinical' as const,
     description: '',
-    purpose: criteriaType === 'audit' ? 'Audit' : 'Assessment',
+    purpose: criteriaType === 'audit' ? 'Audit' as const : 'Assessment' as const,
     indicators: [{ name: '', weight: 1.0 }]
   });
 
@@ -45,9 +45,9 @@ const CriteriaForm: React.FC<CriteriaFormProps> = ({ criteriaType }) => {
     if (criterion) {
       setFormData({
         name: criterion.name,
-        category: criterion.category,
+        category: criterion.category as 'Clinical' | 'Facility' | 'Administrative' | 'Ethical' | 'Quality Improvement',
         description: criterion.description || '',
-        purpose: criterion.purpose === 'Audit' ? 'Audit' : 'Assessment',
+        purpose: criterion.purpose || 'Assessment' as const,
         indicators: criterion.indicators?.length 
           ? criterion.indicators 
           : [{ name: '', weight: 1.0 }]
@@ -62,7 +62,7 @@ const CriteriaForm: React.FC<CriteriaFormProps> = ({ criteriaType }) => {
 
   const handleIndicatorChange = (index: number, field: 'name' | 'weight', value: string | number) => {
     const newIndicators = [...formData.indicators];
-    newIndicators[index][field] = field === 'weight' ? Number(value) : value;
+    newIndicators[index][field] = value;
     setFormData(prev => ({ ...prev, indicators: newIndicators }));
   };
 
@@ -158,8 +158,8 @@ const CriteriaForm: React.FC<CriteriaFormProps> = ({ criteriaType }) => {
             <CriteriaFormFields
               name={formData.name}
               description={formData.description}
-              category={formData.category as any}
-              purpose={formData.purpose as any}
+              category={formData.category}
+              purpose={formData.purpose}
               onInputChange={handleInputChange}
             />
 
