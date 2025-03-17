@@ -1,89 +1,83 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BuildingIcon, MapPinIcon, EyeIcon, EditIcon, Trash2Icon } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Facility } from '@/services/facilityService';
+import { MapPinIcon, UsersIcon, CalendarIcon, Edit2Icon, Trash2Icon } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
 
 interface FacilityListViewProps {
   facilities: Facility[];
   onDelete: (id: number, name: string) => void;
+  onEdit: (id: number) => void;
 }
 
-/**
- * List view for facilities
- * Displays facilities in a list layout with detailed information
- */
-const FacilityListView: React.FC<FacilityListViewProps> = ({ facilities, onDelete }) => {
-  const navigate = useNavigate();
-
+const FacilityListView: React.FC<FacilityListViewProps> = ({ facilities, onDelete, onEdit }) => {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {facilities.map((facility) => (
-        <div key={facility.id} className="p-4 bg-card rounded-lg border shadow-sm flex flex-wrap md:flex-nowrap items-center justify-between gap-4 animate-slide-in">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-healthiq-100 flex items-center justify-center">
-              <BuildingIcon className="h-5 w-5 text-healthiq-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold">{facility.name}</h3>
-              <div className="flex items-center text-sm text-muted-foreground">
-                <MapPinIcon className="h-3 w-3 mr-1" />
-                {facility.location}
+        <Card key={facility.id} className="overflow-hidden hover:shadow-md transition-shadow">
+          <CardContent className="p-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+              <div className="flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <h3 className="font-semibold">{facility.name}</h3>
+                  <Badge variant="outline" className="bg-healthiq-50 sm:ml-2 w-fit">
+                    {facility.type || facility.facility_type}
+                  </Badge>
+                </div>
+                
+                <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                  <div className="flex items-center">
+                    <MapPinIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-muted-foreground truncate">
+                      {facility.location || `${facility.city || facility.district}, ${facility.province}, ${facility.country}`}
+                    </span>
+                  </div>
+                  
+                  {facility.capacity && (
+                    <div className="flex items-center">
+                      <UsersIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-muted-foreground">
+                        Capacity: {facility.capacity}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {facility.lastAudit && (
+                    <div className="flex items-center">
+                      <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <span className="text-muted-foreground">
+                        Last audit: {facility.lastAudit}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-center self-end sm:self-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onEdit(facility.id)}
+                >
+                  <Edit2Icon className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-rose-500 hover:bg-rose-50 hover:text-rose-600"
+                  onClick={() => onDelete(facility.id, facility.name)}
+                >
+                  <Trash2Icon className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
               </div>
             </div>
-          </div>
-          
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="px-3 py-1 bg-muted/50 rounded-md">
-              <p className="text-xs text-muted-foreground">Type</p>
-              <p className="font-medium">{facility.type}</p>
-            </div>
-            <div className="px-3 py-1 bg-muted/50 rounded-md">
-              <p className="text-xs text-muted-foreground">Capacity</p>
-              <p className="font-medium">{facility.capacity}</p>
-            </div>
-            <div className="px-3 py-1 bg-muted/50 rounded-md">
-              <p className="text-xs text-muted-foreground">Last Audit</p>
-              <p className="font-medium">
-                {facility.lastAudit ? new Date(facility.lastAudit).toLocaleDateString() : 'None'}
-              </p>
-            </div>
-            <Badge className={
-              (facility.score || 0) >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-              (facility.score || 0) >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
-              'bg-rose-50 text-rose-600 hover:bg-rose-100'
-            }>
-              {facility.score || 0}%
-            </Badge>
-          </div>
-          
-          <div className="flex items-center justify-end gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => navigate(`/facilities/${facility.id}`)}
-            >
-              <EyeIcon className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => navigate(`/facilities/edit/${facility.id}`)}
-            >
-              <EditIcon className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              className="text-rose-600"
-              onClick={() => onDelete(facility.id, facility.name)}
-            >
-              <Trash2Icon className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

@@ -1,107 +1,81 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BuildingIcon, CalendarIcon, MapPinIcon, EyeIcon, EditIcon, Trash2Icon } from 'lucide-react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Facility } from '@/services/facilityService';
+import { MapPinIcon, UsersIcon, CalendarIcon, Edit2Icon, Trash2Icon } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
 
 interface FacilityGridViewProps {
   facilities: Facility[];
   onDelete: (id: number, name: string) => void;
+  onEdit: (id: number) => void;
 }
 
-/**
- * Grid view for facilities
- * Displays facilities in a card grid layout
- */
-const FacilityGridView: React.FC<FacilityGridViewProps> = ({ facilities, onDelete }) => {
-  const navigate = useNavigate();
-
+const FacilityGridView: React.FC<FacilityGridViewProps> = ({ facilities, onDelete, onEdit }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {facilities.map((facility) => (
-        <Card key={facility.id} className="overflow-hidden transition-all duration-200 hover:shadow-md animate-scale-in">
-          <CardContent className="p-0">
-            <div className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-healthiq-100 flex items-center justify-center">
-                    <BuildingIcon className="h-5 w-5 text-healthiq-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{facility.name}</h3>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPinIcon className="h-3 w-3 mr-1" />
-                      {facility.location}
-                    </div>
-                  </div>
-                </div>
-                <Badge className={
-                  (facility.score || 0) >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-                  (facility.score || 0) >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
-                  'bg-rose-50 text-rose-600 hover:bg-rose-100'
-                }>
-                  {facility.score || 0}%
+        <Card key={facility.id} className="overflow-hidden hover:shadow-md transition-shadow">
+          <div className="bg-gradient-to-r from-healthiq-100 to-healthiq-50 h-2" />
+          <CardContent className="p-6 pb-0">
+            <div className="flex flex-col h-full">
+              <div className="flex justify-between items-start">
+                <h3 className="text-lg font-semibold line-clamp-2">{facility.name}</h3>
+                <Badge variant="outline" className="bg-healthiq-50">
+                  {facility.type || facility.facility_type}
                 </Badge>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Type</p>
-                  <p className="font-medium">{facility.type}</p>
-                </div>
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <p className="text-xs text-muted-foreground">Capacity</p>
-                  <p className="font-medium">{facility.capacity}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <CalendarIcon className="h-3 w-3 mr-1" />
-                  Last audit: {facility.lastAudit ? new Date(facility.lastAudit).toLocaleDateString() : 'None'}
+              <div className="mt-4 space-y-2 text-sm">
+                <div className="flex items-start">
+                  <MapPinIcon className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    {facility.location || `${facility.city || facility.district}, ${facility.province}, ${facility.country}`}
+                  </span>
                 </div>
                 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      Actions
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuLabel>Facility Actions</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate(`/facilities/${facility.id}`)}>
-                      <EyeIcon className="h-4 w-4 mr-2" />
-                      View Details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate(`/facilities/edit/${facility.id}`)}>
-                      <EditIcon className="h-4 w-4 mr-2" />
-                      Edit Facility
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      className="text-rose-600"
-                      onClick={() => onDelete(facility.id, facility.name)}
-                    >
-                      <Trash2Icon className="h-4 w-4 mr-2" />
-                      Remove
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {facility.capacity && (
+                  <div className="flex items-center">
+                    <UsersIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      Capacity: {facility.capacity}
+                    </span>
+                  </div>
+                )}
+                
+                {facility.lastAudit && (
+                  <div className="flex items-center">
+                    <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                    <span className="text-muted-foreground">
+                      Last audit: {facility.lastAudit}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
+          
+          <CardFooter className="p-6 pt-4 flex justify-between">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onEdit(facility.id)}
+            >
+              <Edit2Icon className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="text-rose-500 hover:bg-rose-50 hover:text-rose-600"
+              onClick={() => onDelete(facility.id, facility.name)}
+            >
+              <Trash2Icon className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          </CardFooter>
         </Card>
       ))}
     </div>

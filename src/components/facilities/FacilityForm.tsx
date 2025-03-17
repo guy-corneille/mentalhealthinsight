@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -22,6 +23,7 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
+import { useFacility, useCreateFacility, useUpdateFacility, Facility } from '@/services/facilityService';
 
 interface FacilityFormProps {
   isEdit?: boolean;
@@ -31,80 +33,116 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  
+  // Use React Query hooks for API operations
+  const facilityId = id ? parseInt(id) : 0;
+  const { data: facilityData, isLoading: isFetchingFacility } = useFacility(facilityId);
+  const createFacilityMutation = useCreateFacility();
+  const updateFacilityMutation = useUpdateFacility(facilityId);
+  
+  const isLoading = isFetchingFacility || createFacilityMutation.isPending || updateFacilityMutation.isPending;
 
-  const [facilityData, setFacilityData] = useState({
+  const [formData, setFormData] = useState({
     name: '',
-    type: '',
-    location: '',
+    facility_type: '',
+    address: '',
+    city: '',
+    district: '',
+    province: '',
+    country: 'Rwanda',
     capacity: '',
     description: '',
-    email: '',
-    phone: '',
+    contact_email: '',
+    contact_phone: '',
     website: '',
-    leadDoctor: '',
-    staffCount: '',
+    contact_name: '',
   });
 
   useEffect(() => {
-    if (isEdit && id) {
-      setIsLoading(true);
-      setTimeout(() => {
-        setFacilityData({
-          name: 'Central Hospital',
-          type: 'Hospital',
-          location: 'Kigali, Rwanda',
-          capacity: '250',
-          description: 'A leading mental health facility providing comprehensive services to the community.',
-          email: 'info@centralhospital.rw',
-          phone: '+250 782 123 456',
-          website: 'www.centralhospital.rw',
-          leadDoctor: 'Dr. Jean Mutabazi',
-          staffCount: '120',
-        });
-        setIsLoading(false);
-      }, 800);
+    // If editing mode and facility data loaded, populate form
+    if (isEdit && facilityData) {
+      setFormData({
+        name: facilityData.name || '',
+        facility_type: facilityData.type || facilityData.facility_type || '',
+        address: facilityData.address || '',
+        city: facilityData.city || '',
+        district: facilityData.district || '',
+        province: facilityData.province || '',
+        country: facilityData.country || 'Rwanda',
+        capacity: facilityData.capacity?.toString() || '',
+        description: facilityData.description || '',
+        contact_email: facilityData.contact_email || '',
+        contact_phone: facilityData.contact_phone || '',
+        website: facilityData.website || '',
+        contact_name: facilityData.contact_name || '',
+      });
     }
-  }, [isEdit, id]);
+  }, [isEdit, facilityData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFacilityData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (value: string, name: string) => {
-    setFacilityData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    if (!facilityData.name || !facilityData.type || !facilityData.location) {
+    if (!formData.name || !formData.facility_type || !formData.address) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields.",
         variant: "destructive",
       });
-      setIsLoading(false);
       return;
     }
 
-    setTimeout(() => {
-      if (isEdit) {
-        toast({
-          title: "Facility Updated",
-          description: `${facilityData.name} has been updated successfully.`,
-        });
-      } else {
-        toast({
-          title: "Facility Created",
-          description: `${facilityData.name} has been added successfully.`,
-        });
-      }
-      setIsLoading(false);
-      navigate('/facilities');
-    }, 1000);
+    // Prepare facility data with proper types
+    const facilityPayload: Partial<Facility> = {
+      ...formData,
+      capacity: parseInt(formData.capacity) || 0,
+    };
+
+    if (isEdit && id) {
+      // Update existing facility
+      updateFacilityMutation.mutate(facilityPayload, {
+        onSuccess: (data) => {
+          toast({
+            title: "Facility Updated",
+            description: `${data.name} has been updated successfully.`,
+          });
+          navigate('/facilities');
+        },
+        onError: (error) => {
+          toast({
+            title: "Update Failed",
+            description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            variant: "destructive",
+          });
+        }
+      });
+    } else {
+      // Create new facility
+      createFacilityMutation.mutate(facilityPayload, {
+        onSuccess: (data) => {
+          toast({
+            title: "Facility Created",
+            description: `${data.name} has been added successfully.`,
+          });
+          navigate('/facilities');
+        },
+        onError: (error) => {
+          toast({
+            title: "Creation Failed",
+            description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            variant: "destructive",
+          });
+        }
+      });
+    }
   };
 
   return (
@@ -122,7 +160,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
         </h1>
       </div>
 
-      {isLoading && !isEdit ? (
+      {isFetchingFacility && isEdit ? (
         <div className="flex flex-col items-center justify-center p-8 gap-4">
           <Spinner size="lg" />
           <p className="text-muted-foreground">Loading facility data...</p>
@@ -144,7 +182,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
                       <Input
                         id="name"
                         name="name"
-                        value={facilityData.name}
+                        value={formData.name}
                         onChange={handleInputChange}
                         className="rounded-l-none"
                         placeholder="Enter facility name"
@@ -154,12 +192,12 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
                   </div>
 
                   <div>
-                    <Label htmlFor="type" className="text-base">
+                    <Label htmlFor="facility_type" className="text-base">
                       Facility Type <span className="text-red-500">*</span>
                     </Label>
                     <Select
-                      value={facilityData.type}
-                      onValueChange={(value) => handleSelectChange(value, 'type')}
+                      value={formData.facility_type}
+                      onValueChange={(value) => handleSelectChange(value, 'facility_type')}
                     >
                       <SelectTrigger className="w-full mt-1">
                         <SelectValue placeholder="Select facility type" />
@@ -174,20 +212,20 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
                   </div>
 
                   <div>
-                    <Label htmlFor="location" className="text-base">
-                      Location <span className="text-red-500">*</span>
+                    <Label htmlFor="address" className="text-base">
+                      Address <span className="text-red-500">*</span>
                     </Label>
                     <div className="flex mt-1">
                       <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted">
                         <MapPinIcon className="h-4 w-4 text-muted-foreground" />
                       </span>
                       <Input
-                        id="location"
-                        name="location"
-                        value={facilityData.location}
+                        id="address"
+                        name="address"
+                        value={formData.address}
                         onChange={handleInputChange}
                         className="rounded-l-none"
-                        placeholder="City, Country"
+                        placeholder="Street address"
                         required
                       />
                     </div>
@@ -195,39 +233,64 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="capacity" className="text-base">
-                        Capacity
+                      <Label htmlFor="city" className="text-base">
+                        City
                       </Label>
                       <Input
-                        id="capacity"
-                        name="capacity"
-                        type="number"
-                        value={facilityData.capacity}
+                        id="city"
+                        name="city"
+                        value={formData.city}
                         onChange={handleInputChange}
                         className="mt-1"
-                        placeholder="Patient capacity"
+                        placeholder="City"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="staffCount" className="text-base">
-                        Staff Count
+                      <Label htmlFor="district" className="text-base">
+                        District <span className="text-red-500">*</span>
                       </Label>
-                      <div className="flex mt-1">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted">
-                          <UsersIcon className="h-4 w-4 text-muted-foreground" />
-                        </span>
-                        <Input
-                          id="staffCount"
-                          name="staffCount"
-                          type="number"
-                          value={facilityData.staffCount}
-                          onChange={handleInputChange}
-                          className="rounded-l-none"
-                          placeholder="Number of staff"
-                        />
-                      </div>
+                      <Input
+                        id="district"
+                        name="district"
+                        value={formData.district}
+                        onChange={handleInputChange}
+                        className="mt-1"
+                        placeholder="District"
+                        required
+                      />
                     </div>
                   </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="province" className="text-base">
+                        Province <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="province"
+                        name="province"
+                        value={formData.province}
+                        onChange={handleInputChange}
+                        className="mt-1"
+                        placeholder="Province"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="country" className="text-base">
+                        Country
+                      </Label>
+                      <Input
+                        id="country"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleInputChange}
+                        className="mt-1"
+                        placeholder="Country"
+                      />
+                    </div>
+                  </div>
+
                 </div>
 
                 <div className="space-y-4">
@@ -238,7 +301,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
                     <Textarea
                       id="description"
                       name="description"
-                      value={facilityData.description}
+                      value={formData.description}
                       onChange={handleInputChange}
                       className="mt-1 h-32"
                       placeholder="Describe the facility's services and specialties"
@@ -246,60 +309,75 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
                   </div>
 
                   <div>
-                    <Label htmlFor="email" className="text-base">
-                      Email
+                    <Label htmlFor="capacity" className="text-base">
+                      Capacity
                     </Label>
                     <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={facilityData.email}
+                      id="capacity"
+                      name="capacity"
+                      type="number"
+                      value={formData.capacity}
                       onChange={handleInputChange}
                       className="mt-1"
-                      placeholder="contact@example.com"
+                      placeholder="Patient capacity"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="contact_name" className="text-base">
+                      Contact Person
+                    </Label>
+                    <Input
+                      id="contact_name"
+                      name="contact_name"
+                      value={formData.contact_name}
+                      onChange={handleInputChange}
+                      className="mt-1"
+                      placeholder="Primary contact name"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="phone" className="text-base">
+                      <Label htmlFor="contact_email" className="text-base">
+                        Email
+                      </Label>
+                      <Input
+                        id="contact_email"
+                        name="contact_email"
+                        type="email"
+                        value={formData.contact_email}
+                        onChange={handleInputChange}
+                        className="mt-1"
+                        placeholder="contact@example.com"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="contact_phone" className="text-base">
                         Phone
                       </Label>
                       <Input
-                        id="phone"
-                        name="phone"
-                        value={facilityData.phone}
+                        id="contact_phone"
+                        name="contact_phone"
+                        value={formData.contact_phone}
                         onChange={handleInputChange}
                         className="mt-1"
                         placeholder="+1 234 567 890"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="website" className="text-base">
-                        Website
-                      </Label>
-                      <Input
-                        id="website"
-                        name="website"
-                        value={facilityData.website}
-                        onChange={handleInputChange}
-                        className="mt-1"
-                        placeholder="www.example.com"
-                      />
-                    </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="leadDoctor" className="text-base">
-                      Lead Doctor
+                    <Label htmlFor="website" className="text-base">
+                      Website
                     </Label>
                     <Input
-                      id="leadDoctor"
-                      name="leadDoctor"
-                      value={facilityData.leadDoctor}
+                      id="website"
+                      name="website"
+                      value={formData.website}
                       onChange={handleInputChange}
                       className="mt-1"
-                      placeholder="Dr. Name"
+                      placeholder="www.example.com"
                     />
                   </div>
                 </div>

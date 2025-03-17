@@ -34,7 +34,7 @@ const Facilities: React.FC = () => {
           </Button>
         </div>
         
-        {/* Facility list component - now using API data */}
+        {/* Facility list component with API data */}
         <FacilityList />
       </div>
     </Layout>

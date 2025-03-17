@@ -41,7 +41,8 @@ const FacilityList: React.FC = () => {
     // Apply type filter
     if (typeFilter !== 'all') {
       results = results.filter(facility => 
-        facility.type?.toLowerCase() === typeFilter.toLowerCase()
+        facility.type?.toLowerCase() === typeFilter.toLowerCase() || 
+        facility.facility_type?.toLowerCase() === typeFilter.toLowerCase()
       );
     }
     
@@ -51,7 +52,11 @@ const FacilityList: React.FC = () => {
       results = results.filter(facility => 
         facility.name.toLowerCase().includes(query) ||
         facility.location?.toLowerCase().includes(query) ||
-        facility.type?.toLowerCase().includes(query)
+        facility.city?.toLowerCase().includes(query) ||
+        facility.district?.toLowerCase().includes(query) ||
+        facility.province?.toLowerCase().includes(query) ||
+        facility.type?.toLowerCase().includes(query) ||
+        facility.facility_type?.toLowerCase().includes(query)
       );
     }
     
@@ -86,10 +91,9 @@ const FacilityList: React.FC = () => {
     }
   };
 
-  // Handle facility deletion
+  // Handle facility deletion - now properly connected to the API
   const handleDelete = (id: number, name: string) => {
     if (window.confirm(`Are you sure you want to delete ${name}?`)) {
-      // Call the delete mutation
       deleteFacilityMutation.mutate(id, {
         onSuccess: () => {
           toast({
@@ -99,14 +103,19 @@ const FacilityList: React.FC = () => {
         },
         onError: (error) => {
           toast({
-            title: "Error",
-            description: `Failed to delete ${name}. Please try again.`,
+            title: "Delete Failed",
+            description: `Failed to delete ${name}. ${error instanceof Error ? error.message : 'Unknown error'}`,
             variant: "destructive",
           });
           console.error("Delete error:", error);
         }
       });
     }
+  };
+
+  // Handle editing a facility
+  const handleEdit = (id: number) => {
+    navigate(`/facilities/edit/${id}`);
   };
 
   // Clear all applied filters
@@ -168,17 +177,20 @@ const FacilityList: React.FC = () => {
       ) : viewMode === 'grid' ? (
         <FacilityGridView 
           facilities={filteredFacilities} 
-          onDelete={handleDelete} 
+          onDelete={handleDelete}
+          onEdit={handleEdit}
         />
       ) : viewMode === 'list' ? (
         <FacilityListView 
           facilities={filteredFacilities} 
-          onDelete={handleDelete} 
+          onDelete={handleDelete}
+          onEdit={handleEdit}
         />
       ) : (
         <FacilityTableView 
           facilities={filteredFacilities} 
           onDelete={handleDelete}
+          onEdit={handleEdit}
           onSort={handleSort}
           sortColumn={sortColumn}
           sortDirection={sortDirection}

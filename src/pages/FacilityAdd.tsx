@@ -6,7 +6,7 @@ import FacilityForm from '@/components/facilities/FacilityForm';
 const FacilityAdd: React.FC = () => {
   return (
     <Layout>
-      <FacilityForm />
+      <FacilityForm isEdit={false} />
     </Layout>
   );
 };

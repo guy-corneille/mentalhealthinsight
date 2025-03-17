@@ -1,144 +1,118 @@
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { EyeIcon, EditIcon, Trash2Icon, ArrowUpDownIcon } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Facility } from '@/services/facilityService';
+import { ChevronUpIcon, ChevronDownIcon, Edit2Icon, Trash2Icon } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
 
 interface FacilityTableViewProps {
   facilities: Facility[];
   onDelete: (id: number, name: string) => void;
+  onEdit: (id: number) => void;
   onSort: (column: string) => void;
   sortColumn: string;
   sortDirection: 'asc' | 'desc';
 }
 
-/**
- * Table view for facilities
- * Displays facilities in a tabular format with sortable columns
- */
 const FacilityTableView: React.FC<FacilityTableViewProps> = ({ 
   facilities, 
   onDelete, 
-  onSort,
-  sortColumn,
-  sortDirection
+  onEdit,
+  onSort, 
+  sortColumn, 
+  sortDirection 
 }) => {
-  const navigate = useNavigate();
-
-  // Helper to render the appropriate sort icon
-  const getSortIcon = (column: string) => {
-    if (sortColumn !== column) return <ArrowUpDownIcon className="h-4 w-4 text-muted-foreground" />;
+  // Render sort indicator
+  const renderSortIndicator = (column: string) => {
+    if (sortColumn !== column) return null;
+    
     return sortDirection === 'asc' 
-      ? <ArrowUpDownIcon className="h-4 w-4 text-foreground" /> 
-      : <ArrowUpDownIcon className="h-4 w-4 text-foreground rotate-180" />;
+      ? <ChevronUpIcon className="h-4 w-4 ml-1" /> 
+      : <ChevronDownIcon className="h-4 w-4 ml-1" />;
   };
-
+  
+  // Create sortable column header
+  const SortableHeader = ({ column, label }: { column: string, label: string }) => (
+    <div 
+      className="flex items-center cursor-pointer hover:text-healthiq-600"
+      onClick={() => onSort(column)}
+    >
+      {label}
+      {renderSortIndicator(column)}
+    </div>
+  );
+  
   return (
-    <div className="rounded-md border">
+    <div className="border rounded-md">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead 
-              className="cursor-pointer"
-              onClick={() => onSort('name')}
-            >
-              <div className="flex items-center">
-                Name
-                {getSortIcon('name')}
-              </div>
+            <TableHead><SortableHeader column="name" label="Name" /></TableHead>
+            <TableHead><SortableHeader column="type" label="Type" /></TableHead>
+            <TableHead className="hidden md:table-cell">
+              <SortableHeader column="location" label="Location" />
             </TableHead>
-            <TableHead 
-              className="cursor-pointer"
-              onClick={() => onSort('type')}
-            >
-              <div className="flex items-center">
-                Type
-                {getSortIcon('type')}
-              </div>
+            <TableHead className="hidden md:table-cell">
+              <SortableHeader column="capacity" label="Capacity" />
             </TableHead>
-            <TableHead 
-              className="cursor-pointer"
-              onClick={() => onSort('location')}
-            >
-              <div className="flex items-center">
-                Location
-                {getSortIcon('location')}
-              </div>
+            <TableHead className="hidden lg:table-cell">
+              <SortableHeader column="lastAudit" label="Last Audit" />
             </TableHead>
-            <TableHead 
-              className="cursor-pointer"
-              onClick={() => onSort('capacity')}
-            >
-              <div className="flex items-center">
-                Capacity
-                {getSortIcon('capacity')}
-              </div>
+            <TableHead className="hidden lg:table-cell">
+              <SortableHeader column="score" label="Score" />
             </TableHead>
-            <TableHead 
-              className="cursor-pointer"
-              onClick={() => onSort('score')}
-            >
-              <div className="flex items-center">
-                Score
-                {getSortIcon('score')}
-              </div>
-            </TableHead>
-            <TableHead>
-              <span className="sr-only">Actions</span>
-            </TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {facilities.map((facility) => (
             <TableRow key={facility.id}>
+              <TableCell className="font-medium">{facility.name}</TableCell>
               <TableCell>
-                <div className="font-medium">{facility.name}</div>
-              </TableCell>
-              <TableCell>{facility.type}</TableCell>
-              <TableCell>{facility.location}</TableCell>
-              <TableCell>{facility.capacity}</TableCell>
-              <TableCell>
-                <Badge className={
-                  (facility.score || 0) >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-                  (facility.score || 0) >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
-                  'bg-rose-50 text-rose-600 hover:bg-rose-100'
-                }>
-                  {facility.score || 0}%
+                <Badge variant="outline" className="bg-healthiq-50">
+                  {facility.type || facility.facility_type}
                 </Badge>
               </TableCell>
-              <TableCell>
-                <div className="flex items-center justify-end gap-2">
+              <TableCell className="hidden md:table-cell">
+                {facility.location || `${facility.city || facility.district}, ${facility.province}`}
+              </TableCell>
+              <TableCell className="hidden md:table-cell">
+                {facility.capacity || '-'}
+              </TableCell>
+              <TableCell className="hidden lg:table-cell">
+                {facility.lastAudit || facility.last_inspection_date || '-'}
+              </TableCell>
+              <TableCell className="hidden lg:table-cell">
+                {facility.score ? `${facility.score}/100` : '-'}
+              </TableCell>
+              <TableCell className="text-right">
+                <div className="flex justify-end gap-2">
                   <Button 
                     variant="ghost" 
-                    size="icon"
-                    onClick={() => navigate(`/facilities/${facility.id}`)}
+                    size="sm"
+                    className="h-8 w-8 p-0"
+                    onClick={() => onEdit(facility.id)}
                   >
-                    <EyeIcon className="h-4 w-4" />
+                    <Edit2Icon className="h-4 w-4" />
+                    <span className="sr-only">Edit</span>
                   </Button>
+                  
                   <Button 
                     variant="ghost" 
-                    size="icon"
-                    onClick={() => navigate(`/facilities/edit/${facility.id}`)}
-                  >
-                    <EditIcon className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="text-rose-600"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
                     onClick={() => onDelete(facility.id, facility.name)}
                   >
                     <Trash2Icon className="h-4 w-4" />
+                    <span className="sr-only">Delete</span>
                   </Button>
                 </div>
               </TableCell>
