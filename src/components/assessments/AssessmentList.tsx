@@ -30,6 +30,22 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import NewAssessmentDialog from './NewAssessmentDialog';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/services/api';
+import { Spinner } from '@/components/ui/spinner';
+
+interface Assessment {
+  id: number;
+  patient: string;
+  patient_name?: string;
+  facility: string;
+  facility_name?: string;
+  assessment_date: string;
+  score: number;
+  notes: string;
+  evaluator: string;
+  evaluator_name?: string;
+}
 
 interface AssessmentListProps {
   onStartAssessment: (patientId: string, facilityId: string) => void;
@@ -39,58 +55,18 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const assessments = [
-    { 
-      id: 'A-5001', 
-      patientId: 'P-1001', 
-      date: '2023-05-15', 
-      score: 24,
-      maxScore: 27,
-      notes: 'Significant improvement in mood and sleep pattern',
-      facility: 'Central Hospital'
-    },
-    { 
-      id: 'A-5002', 
-      patientId: 'P-1002', 
-      date: '2023-05-12', 
-      score: 18,
-      maxScore: 21,
-      notes: 'Reduced anxiety symptoms, still experiencing sleep disruption',
-      facility: 'Eastern District Clinic'
-    },
-    { 
-      id: 'A-5003', 
-      patientId: 'P-1003', 
-      date: '2023-05-10', 
-      score: 15,
-      maxScore: 27,
-      notes: 'Mood stabilizing, adhering to medication regimen',
-      facility: 'Northern Community Center'
-    },
-    { 
-      id: 'A-5004', 
-      patientId: 'P-1005', 
-      date: '2023-05-18', 
-      score: 12,
-      maxScore: 15,
-      notes: 'Showing improvement in trauma responses',
-      facility: 'Central Hospital'
-    },
-    { 
-      id: 'A-5005', 
-      patientId: 'P-1006', 
-      date: '2023-05-05', 
-      score: 8,
-      maxScore: 18,
-      notes: 'Reduced compulsive behaviors, implementing coping strategies',
-      facility: 'Southern District Hospital'
-    },
-  ];
+  // Fetch assessments using React Query
+  const { data: assessments, isLoading, error } = useQuery({
+    queryKey: ['assessments'],
+    queryFn: async () => {
+      const response = await api.get('/assessments/');
+      return response.data;
+    }
+  });
 
   const handleCreateAssessment = (patientId: string, facilityId: string) => {
-    // In a real application, this would navigate to a new assessment form
-    // with the selected patient and facility
     toast({
       title: "Assessment started",
       description: `New assessment for patient ${patientId} at facility ID: ${facilityId}`,
@@ -100,6 +76,17 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     onStartAssessment(patientId, facilityId);
   };
 
+  // Filter assessments based on search query
+  const filteredAssessments = assessments?.filter((assessment: Assessment) => {
+    const searchText = searchQuery.toLowerCase();
+    return (
+      String(assessment.id).includes(searchText) ||
+      (assessment.patient_name || assessment.patient).toLowerCase().includes(searchText) ||
+      (assessment.facility_name || assessment.facility).toLowerCase().includes(searchText) ||
+      (assessment.notes && assessment.notes.toLowerCase().includes(searchText))
+    );
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -108,6 +95,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
           <Input 
             placeholder="Search assessments..." 
             className="pl-9 bg-muted/50 border-none focus-visible:ring-1" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         
@@ -128,79 +117,100 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       </div>
       
       <div className="bg-card rounded-lg border shadow-sm overflow-hidden animate-scale-in">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[100px]">ID</TableHead>
-                <TableHead className="w-[100px]">Patient</TableHead>
-                <TableHead>
-                  <Button variant="ghost" className="p-0 h-auto font-semibold flex items-center text-xs">
-                    Date
-                    <ArrowUpDownIcon className="h-3 w-3 ml-1" />
-                  </Button>
-                </TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Facility</TableHead>
-                <TableHead>Notes</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assessments.map((assessment) => {
-                const scorePercentage = (assessment.score / assessment.maxScore) * 100;
-                return (
-                  <TableRow key={assessment.id}>
-                    <TableCell className="font-medium">{assessment.id}</TableCell>
-                    <TableCell>{assessment.patientId}</TableCell>
-                    <TableCell>{new Date(assessment.date).toLocaleDateString()}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Progress 
-                          value={scorePercentage} 
-                          className="h-2 w-16"
-                          indicatorClassName={
-                            scorePercentage >= 80 ? 'bg-emerald-500' : 
-                            scorePercentage >= 60 ? 'bg-amber-500' : 
-                            'bg-rose-500'
-                          }
-                        />
-                        <span className="text-sm font-medium">
-                          {assessment.score}/{assessment.maxScore}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>{assessment.facility}</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {assessment.notes}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontalIcon className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Assessment Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <FileTextIcon className="h-4 w-4 mr-2" />
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>Edit Assessment</DropdownMenuItem>
-                          <DropdownMenuItem>Print Report</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-rose-600">Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <Spinner size="lg" />
+            <span className="ml-2">Loading assessments...</span>
+          </div>
+        ) : error ? (
+          <div className="p-6 text-center text-rose-500">
+            <p>Error loading assessments</p>
+            <p className="text-sm text-muted-foreground mt-1">Please try again later</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[100px]">ID</TableHead>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>
+                    <Button variant="ghost" className="p-0 h-auto font-semibold flex items-center text-xs">
+                      Date
+                      <ArrowUpDownIcon className="h-3 w-3 ml-1" />
+                    </Button>
+                  </TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Facility</TableHead>
+                  <TableHead>Notes</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAssessments?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                      No assessments found. Create a new assessment to get started.
                     </TableCell>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+                ) : (
+                  filteredAssessments?.map((assessment: Assessment) => {
+                    // Calculate score color based on value
+                    const scoreColor = 
+                      assessment.score >= 80 ? 'bg-emerald-500' : 
+                      assessment.score >= 60 ? 'bg-amber-500' : 
+                      'bg-rose-500';
+                      
+                    return (
+                      <TableRow key={assessment.id}>
+                        <TableCell className="font-medium">{assessment.id}</TableCell>
+                        <TableCell>{assessment.patient_name || assessment.patient}</TableCell>
+                        <TableCell>{new Date(assessment.assessment_date).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Progress 
+                              value={assessment.score} 
+                              className="h-2 w-16"
+                              indicatorClassName={scoreColor}
+                            />
+                            <span className="text-sm font-medium">
+                              {assessment.score}%
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>{assessment.facility_name || assessment.facility}</TableCell>
+                        <TableCell className="max-w-xs truncate">
+                          {assessment.notes}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontalIcon className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuLabel>Assessment Actions</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem>
+                                <FileTextIcon className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>Edit Assessment</DropdownMenuItem>
+                              <DropdownMenuItem>Print Report</DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem className="text-rose-600">Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
 
       <NewAssessmentDialog 

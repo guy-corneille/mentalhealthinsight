@@ -109,6 +109,7 @@ def create_assessments():
                         assessment=assessment,
                         indicator=indicator,
                         score=score,
+                        rating=rating,  # Store the rating string for better reporting
                         notes=f"Score: {rating.replace('-', ' ').title()}"
                     )
                     

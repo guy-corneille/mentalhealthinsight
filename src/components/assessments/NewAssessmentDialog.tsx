@@ -19,15 +19,19 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { FileText } from 'lucide-react';
+import { usePatients, usePatient, useFacilities } from '@/services/patientService';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Patient {
   id: string;
-  name: string;
-  facilityId: string;
+  first_name: string;
+  last_name: string;
+  facility: number;
+  facility_name?: string;
 }
 
 interface Facility {
-  id: string;
+  id: number;
   name: string;
 }
 
@@ -44,33 +48,18 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
 }) => {
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
-
-  // Mock data for development purposes
-  const patients: Patient[] = [
-    { id: 'P-1001', name: 'John Doe', facilityId: '1' },
-    { id: 'P-1002', name: 'Jane Smith', facilityId: '2' },
-    { id: 'P-1003', name: 'Michael Johnson', facilityId: '3' },
-    { id: 'P-1005', name: 'Emily Davis', facilityId: '4' },
-    { id: 'P-1006', name: 'Robert Wilson', facilityId: '5' },
-  ];
-
-  const facilities: Facility[] = [
-    { id: '1', name: 'Central Hospital' },
-    { id: '2', name: 'Eastern District Clinic' },
-    { id: '3', name: 'Northern Community Center' },
-    { id: '4', name: 'Southern District Hospital' },
-    { id: '5', name: 'Western Health Center' },
-  ];
+  
+  // Fetch patients and facilities
+  const { data: patients, isLoading: isPatientsLoading } = usePatients();
+  const { data: facilities, isLoading: isFacilitiesLoading } = useFacilities();
+  const { data: selectedPatient } = usePatient(selectedPatientId, { enabled: !!selectedPatientId });
 
   // Auto-select facility when patient is selected
   useEffect(() => {
-    if (selectedPatientId) {
-      const patient = patients.find(p => p.id === selectedPatientId);
-      if (patient) {
-        setSelectedFacilityId(patient.facilityId);
-      }
+    if (selectedPatient && selectedPatient.facility) {
+      setSelectedFacilityId(selectedPatient.facility.toString());
     }
-  }, [selectedPatientId]);
+  }, [selectedPatient]);
 
   const handleStartAssessment = () => {
     if (selectedPatientId && selectedFacilityId) {
@@ -87,9 +76,11 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
 
   // Get facility name for display
   const getFacilityName = (facilityId: string) => {
-    const facility = facilities.find(f => f.id === facilityId);
+    const facility = facilities?.find(f => f.id.toString() === facilityId);
     return facility ? facility.name : '';
   };
+
+  const isLoading = isPatientsLoading || isFacilitiesLoading;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -102,41 +93,54 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
         </DialogHeader>
         
         <div className="py-6">
-          <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-medium mb-2 block">
-                Patient
-              </Label>
-              <Select
-                value={selectedPatientId}
-                onValueChange={setSelectedPatientId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a patient" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {patients.map((patient) => (
-                      <SelectItem key={patient.id} value={patient.id}>
-                        {patient.name} ({patient.id})
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-4">
+              <Spinner size="md" />
+              <span className="ml-2">Loading...</span>
             </div>
-            
-            {selectedPatientId && (
+          ) : (
+            <div className="space-y-4">
               <div>
                 <Label className="text-sm font-medium mb-2 block">
-                  Facility
+                  Patient
                 </Label>
-                <div className="px-3 py-2 border rounded-md bg-muted/50">
-                  {getFacilityName(selectedFacilityId)}
-                </div>
+                {(!patients || patients.length === 0) ? (
+                  <div className="text-sm text-muted-foreground">
+                    No patients available. Please add patients first.
+                  </div>
+                ) : (
+                  <Select
+                    value={selectedPatientId}
+                    onValueChange={setSelectedPatientId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a patient" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {patients.map((patient) => (
+                          <SelectItem key={patient.id} value={patient.id}>
+                            {patient.first_name} {patient.last_name} ({patient.id})
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
-            )}
-          </div>
+              
+              {selectedPatientId && selectedFacilityId && (
+                <div>
+                  <Label className="text-sm font-medium mb-2 block">
+                    Facility
+                  </Label>
+                  <div className="px-3 py-2 border rounded-md bg-muted/50">
+                    {getFacilityName(selectedFacilityId)}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
         <DialogFooter>
@@ -145,7 +149,7 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
           </Button>
           <Button 
             onClick={handleStartAssessment} 
-            disabled={!selectedPatientId}
+            disabled={!selectedPatientId || isLoading}
             className="bg-healthiq-600 hover:bg-healthiq-700"
           >
             <FileText className="mr-2 h-4 w-4" />
