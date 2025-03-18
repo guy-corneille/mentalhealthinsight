@@ -46,6 +46,9 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
     );
   }
 
+  // Find the selected patient for display
+  const selectedPatient = patients.find((patient) => patient.id === selectedPatientId);
+  
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
@@ -55,10 +58,8 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
           aria-expanded={isOpen}
           className="w-full justify-between"
         >
-          {selectedPatientId ? 
-            patients.find((patient) => patient.id === selectedPatientId)
-              ? `${patients.find((patient) => patient.id === selectedPatientId)?.first_name} ${patients.find((patient) => patient.id === selectedPatientId)?.last_name}`
-              : "Select a patient" 
+          {selectedPatient 
+            ? `${selectedPatient.first_name} ${selectedPatient.last_name}`
             : "Select a patient"}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -71,7 +72,7 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
             {patients.map((patient) => (
               <CommandItem
                 key={patient.id}
-                value={`${patient.first_name} ${patient.last_name} (${patient.id})`}
+                value={`${patient.first_name} ${patient.last_name}`}
                 onSelect={() => {
                   onSelect(patient.id);
                   onOpenChange(false);
@@ -83,7 +84,7 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
                     selectedPatientId === patient.id ? "opacity-100" : "opacity-0"
                   )}
                 />
-                {patient.first_name} {patient.last_name} ({patient.id})
+                {patient.first_name} {patient.last_name}
               </CommandItem>
             ))}
           </CommandGroup>
