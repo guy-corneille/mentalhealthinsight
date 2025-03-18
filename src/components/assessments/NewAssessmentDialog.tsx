@@ -33,6 +33,12 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
     actions
   } = useNewAssessmentDialog(onCreateAssessment, () => onOpenChange(false));
 
+  const handleStartAssessment = () => {
+    if (state.selectedPatientId && state.selectedFacilityId) {
+      onCreateAssessment(state.selectedPatientId, state.selectedFacilityId);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => isOpen ? onOpenChange(true) : actions.handleClose()}>
       <DialogContent className="sm:max-w-[450px]">

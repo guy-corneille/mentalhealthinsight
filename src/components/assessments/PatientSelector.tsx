@@ -39,7 +39,7 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
   onOpenChange,
   onSelect,
 }) => {
-  // Safety check - ensure patients is always an array even if undefined is passed
+  // Safety check - ensure patients is always an array
   const patientsList = patients || [];
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -66,16 +66,9 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
   const displayLimit = 100;
   const patientsToDisplay = searchQuery ? filteredPatients : filteredPatients.slice(0, displayLimit);
   
-  const handleSelect = (value: string) => {
-    // Find the patient by matching the full name
-    const patient = patientsList.find(
-      (p) => `${p.first_name} ${p.last_name}`.toLowerCase() === value.toLowerCase()
-    );
-    
-    if (patient) {
-      onSelect(patient.id);
-      onOpenChange(false);
-    }
+  const handleSelect = (currentPatientId: string) => {
+    onSelect(currentPatientId);
+    onOpenChange(false);
   };
   
   return (
@@ -86,7 +79,6 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
           role="combobox"
           aria-expanded={isOpen}
           className="w-full justify-between"
-          onClick={() => onOpenChange(true)}
         >
           {selectedPatient 
             ? `${selectedPatient.first_name} ${selectedPatient.last_name}`
@@ -111,8 +103,8 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
               {patientsToDisplay.map((patient) => (
                 <CommandItem
                   key={patient.id}
-                  value={`${patient.first_name} ${patient.last_name}`}
-                  onSelect={handleSelect}
+                  value={patient.id} // Use patient ID as value for direct selection
+                  onSelect={handleSelect} // Pass ID directly to handler
                   className="cursor-pointer"
                 >
                   <Check
@@ -121,10 +113,8 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
                       selectedPatientId === patient.id ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  <div>
-                    <span className="font-medium">{patient.first_name} {patient.last_name}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">({patient.id})</span>
-                  </div>
+                  <span className="font-medium">{patient.first_name} {patient.last_name}</span>
+                  <span className="ml-2 text-xs text-muted-foreground">({patient.id})</span>
                 </CommandItem>
               ))}
               {!searchQuery && patientsList.length > displayLimit && (
