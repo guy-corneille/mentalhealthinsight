@@ -10,17 +10,22 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { 
-  Select, 
-  SelectContent, 
-  SelectGroup,
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { FileText } from 'lucide-react';
+import { FileText, Check, ChevronsUpDown } from 'lucide-react';
 import { usePatients, usePatient, useFacilities } from '@/services/patientService';
 import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
 
 interface Patient {
   id: string;
@@ -48,6 +53,7 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
 }) => {
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
+  const [patientComboOpen, setPatientComboOpen] = useState(false);
   
   // Fetch patients and facilities
   const { data: patients, isLoading: isPatientsLoading } = usePatients();
@@ -109,23 +115,49 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
                     No patients available. Please add patients first.
                   </div>
                 ) : (
-                  <Select
-                    value={selectedPatientId}
-                    onValueChange={setSelectedPatientId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a patient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {patients.map((patient) => (
-                          <SelectItem key={patient.id} value={patient.id}>
-                            {patient.first_name} {patient.last_name} ({patient.id})
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <Popover open={patientComboOpen} onOpenChange={setPatientComboOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={patientComboOpen}
+                        className="w-full justify-between"
+                      >
+                        {selectedPatientId ? 
+                          patients.find((patient) => patient.id === selectedPatientId)
+                            ? `${patients.find((patient) => patient.id === selectedPatientId)?.first_name} ${patients.find((patient) => patient.id === selectedPatientId)?.last_name}`
+                            : "Select a patient" 
+                          : "Select a patient"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search patients..." />
+                        <CommandEmpty>No patient found.</CommandEmpty>
+                        <CommandGroup className="max-h-[300px] overflow-auto">
+                          {patients.map((patient) => (
+                            <CommandItem
+                              key={patient.id}
+                              value={`${patient.first_name} ${patient.last_name} (${patient.id})`}
+                              onSelect={() => {
+                                setSelectedPatientId(patient.id);
+                                setPatientComboOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedPatientId === patient.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {patient.first_name} {patient.last_name} ({patient.id})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 )}
               </div>
               
