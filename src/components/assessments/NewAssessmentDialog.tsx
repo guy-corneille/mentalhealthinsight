@@ -18,9 +18,23 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { FileText } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { FileText, Search } from 'lucide-react';
 import { usePatients, usePatient, useFacilities } from '@/services/patientService';
 import { Spinner } from '@/components/ui/spinner';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Patient {
   id: string;
@@ -48,6 +62,8 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
 }) => {
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [patientComboOpen, setPatientComboOpen] = useState(false);
   
   // Fetch patients and facilities
   const { data: patients, isLoading: isPatientsLoading } = usePatients();
@@ -61,6 +77,22 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
     }
   }, [selectedPatient]);
 
+  // Filter patients based on search query
+  const filteredPatients = React.useMemo(() => {
+    if (!patients) return [];
+    
+    if (!searchQuery.trim()) return patients;
+    
+    const query = searchQuery.toLowerCase();
+    return patients.filter(
+      (patient) => 
+        patient.id.toLowerCase().includes(query) ||
+        patient.first_name.toLowerCase().includes(query) ||
+        patient.last_name.toLowerCase().includes(query) ||
+        `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(query)
+    );
+  }, [patients, searchQuery]);
+
   const handleStartAssessment = () => {
     if (selectedPatientId && selectedFacilityId) {
       onCreateAssessment(selectedPatientId, selectedFacilityId);
@@ -71,13 +103,26 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
   const handleClose = () => {
     setSelectedPatientId('');
     setSelectedFacilityId('');
+    setSearchQuery('');
+    setPatientComboOpen(false);
     onOpenChange(false);
+  };
+
+  const handlePatientSelect = (patientId: string) => {
+    setSelectedPatientId(patientId);
+    setPatientComboOpen(false);
   };
 
   // Get facility name for display
   const getFacilityName = (facilityId: string) => {
     const facility = facilities?.find(f => f.id.toString() === facilityId);
     return facility ? facility.name : '';
+  };
+
+  const getPatientDisplayName = (patientId: string) => {
+    const patient = patients?.find(p => p.id === patientId);
+    if (!patient) return "Select a patient";
+    return `${patient.first_name} ${patient.last_name} (${patient.id})`;
   };
 
   const isLoading = isPatientsLoading || isFacilitiesLoading;
@@ -109,23 +154,41 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
                     No patients available. Please add patients first.
                   </div>
                 ) : (
-                  <Select
-                    value={selectedPatientId}
-                    onValueChange={setSelectedPatientId}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a patient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {patients.map((patient) => (
-                          <SelectItem key={patient.id} value={patient.id}>
-                            {patient.first_name} {patient.last_name} ({patient.id})
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  <Popover open={patientComboOpen} onOpenChange={setPatientComboOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={patientComboOpen}
+                        className="w-full justify-between"
+                      >
+                        {selectedPatientId ? getPatientDisplayName(selectedPatientId) : "Select a patient..."}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[350px] p-0">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Search patients..." 
+                          value={searchQuery}
+                          onValueChange={setSearchQuery}
+                        />
+                        <CommandList className="max-h-[300px]">
+                          <CommandEmpty>No patients found.</CommandEmpty>
+                          <CommandGroup>
+                            {filteredPatients.map((patient) => (
+                              <CommandItem
+                                key={patient.id}
+                                value={patient.id}
+                                onSelect={() => handlePatientSelect(patient.id)}
+                              >
+                                {patient.first_name} {patient.last_name} ({patient.id})
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 )}
               </div>
               
