@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -57,12 +56,12 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch assessments using React Query
+  // Fetch assessments using React Query - Fix the typing issue
   const { data: assessments, isLoading, error } = useQuery({
     queryKey: ['assessments'],
     queryFn: async () => {
-      const response = await api.get('/assessments/');
-      return response.data as Assessment[];
+      const response = await api.get<Assessment[]>('/assessments/');
+      return response.data;
     }
   });
 
