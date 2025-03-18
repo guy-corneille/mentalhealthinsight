@@ -141,6 +141,24 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
   
   const handleSubmit = async () => {
     try {
+      console.info("Making API request to: /assessments/", {
+        patient: patientId,
+        facility: facilityId,
+        assessment_date: new Date().toISOString(),
+        score: overallScore,
+        notes: notes,
+        // Add criteria ID - this was missing and causing the 400 error
+        criteria: criteria[0]?.id, 
+        indicator_scores: criteria.flatMap(criterion => 
+          criterion.indicators.map(indicator => ({
+            indicator: indicator.id,
+            score: indicator.score,
+            rating: indicator.rating,
+            notes: ''
+          }))
+        )
+      });
+      
       // Prepare assessment data
       const assessmentData = {
         patient: patientId,
@@ -148,6 +166,8 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
         assessment_date: new Date().toISOString(),
         score: overallScore,
         notes: notes,
+        // Add criteria ID - this was missing and causing the 400 error
+        criteria: criteria[0]?.id,
         indicator_scores: criteria.flatMap(criterion => 
           criterion.indicators.map(indicator => ({
             indicator: indicator.id,
@@ -163,7 +183,7 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
       
       toast({
         title: "Assessment Completed",
-        description: `Assessment for Patient ID: ${patientId} at Facility ID: ${facilityId} has been saved.`,
+        description: `Assessment for patient has been saved successfully.`,
       });
       
       onComplete();
@@ -218,7 +238,7 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
       <CardHeader>
         <CardTitle>Patient Assessment</CardTitle>
         <CardDescription>
-          Evaluate patient {patientId} at facility {facilityId}
+          Evaluate patient {patientId}
         </CardDescription>
       </CardHeader>
       <CardContent>

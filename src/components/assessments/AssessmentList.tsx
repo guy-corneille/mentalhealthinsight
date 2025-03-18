@@ -78,7 +78,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const handleCreateAssessment = (patientId: string, facilityId: string) => {
     toast({
       title: "Assessment started",
-      description: `New assessment for patient ${patientId} at facility ID: ${facilityId}`,
+      description: `New assessment for patient ${patientId}`,
     });
     
     setIsDialogOpen(false);
@@ -141,7 +141,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">ID</TableHead>
                   <TableHead>Patient</TableHead>
                   <TableHead>
                     <Button variant="ghost" className="p-0 h-auto font-semibold flex items-center text-xs">
@@ -158,7 +157,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
               <TableBody>
                 {!filteredAssessments || filteredAssessments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                       No assessments found. Create a new assessment to get started.
                     </TableCell>
                   </TableRow>
@@ -172,7 +171,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                       
                     return (
                       <TableRow key={assessment.id}>
-                        <TableCell className="font-medium">{assessment.id}</TableCell>
                         <TableCell>{assessment.patient_name || assessment.patient}</TableCell>
                         <TableCell>{new Date(assessment.assessment_date).toLocaleDateString()}</TableCell>
                         <TableCell>
