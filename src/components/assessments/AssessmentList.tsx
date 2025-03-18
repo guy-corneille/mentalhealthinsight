@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -65,7 +66,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     queryKey: ['assessments'],
     queryFn: async () => {
       const response = await api.get<AssessmentApiResponse>('/assessments/');
-      return response.data || { results: [] };
+      return response.data;
     }
   });
 
