@@ -1,4 +1,3 @@
-
 """
 URL configuration for mentalhealthiq project.
 
@@ -28,7 +27,8 @@ router.register(r'users', views.UserViewSet)
 router.register(r'pending-users', views.PendingUserViewSet)
 router.register(r'facilities', views.FacilityViewSet)
 router.register(r'staff', views.StaffMemberViewSet)
-router.register(r'assessment-criteria', views.AssessmentCriteriaViewSet,basename='assessmentcriteria')
+router.register(r'assessment-criteria', views.AssessmentCriteriaViewSet, basename='assessmentcriteria')
+router.register(r'audit-criteria', views.AuditCriteriaViewSet, basename='auditcriteria')
 router.register(r'patients', views.PatientViewSet)
 router.register(r'assessments', views.AssessmentViewSet)
 router.register(r'audits', views.AuditViewSet)

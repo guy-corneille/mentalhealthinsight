@@ -260,7 +260,9 @@ const CriteriaList: React.FC<CriteriaListProps> = ({ criteriaType }) => {
                     <TableCell className="max-w-xs truncate">
                       {criterion.description}
                     </TableCell>
-                    <TableCell>{criterion.indicators?.length || 0}</TableCell>
+                    <TableCell>
+                      {Array.isArray(criterion.indicators) ? criterion.indicators.length : 0}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button 

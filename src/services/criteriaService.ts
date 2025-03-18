@@ -1,3 +1,4 @@
+
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -46,23 +47,37 @@ const criteriaService = {
       ? '/assessment-criteria/'
       : '/audit-criteria/';
       
-    const response = await api.get<PaginatedResponse<AssessmentCriteria>>(`${endpoint}?purpose=${purpose}`);
-    
-    return Array.isArray(response.results) ? response.results : [];
+    try {
+      const response = await api.get<PaginatedResponse<AssessmentCriteria>>(endpoint);
+      console.log(`Received ${type} criteria:`, response);
+      return Array.isArray(response.results) ? response.results : [];
+    } catch (error) {
+      console.error(`Error fetching ${type} criteria:`, error);
+      throw error;
+    }
   },
 
   /**
    * Get a single criterion by ID
    * @param id Criterion ID
+   * @param type The type of criterion (assessment or audit)
    * @returns Promise with criterion data
    */
-  getCriterionById: async (id: number): Promise<AssessmentCriteria> => {
+  getCriterionById: async (id: number, type: 'assessment' | 'audit' = 'assessment'): Promise<AssessmentCriteria> => {
     console.log(`Fetching criterion with ID ${id} from API`);
-    // We'll determine endpoint based on purpose in the future
-    // For now, use assessment-criteria endpoint
-    const response = await api.get<AssessmentCriteria>(`/assessment-criteria/${id}/`);
     
-    return response;
+    const endpoint = type === 'assessment'
+      ? `/assessment-criteria/${id}/`
+      : `/audit-criteria/${id}/`;
+      
+    try {
+      const response = await api.get<AssessmentCriteria>(endpoint);
+      console.log(`Received criterion details:`, response);
+      return response;
+    } catch (error) {
+      console.error(`Error fetching criterion with ID ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
@@ -76,16 +91,15 @@ const criteriaService = {
       ? '/audit-criteria/' 
       : '/assessment-criteria/';
       
-    // Create criterion with indicators in a single request
-    const response = await api.post<AssessmentCriteria>(endpoint, {
-      name: criterionData.name,
-      category: criterionData.category,
-      description: criterionData.description,
-      purpose: criterionData.purpose,
-      indicators: criterionData.indicators || []
-    });
-    
-    return response;
+    try {
+      // Create criterion with indicators in a single request
+      const response = await api.post<AssessmentCriteria>(endpoint, criterionData);
+      console.log('Created criterion:', response);
+      return response;
+    } catch (error) {
+      console.error('Error creating criterion:', error);
+      throw error;
+    }
   },
 
   /**
@@ -100,16 +114,15 @@ const criteriaService = {
       ? `/audit-criteria/${id}/` 
       : `/assessment-criteria/${id}/`;
       
-    // Update criterion with indicators in a single request
-    const response = await api.put<AssessmentCriteria>(endpoint, {
-      name: criterionData.name,
-      category: criterionData.category,
-      description: criterionData.description,
-      purpose: criterionData.purpose,
-      indicators: criterionData.indicators || []
-    });
-    
-    return response;
+    try {
+      // Update criterion with indicators in a single request
+      const response = await api.put<AssessmentCriteria>(endpoint, criterionData);
+      console.log('Updated criterion:', response);
+      return response;
+    } catch (error) {
+      console.error(`Error updating criterion with ID ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
@@ -125,7 +138,13 @@ const criteriaService = {
       ? `/audit-criteria/${id}/` 
       : `/assessment-criteria/${id}/`;
       
-    await api.delete(endpoint);
+    try {
+      await api.delete(endpoint);
+      console.log(`Deleted criterion with ID ${id}`);
+    } catch (error) {
+      console.error(`Error deleting criterion with ID ${id}:`, error);
+      throw error;
+    }
   },
 
   /**
@@ -142,9 +161,14 @@ const criteriaService = {
       ? `/audit-criteria/${criterionId}/indicators/` 
       : `/assessment-criteria/${criterionId}/indicators/`;
       
-    const response = await api.get<Indicator[]>(endpoint);
-    
-    return Array.isArray(response) ? response : [];
+    try {
+      const response = await api.get<Indicator[]>(endpoint);
+      console.log(`Received indicators:`, response);
+      return Array.isArray(response) ? response : [];
+    } catch (error) {
+      console.error(`Error fetching indicators for criterion ID ${criterionId}:`, error);
+      throw error;
+    }
   },
 };
 
@@ -162,9 +186,13 @@ export const useAssessmentCriteria = (type: 'assessment' | 'audit' = 'assessment
 
 // Hook for fetching a single criterion
 export const useAssessmentCriterion = (id: number, options = {}) => {
+  const location = window.location.pathname;
+  const isAuditPath = location.includes('audit');
+  const type = isAuditPath ? 'audit' : 'assessment';
+  
   return useQuery({
-    queryKey: ['criterion', id],
-    queryFn: () => criteriaService.getCriterionById(id),
+    queryKey: ['criterion', id, type],
+    queryFn: () => criteriaService.getCriterionById(id, type as 'assessment' | 'audit'),
     enabled: !!id, // Only run query if id is provided
     ...options
   });

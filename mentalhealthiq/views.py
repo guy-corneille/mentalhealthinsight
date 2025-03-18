@@ -236,6 +236,28 @@ class AssessmentCriteriaViewSet(viewsets.ModelViewSet):
         serializer = IndicatorSerializer(indicators, many=True)
         return Response(serializer.data)
 
+class AuditCriteriaViewSet(viewsets.ModelViewSet):
+    """API endpoints for managing audit criteria"""
+    serializer_class = AssessmentCriteriaSerializer
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['category']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'created_at']
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        """Filter queryset to only show Audit criteria"""
+        return AssessmentCriteria.objects.filter(purpose='Audit')
+
+    @action(detail=True, methods=['get'])
+    def indicators(self, request, pk=None):
+        """Get all indicators for a specific audit criteria"""
+        criteria = self.get_object()
+        indicators = Indicator.objects.filter(criteria=criteria)
+        serializer = IndicatorSerializer(indicators, many=True)
+        return Response(serializer.data)
+
 class PatientViewSet(viewsets.ModelViewSet):
     """API endpoints for managing patients"""
     queryset = Patient.objects.all()
