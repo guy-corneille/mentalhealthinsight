@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -60,8 +61,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const { data: assessments, isLoading, error } = useQuery({
     queryKey: ['assessments'],
     queryFn: async () => {
-      const response = await api.get<Assessment[]>('/assessments/');
-      return response.data;
+      // Because api.get already returns response.data, we don't need to access .data again
+      return api.get<Assessment[]>('/assessments/');
     }
   });
 
