@@ -39,6 +39,8 @@ import api from '@/services/api';
 import { Spinner } from '@/components/ui/spinner';
 import PaginationControls from '@/components/common/PaginationControls';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Assessment {
   id: number;
@@ -51,6 +53,8 @@ interface Assessment {
   notes: string;
   evaluator: string;
   evaluator_name?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Define the API response structure that includes pagination
@@ -69,6 +73,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth(); // Access the authenticated user
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -164,6 +169,12 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  // Format date for display
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return format(new Date(dateString), 'PPP p'); // Format like "Apr 29, 2023, 2:15 PM"
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -348,8 +359,19 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                 </div>
                 <div className="col-span-2">
                   <h4 className="text-sm font-medium text-muted-foreground">Evaluator</h4>
-                  <p>{viewingAssessment.evaluator_name || viewingAssessment.evaluator || 'Not specified'}</p>
+                  <p>{viewingAssessment.evaluator_name || viewingAssessment.evaluator || user?.displayName || user?.username || 'Current User'}</p>
                 </div>
+
+                {/* Added timestamps */}
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Completed On</h4>
+                  <p className="text-sm">{formatDate(viewingAssessment.created_at)}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Updated On</h4>
+                  <p className="text-sm">{formatDate(viewingAssessment.updated_at)}</p>
+                </div>
+
                 <div className="col-span-2">
                   <h4 className="text-sm font-medium text-muted-foreground">Notes</h4>
                   <p className="whitespace-pre-wrap">{viewingAssessment.notes || 'No notes provided.'}</p>

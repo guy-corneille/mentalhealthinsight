@@ -6,12 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileEdit, Eye, Trash2, Calendar } from 'lucide-react';
+import { Plus, Search, FileEdit, Eye, Trash2, Calendar, MoreHorizontal, Printer } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import ScoreTrendIndicator from '@/components/facilities/audits/ScoreTrendIndicator';
 import { format } from 'date-fns';
 import ScheduleAuditDialog from './ScheduleAuditDialog';
 import NewAuditDialog from './NewAuditDialog';
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useAuth } from '@/contexts/AuthContext';
+import PaginationControls from '@/components/common/PaginationControls';
 
 interface AuditItem {
   id: number;
@@ -22,14 +27,22 @@ interface AuditItem {
   previousScore: number | null;
   auditor: string;
   status: 'completed' | 'in-progress' | 'scheduled';
+  created_at?: string;
+  updated_at?: string;
 }
 
 const AuditList: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [facilityFilter, setFacilityFilter] = useState('all');
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isNewAuditDialogOpen, setIsNewAuditDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+  const [viewingAudit, setViewingAudit] = useState<AuditItem | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   
   // Mock data - would be fetched from API in a real app
   const audits: AuditItem[] = [
@@ -41,7 +54,9 @@ const AuditList: React.FC = () => {
       score: 92,
       previousScore: 85,
       auditor: 'Dr. Jean Mutabazi',
-      status: 'completed'
+      status: 'completed',
+      created_at: '2023-04-15T14:30:00Z',
+      updated_at: '2023-04-15T16:45:00Z'
     },
     {
       id: 2,
@@ -51,7 +66,9 @@ const AuditList: React.FC = () => {
       score: 78,
       previousScore: 81,
       auditor: 'Dr. Marie Uwase',
-      status: 'completed'
+      status: 'completed',
+      created_at: '2023-03-22T10:15:00Z',
+      updated_at: '2023-03-22T13:20:00Z'
     },
     {
       id: 3,
@@ -61,7 +78,9 @@ const AuditList: React.FC = () => {
       score: 65,
       previousScore: 60,
       auditor: 'Dr. Robert Mugabo',
-      status: 'completed'
+      status: 'completed',
+      created_at: '2023-05-10T09:00:00Z',
+      updated_at: '2023-05-10T11:30:00Z'
     },
     {
       id: 4,
@@ -71,7 +90,9 @@ const AuditList: React.FC = () => {
       score: 84,
       previousScore: 79,
       auditor: 'Dr. Claire Niyonzima',
-      status: 'completed'
+      status: 'completed',
+      created_at: '2023-06-05T13:45:00Z',
+      updated_at: '2023-06-05T17:20:00Z'
     },
     {
       id: 5,
@@ -81,7 +102,9 @@ const AuditList: React.FC = () => {
       score: 0,
       previousScore: 92,
       auditor: 'Dr. Jean Mutabazi',
-      status: 'scheduled'
+      status: 'scheduled',
+      created_at: '2023-07-01T08:30:00Z',
+      updated_at: '2023-07-01T08:30:00Z'
     }
   ];
   
@@ -102,10 +125,60 @@ const AuditList: React.FC = () => {
     return { id, name: facility?.facilityName || '' };
   });
 
+  // Calculate pagination
+  const totalItems = filteredAudits?.length || 0;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  // Get current page items
+  const currentItems = filteredAudits?.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Format date for display
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return format(new Date(dateString), 'PPP p'); // Format like "Apr 29, 2023, 2:15 PM"
+  };
+
   // Handle starting a new audit when a facility is selected
   const handleStartNewAudit = (facilityId: number) => {
     navigate(`/facilities/audit/${facilityId}`);
     setIsNewAuditDialogOpen(false);
+  };
+
+  const handleViewAudit = (audit: AuditItem) => {
+    setViewingAudit(audit);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditAudit = (audit: AuditItem) => {
+    if (audit.status === 'scheduled' || audit.status === 'in-progress') {
+      navigate(`/facilities/audit/${audit.id}`);
+    } else {
+      toast({
+        title: "Edit Audit",
+        description: `Editing completed audit ${audit.id} is not implemented yet.`,
+      });
+    }
+  };
+
+  const handlePrintReport = (audit: AuditItem) => {
+    toast({
+      title: "Print Report",
+      description: `Printing report for audit ${audit.id} is not implemented yet.`,
+    });
+  };
+
+  const handleDeleteAudit = (id: number) => {
+    if (confirm("Are you sure you want to delete this audit? This action cannot be undone.")) {
+      // In a real implementation, this would be a mutation that calls an API
+      // For now, we'll just show a success message
+      toast({
+        title: "Audit deleted",
+        description: "The audit has been successfully deleted.",
+      });
+    }
   };
 
   return (
@@ -178,8 +251,8 @@ const AuditList: React.FC = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAudits.length > 0 ? (
-                filteredAudits.map((audit) => (
+              {currentItems.length > 0 ? (
+                currentItems.map((audit) => (
                   <TableRow key={audit.id}>
                     <TableCell className="font-medium">{audit.facilityName}</TableCell>
                     <TableCell>{format(new Date(audit.date), 'MMM d, yyyy')}</TableCell>
@@ -218,20 +291,44 @@ const AuditList: React.FC = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {audit.status === 'completed' ? (
-                          <Button variant="outline" size="icon" onClick={() => navigate(`/facilities/audit/${audit.id}`)}>
-                            <Eye className="h-4 w-4" />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
-                        ) : (
-                          <Button variant="outline" size="icon" onClick={() => navigate(`/facilities/audit/${audit.id}`)}>
-                            <FileEdit className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button variant="outline" size="icon" className="text-rose-600">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Audit Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem onClick={() => handleViewAudit(audit)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </DropdownMenuItem>
+                          
+                          <DropdownMenuItem onClick={() => handleEditAudit(audit)}>
+                            <FileEdit className="h-4 w-4 mr-2" />
+                            {audit.status === 'completed' ? 'View Audit' : 'Continue Audit'}
+                          </DropdownMenuItem>
+                          
+                          {audit.status === 'completed' && (
+                            <DropdownMenuItem onClick={() => handlePrintReport(audit)}>
+                              <Printer className="h-4 w-4 mr-2" />
+                              Print Report
+                            </DropdownMenuItem>
+                          )}
+                          
+                          <DropdownMenuSeparator />
+                          
+                          <DropdownMenuItem 
+                            className="text-rose-600"
+                            onClick={() => handleDeleteAudit(audit.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
@@ -244,8 +341,112 @@ const AuditList: React.FC = () => {
               )}
             </TableBody>
           </Table>
+          
+          {filteredAudits.length > 0 && (
+            <div className="mt-4">
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Audit Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Audit Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about this facility audit.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewingAudit && (
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Facility</h4>
+                  <p>{viewingAudit.facilityName}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Date</h4>
+                  <p>{format(new Date(viewingAudit.date), 'PPP')}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
+                  <Badge
+                    className={
+                      viewingAudit.status === 'completed' ? 'bg-emerald-50 text-emerald-600' :
+                      viewingAudit.status === 'in-progress' ? 'bg-amber-50 text-amber-600' :
+                      'bg-blue-50 text-blue-600'
+                    }
+                  >
+                    {viewingAudit.status === 'completed' ? 'Completed' :
+                     viewingAudit.status === 'in-progress' ? 'In Progress' :
+                     'Scheduled'}
+                  </Badge>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Score</h4>
+                  {viewingAudit.status === 'completed' ? (
+                    <p className={
+                      viewingAudit.score >= 80 ? 'text-emerald-600 font-medium' :
+                      viewingAudit.score >= 60 ? 'text-amber-600 font-medium' :
+                      'text-rose-600 font-medium'
+                    }>
+                      {viewingAudit.score}%
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground">Not available</p>
+                  )}
+                </div>
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Auditor</h4>
+                  <p>{viewingAudit.auditor || user?.displayName || user?.username || 'Current User'}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Completed On</h4>
+                  <p className="text-sm">{formatDate(viewingAudit.created_at)}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Updated On</h4>
+                  <p className="text-sm">{formatDate(viewingAudit.updated_at)}</p>
+                </div>
+                {viewingAudit.previousScore !== null && (
+                  <div className="col-span-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">Previous Score</h4>
+                    <div className="flex items-center">
+                      <p>{viewingAudit.previousScore}%</p>
+                      <ScoreTrendIndicator current={viewingAudit.score} previous={viewingAudit.previousScore} />
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                  Close
+                </Button>
+                {viewingAudit.status === 'completed' && (
+                  <Button onClick={() => handlePrintReport(viewingAudit)}>
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print Report
+                  </Button>
+                )}
+                {(viewingAudit.status === 'scheduled' || viewingAudit.status === 'in-progress') && (
+                  <Button onClick={() => handleEditAudit(viewingAudit)}>
+                    <FileEdit className="h-4 w-4 mr-2" />
+                    Continue Audit
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <ScheduleAuditDialog 
         open={isScheduleDialogOpen} 
