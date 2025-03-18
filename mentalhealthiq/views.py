@@ -215,15 +215,19 @@ class StaffMemberViewSet(viewsets.ModelViewSet):
 
 class AssessmentCriteriaViewSet(viewsets.ModelViewSet):
     """API endpoints for managing assessment criteria"""
-    queryset = AssessmentCriteria.objects.all()
     serializer_class = AssessmentCriteriaSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['category']
+    filterset_fields = ['category', 'purpose']
     search_fields = ['name', 'description']
     ordering_fields = ['name', 'created_at']
-    permission_classes = [AllowAny]  # Allow any user to access these endpoints
-    
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        """Filter queryset based on purpose"""
+        purpose = self.request.query_params.get('purpose', 'Assessment')
+        return AssessmentCriteria.objects.filter(purpose=purpose)
+
     @action(detail=True, methods=['get'])
     def indicators(self, request, pk=None):
         """Get all indicators for a specific assessment criteria"""

@@ -1,4 +1,3 @@
-
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -72,14 +71,19 @@ const criteriaService = {
    * @returns Promise with created criterion
    */
   createCriterion: async (criterionData: Partial<AssessmentCriteria>): Promise<AssessmentCriteria> => {
-    console.log('Creating new criterion via API', criterionData);
-    
-    // Use different endpoints based on purpose
+    console.log('Creating criterion with data:', criterionData);
     const endpoint = criterionData.purpose === 'Audit' 
       ? '/audit-criteria/' 
       : '/assessment-criteria/';
       
-    const response = await api.post<AssessmentCriteria>(endpoint, criterionData);
+    // Create criterion with indicators in a single request
+    const response = await api.post<AssessmentCriteria>(endpoint, {
+      name: criterionData.name,
+      category: criterionData.category,
+      description: criterionData.description,
+      purpose: criterionData.purpose,
+      indicators: criterionData.indicators || []
+    });
     
     return response;
   },
@@ -91,14 +95,19 @@ const criteriaService = {
    * @returns Promise with updated criterion
    */
   updateCriterion: async (id: number, criterionData: Partial<AssessmentCriteria>): Promise<AssessmentCriteria> => {
-    console.log(`Updating criterion with ID ${id} via API`, criterionData);
-    
-    // Use different endpoints based on purpose
+    console.log('Updating criterion with data:', criterionData);
     const endpoint = criterionData.purpose === 'Audit' 
       ? `/audit-criteria/${id}/` 
       : `/assessment-criteria/${id}/`;
       
-    const response = await api.put<AssessmentCriteria>(endpoint, criterionData);
+    // Update criterion with indicators in a single request
+    const response = await api.put<AssessmentCriteria>(endpoint, {
+      name: criterionData.name,
+      category: criterionData.category,
+      description: criterionData.description,
+      purpose: criterionData.purpose,
+      indicators: criterionData.indicators || []
+    });
     
     return response;
   },

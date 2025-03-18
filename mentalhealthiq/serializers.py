@@ -51,12 +51,36 @@ class IndicatorSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'weight']
 
 class AssessmentCriteriaSerializer(serializers.ModelSerializer):
-    indicators = IndicatorSerializer(many=True, read_only=True)
+    indicators = IndicatorSerializer(many=True, read_only=False, required=False)
     
     class Meta:
         model = AssessmentCriteria
-        fields = ['id', 'name', 'category', 'description', 'indicators', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'category', 'description', 'purpose', 'indicators', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        indicators_data = validated_data.pop('indicators', [])
+        criterion = AssessmentCriteria.objects.create(**validated_data)
+        
+        for indicator_data in indicators_data:
+            Indicator.objects.create(criteria=criterion, **indicator_data)
+        
+        return criterion
+    
+    def update(self, instance, validated_data):
+        indicators_data = validated_data.pop('indicators', [])
+        
+        # Update criterion fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Clear existing indicators and create new ones
+        instance.indicators.all().delete()
+        for indicator_data in indicators_data:
+            Indicator.objects.create(criteria=instance, **indicator_data)
+        
+        return instance
 
 class PatientSerializer(serializers.ModelSerializer):
     facility_name = serializers.CharField(source='facility.name', read_only=True)

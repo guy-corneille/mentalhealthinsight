@@ -125,19 +125,6 @@ class StaffQualification(models.Model):
     def __str__(self):
         return f"{self.qualification} - {self.staff.name}"
 
-# class AssessmentCriteria(models.Model):
-#     id = models.AutoField(primary_key=True)
-#     name = models.CharField(max_length=255)
-#     category = models.CharField(max_length=100)
-#     description = models.TextField(blank=True, null=True)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-    
-#     def __str__(self):
-#         return f"{self.name} ({self.category})"
-    
-#     class Meta:
-#         verbose_name_plural = "Assessment Criteria"
 class AssessmentCriteria(models.Model):
     CATEGORY_CHOICES = (
         ('Clinical', 'Clinical'),
@@ -165,6 +152,7 @@ class AssessmentCriteria(models.Model):
 
     class Meta:
         verbose_name_plural = "Assessment Criteria"
+
 class Indicator(models.Model):
     criteria = models.ForeignKey(AssessmentCriteria, on_delete=models.CASCADE, related_name='indicators')
     name = models.CharField(max_length=255)
