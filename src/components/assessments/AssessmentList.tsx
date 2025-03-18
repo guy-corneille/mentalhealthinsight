@@ -7,7 +7,11 @@ import {
   FilterIcon,
   ArrowUpDownIcon,
   FileTextIcon,
-  MoreHorizontalIcon
+  MoreHorizontalIcon,
+  EyeIcon,
+  PencilIcon,
+  PrinterIcon,
+  Trash2Icon
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,9 +34,11 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import NewAssessmentDialog from './NewAssessmentDialog';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { Spinner } from '@/components/ui/spinner';
+import PaginationControls from '@/components/common/PaginationControls';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface Assessment {
   id: number;
@@ -62,8 +68,13 @@ interface AssessmentListProps {
 const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+  const [viewingAssessment, setViewingAssessment] = useState<Assessment | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   // Fetch assessments using React Query with proper typing
   const { data, isLoading, error } = useQuery({
@@ -72,6 +83,26 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       const response = await api.get<PaginatedResponse<Assessment>>('/assessments/');
       // Return the results array from the paginated response
       return response.results || [];
+    }
+  });
+
+  // Delete assessment mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.delete(`/assessments/${id}/`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      toast({
+        title: "Assessment deleted",
+        description: "The assessment has been successfully deleted.",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting assessment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete assessment. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -85,6 +116,34 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     onStartAssessment(patientId, facilityId);
   };
 
+  const handleViewAssessment = (assessment: Assessment) => {
+    setViewingAssessment(assessment);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditAssessment = (assessment: Assessment) => {
+    // For now, let's just show a toast notification
+    toast({
+      title: "Edit Assessment",
+      description: `Editing assessment ${assessment.id} is not implemented yet.`,
+    });
+    // In a real implementation, you would navigate to an edit page or open an edit modal
+  };
+
+  const handlePrintReport = (assessment: Assessment) => {
+    toast({
+      title: "Print Report",
+      description: `Printing report for assessment ${assessment.id} is not implemented yet.`,
+    });
+    // In a real implementation, you would generate and print a report
+  };
+
+  const handleDeleteAssessment = (id: number) => {
+    if (confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
+      deleteMutation.mutate(id);
+    }
+  };
+
   // Filter assessments based on search query
   const filteredAssessments = data?.filter((assessment: Assessment) => {
     const searchText = searchQuery.toLowerCase();
@@ -95,6 +154,16 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       (assessment.notes && assessment.notes.toLowerCase().includes(searchText))
     );
   });
+
+  // Calculate pagination
+  const totalItems = filteredAssessments?.length || 0;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  // Get current page items
+  const currentItems = filteredAssessments?.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -162,7 +231,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredAssessments.map((assessment: Assessment) => {
+                  currentItems.map((assessment: Assessment) => {
                     // Calculate score color based on value
                     const scoreColor = 
                       assessment.score >= 80 ? 'bg-emerald-500' : 
@@ -199,14 +268,26 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                             <DropdownMenuContent align="end" className="w-48">
                               <DropdownMenuLabel>Assessment Actions</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem>
-                                <FileTextIcon className="h-4 w-4 mr-2" />
+                              <DropdownMenuItem onClick={() => handleViewAssessment(assessment)}>
+                                <EyeIcon className="h-4 w-4 mr-2" />
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem>Edit Assessment</DropdownMenuItem>
-                              <DropdownMenuItem>Print Report</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditAssessment(assessment)}>
+                                <PencilIcon className="h-4 w-4 mr-2" />
+                                Edit Assessment
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handlePrintReport(assessment)}>
+                                <PrinterIcon className="h-4 w-4 mr-2" />
+                                Print Report
+                              </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-rose-600">Delete</DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="text-rose-600"
+                                onClick={() => handleDeleteAssessment(assessment.id)}
+                              >
+                                <Trash2Icon className="h-4 w-4 mr-2" />
+                                Delete
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -216,9 +297,78 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                 )}
               </TableBody>
             </Table>
+            
+            {filteredAssessments && filteredAssessments.length > 0 && (
+              <div className="px-4 py-2 border-t">
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      {/* Assessment Details Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Assessment Details</DialogTitle>
+            <DialogDescription>
+              View detailed information about this assessment.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {viewingAssessment && (
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Patient</h4>
+                  <p>{viewingAssessment.patient_name || viewingAssessment.patient}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Facility</h4>
+                  <p>{viewingAssessment.facility_name || viewingAssessment.facility}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Date</h4>
+                  <p>{new Date(viewingAssessment.assessment_date).toLocaleDateString()}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Score</h4>
+                  <p className={
+                    viewingAssessment.score >= 80 ? 'text-emerald-600' : 
+                    viewingAssessment.score >= 60 ? 'text-amber-600' : 
+                    'text-rose-600'
+                  }>
+                    {viewingAssessment.score}%
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Evaluator</h4>
+                  <p>{viewingAssessment.evaluator_name || viewingAssessment.evaluator || 'Not specified'}</p>
+                </div>
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Notes</h4>
+                  <p className="whitespace-pre-wrap">{viewingAssessment.notes || 'No notes provided.'}</p>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                  Close
+                </Button>
+                <Button onClick={() => handlePrintReport(viewingAssessment)}>
+                  <PrinterIcon className="h-4 w-4 mr-2" />
+                  Print Report
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <NewAssessmentDialog 
         open={isDialogOpen}
