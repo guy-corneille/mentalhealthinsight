@@ -57,12 +57,12 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch assessments using React Query - Fix the typing issue
+  // Fetch assessments using React Query
   const { data: assessments, isLoading, error } = useQuery({
     queryKey: ['assessments'],
     queryFn: async () => {
-      // Because api.get already returns response.data, we don't need to access .data again
-      return api.get<Assessment[]>('/assessments/');
+      const response = await api.get('/assessments/');
+      return response.data as Assessment[];
     }
   });
 
