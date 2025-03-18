@@ -35,7 +35,7 @@ import api from '@/services/api';
 import { Spinner } from '@/components/ui/spinner';
 
 interface Assessment {
-  id: number;
+  id: number | string;  // Allow for both number and string IDs
   patient: string;
   patient_name?: string;
   facility: string;

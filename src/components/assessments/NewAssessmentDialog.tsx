@@ -56,10 +56,13 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
   const [patientComboOpen, setPatientComboOpen] = useState(false);
   
   // Fetch patients and facilities
-  const { data: patients, isLoading: isPatientsLoading } = usePatients();
+  const { data: patientsData, isLoading: isPatientsLoading } = usePatients();
   const { data: facilities, isLoading: isFacilitiesLoading } = useFacilities();
   const { data: selectedPatient } = usePatient(selectedPatientId);
 
+  // Ensure patients is always an array even if data is undefined
+  const patients = patientsData || [];
+  
   // Auto-select facility when patient is selected
   useEffect(() => {
     if (selectedPatient && selectedPatient.facility) {
