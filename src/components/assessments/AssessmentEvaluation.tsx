@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,12 +22,13 @@ import {
   StarHalfIcon,
   BanIcon
 } from 'lucide-react';
-import axios from 'axios';
 import { 
   type Rating, 
   getRatingValue, 
   calculateWeightedScoreWithExclusions 
 } from '@/utils/ratingUtils';
+import { useAssessmentCriteria } from '@/services/criteriaService';
+import api from '@/services/api';
 
 interface AssessmentEvaluationProps {
   patientId: string;
@@ -65,102 +67,37 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [notes, setNotes] = useState('');
   const [overallScore, setOverallScore] = useState(0);
-  const [loading, setLoading] = useState(true);
   
-  const mockCriteria: Criterion[] = [
-    {
-      id: 4,
-      name: 'Depression Evaluation',
-      description: 'Assessment criteria for evaluating depression symptoms and severity',
-      standard: 'PHQ-9',
-      weight: 30,
-      type: 'assessment',
-      indicators: [
-        { id: 11, name: 'Depressed Mood', weight: 25, score: 0, rating: "not-rated" },
-        { id: 12, name: 'Loss of Interest', weight: 25, score: 0, rating: "not-rated" },
-        { id: 13, name: 'Sleep Disturbance', weight: 15, score: 0, rating: "not-rated" },
-        { id: 14, name: 'Fatigue', weight: 15, score: 0, rating: "not-rated" },
-        { id: 15, name: 'Appetite Changes', weight: 10, score: 0, rating: "not-rated" },
-        { id: 16, name: 'Concentration Issues', weight: 10, score: 0, rating: "not-rated" }
-      ]
-    },
-    {
-      id: 5,
-      name: 'Anxiety Assessment',
-      description: 'Evaluation of anxiety symptoms and their impact on daily functioning',
-      standard: 'GAD-7',
-      weight: 25,
-      type: 'assessment',
-      indicators: [
-        { id: 17, name: 'Nervousness', weight: 20, score: 0, rating: "not-rated" },
-        { id: 18, name: 'Worry Control', weight: 20, score: 0, rating: "not-rated" },
-        { id: 19, name: 'Restlessness', weight: 20, score: 0, rating: "not-rated" },
-        { id: 20, name: 'Irritability', weight: 20, score: 0, rating: "not-rated" },
-        { id: 21, name: 'Fear', weight: 20, score: 0, rating: "not-rated" }
-      ]
-    },
-    {
-      id: 6,
-      name: 'Cognitive Function',
-      description: 'Assessment of cognitive abilities and impairments',
-      standard: 'Custom',
-      weight: 20,
-      type: 'assessment',
-      indicators: [
-        { id: 22, name: 'Memory', weight: 25, score: 0, rating: "not-rated" },
-        { id: 23, name: 'Attention', weight: 25, score: 0, rating: "not-rated" },
-        { id: 24, name: 'Problem Solving', weight: 25, score: 0, rating: "not-rated" },
-        { id: 25, name: 'Decision Making', weight: 25, score: 0, rating: "not-rated" }
-      ]
-    },
-    {
-      id: 7,
-      name: 'Social Functioning',
-      description: 'Evaluation of social relationships and community integration',
-      standard: 'Custom',
-      weight: 15,
-      type: 'assessment',
-      indicators: [
-        { id: 26, name: 'Interpersonal Relationships', weight: 34, score: 0, rating: "not-rated" },
-        { id: 27, name: 'Social Engagement', weight: 33, score: 0, rating: "not-rated" },
-        { id: 28, name: 'Community Participation', weight: 33, score: 0, rating: "not-rated" }
-      ]
-    }
-  ];
+  // Use the React Query hook to fetch criteria
+  const { data: apiCriteria, isLoading, error } = useAssessmentCriteria('assessment');
   
+  // State to store processed criteria with scores
   const [criteria, setCriteria] = useState<Criterion[]>([]);
   
+  // Process API data when it's received
   useEffect(() => {
-    const fetchCriteria = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get('http://localhost:8000/api/criteria/', {
-          params: { type: 'assessment' }
-        });
-        
-        if (response.data && response.data.length > 0) {
-          const criteriaWithScores = response.data.map((criterion: Criterion) => ({
-            ...criterion,
-            indicators: criterion.indicators.map(indicator => ({
-              ...indicator,
-              score: 0,
-              rating: "not-rated"
-            }))
-          }));
-          setCriteria(criteriaWithScores);
-        } else {
-          setCriteria(mockCriteria);
-        }
-      } catch (error) {
-        console.error('Error fetching criteria:', error);
-        setCriteria(mockCriteria);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchCriteria();
-  }, []);
+    if (apiCriteria && apiCriteria.length > 0) {
+      // Transform API criteria to add score and rating properties to indicators
+      const criteriaWithScores = apiCriteria.map((criterion: any) => ({
+        ...criterion,
+        weight: calculateCriterionWeight(apiCriteria, criterion.id),
+        type: 'assessment',
+        standard: criterion.category, // Use category as standard for now
+        indicators: criterion.indicators?.map((indicator: any) => ({
+          ...indicator,
+          score: 0,
+          rating: "not-rated" as Rating
+        })) || []
+      }));
+      setCriteria(criteriaWithScores);
+    }
+  }, [apiCriteria]);
+  
+  // Calculate the weight for each criterion based on total criteria count
+  const calculateCriterionWeight = (criteria: any[], criterionId: number): number => {
+    const totalCriteria = criteria.length;
+    return totalCriteria > 0 ? Math.round(100 / totalCriteria) : 0;
+  };
 
   const handleRatingChange = (criterionIndex: number, indicatorIndex: number, rating: Rating) => {
     const newCriteria = [...criteria];
@@ -202,12 +139,42 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
     }
   };
   
-  const handleSubmit = () => {
-    toast({
-      title: "Assessment Completed",
-      description: `Assessment for Patient ID: ${patientId} at Facility ID: ${facilityId} has been saved.`,
-    });
-    onComplete();
+  const handleSubmit = async () => {
+    try {
+      // Prepare assessment data
+      const assessmentData = {
+        patient: patientId,
+        facility: facilityId,
+        assessment_date: new Date().toISOString(),
+        score: overallScore,
+        notes: notes,
+        indicator_scores: criteria.flatMap(criterion => 
+          criterion.indicators.map(indicator => ({
+            indicator: indicator.id,
+            score: indicator.score,
+            rating: indicator.rating,
+            notes: ''
+          }))
+        )
+      };
+      
+      // Submit assessment to API
+      await api.post('/assessments/', assessmentData);
+      
+      toast({
+        title: "Assessment Completed",
+        description: `Assessment for Patient ID: ${patientId} at Facility ID: ${facilityId} has been saved.`,
+      });
+      
+      onComplete();
+    } catch (error) {
+      console.error('Error submitting assessment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save assessment. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   const getCurrentCriterion = () => criteria[currentStep];
@@ -216,11 +183,31 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
     return ((currentStep + 1) / criteria.length) * 100;
   };
   
-  if (loading) {
+  if (isLoading) {
     return (
       <Card className="w-full">
         <CardContent className="py-8 text-center">
           Loading assessment criteria...
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardContent className="py-8 text-center text-rose-600">
+          Error loading assessment criteria. Please try again.
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (!criteria || criteria.length === 0) {
+    return (
+      <Card className="w-full">
+        <CardContent className="py-8 text-center">
+          No assessment criteria found. Please add criteria in the Criteria management section.
         </CardContent>
       </Card>
     );
