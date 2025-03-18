@@ -52,7 +52,7 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
   // Fetch patients and facilities
   const { data: patients, isLoading: isPatientsLoading } = usePatients();
   const { data: facilities, isLoading: isFacilitiesLoading } = useFacilities();
-  const { data: selectedPatient } = usePatient(selectedPatientId, { enabled: !!selectedPatientId });
+  const { data: selectedPatient } = usePatient(selectedPatientId);
 
   // Auto-select facility when patient is selected
   useEffect(() => {

@@ -62,7 +62,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     queryKey: ['assessments'],
     queryFn: async () => {
       const response = await api.get('/assessments/');
-      return response.data;
+      return response.data as Assessment[];
     }
   });
 
