@@ -66,11 +66,6 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
   const displayLimit = 100;
   const patientsToDisplay = searchQuery ? filteredPatients : filteredPatients.slice(0, displayLimit);
   
-  const handleSelect = (currentPatientId: string) => {
-    onSelect(currentPatientId);
-    onOpenChange(false);
-  };
-  
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
@@ -103,8 +98,11 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
               {patientsToDisplay.map((patient) => (
                 <CommandItem
                   key={patient.id}
-                  value={patient.id} // Use patient ID as value for direct selection
-                  onSelect={handleSelect} // Pass ID directly to handler
+                  value={patient.id}
+                  onSelect={() => {
+                    onSelect(patient.id);
+                    onOpenChange(false);
+                  }}
                   className="cursor-pointer"
                 >
                   <Check

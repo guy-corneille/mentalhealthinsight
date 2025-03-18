@@ -41,6 +41,7 @@ export const useNewAssessmentDialog = (
   const handleClose = () => {
     setSelectedPatientId('');
     setSelectedFacilityId('');
+    setPatientComboOpen(false);
     onClose();
   };
 

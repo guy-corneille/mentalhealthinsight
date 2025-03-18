@@ -36,6 +36,7 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
   const handleStartAssessment = () => {
     if (state.selectedPatientId && state.selectedFacilityId) {
       onCreateAssessment(state.selectedPatientId, state.selectedFacilityId);
+      onOpenChange(false);
     }
   };
 
@@ -81,7 +82,7 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
             Cancel
           </Button>
           <Button 
-            onClick={actions.handleStartAssessment} 
+            onClick={handleStartAssessment} 
             disabled={!state.selectedPatientId || data.isLoading}
             className="bg-healthiq-600 hover:bg-healthiq-700"
           >
