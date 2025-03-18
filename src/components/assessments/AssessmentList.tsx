@@ -65,8 +65,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const { data: apiResponse, isLoading, error, refetch } = useQuery<AssessmentApiResponse>({
     queryKey: ['assessments'],
     queryFn: async () => {
-      const response = await api.get<AssessmentApiResponse>('/assessments/');
-      return response.data;
+      // Our API interceptor already returns the data, so we don't need to access .data again
+      return await api.get<AssessmentApiResponse>('/assessments/');
     }
   });
 
