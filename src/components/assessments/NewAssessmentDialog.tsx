@@ -34,12 +34,12 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
   } = useNewAssessmentDialog(onCreateAssessment, () => onOpenChange(false));
 
   return (
-    <Dialog open={open} onOpenChange={actions.handleClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => isOpen ? onOpenChange(true) : actions.handleClose()}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle>New Patient Assessment</DialogTitle>
           <DialogDescription>
-            Select a patient to begin a new assessment.
+            Select a patient to begin a new assessment. You can search by name or ID.
           </DialogDescription>
         </DialogHeader>
         

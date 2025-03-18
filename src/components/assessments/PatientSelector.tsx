@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Command,
   CommandEmpty,
@@ -14,7 +14,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Patient {
@@ -41,6 +41,7 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
 }) => {
   // Safety check - ensure patients is always an array even if undefined is passed
   const patientsList = patients || [];
+  const [searchQuery, setSearchQuery] = useState('');
   
   if (patientsList.length === 0) {
     return (
@@ -53,8 +54,29 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
   // Find the selected patient for display
   const selectedPatient = patientsList.find((patient) => patient.id === selectedPatientId);
   
-  // Handle large patient lists by limiting displayed results initially
-  const displayLimit = 100; // Limit to prevent performance issues with very large lists
+  // Filter patients based on search query
+  const filteredPatients = patientsList.filter((patient) => {
+    const fullName = `${patient.first_name} ${patient.last_name}`.toLowerCase();
+    const patientId = patient.id.toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return fullName.includes(query) || patientId.includes(query);
+  });
+  
+  // Limit the number of patients displayed initially to improve performance
+  const displayLimit = 100;
+  const patientsToDisplay = searchQuery ? filteredPatients : filteredPatients.slice(0, displayLimit);
+  
+  const handleSelect = (value: string) => {
+    // Find the patient by matching the full name
+    const patient = patientsList.find(
+      (p) => `${p.first_name} ${p.last_name}`.toLowerCase() === value.toLowerCase()
+    );
+    
+    if (patient) {
+      onSelect(patient.id);
+      onOpenChange(false);
+    }
+  };
   
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
@@ -64,6 +86,7 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
           role="combobox"
           aria-expanded={isOpen}
           className="w-full justify-between"
+          onClick={() => onOpenChange(true)}
         >
           {selectedPatient 
             ? `${selectedPatient.first_name} ${selectedPatient.last_name}`
@@ -72,19 +95,25 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
-          <CommandInput placeholder="Search patients..." />
+        <Command shouldFilter={false}>
+          <div className="flex items-center border-b px-3">
+            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+            <CommandInput 
+              placeholder="Search patients by name or ID..." 
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+              className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
           <CommandList className="max-h-[300px] overflow-auto">
-            <CommandEmpty>No patient found.</CommandEmpty>
+            <CommandEmpty>No patient found with that name or ID.</CommandEmpty>
             <CommandGroup>
-              {patientsList.slice(0, displayLimit).map((patient) => (
+              {patientsToDisplay.map((patient) => (
                 <CommandItem
                   key={patient.id}
                   value={`${patient.first_name} ${patient.last_name}`}
-                  onSelect={() => {
-                    onSelect(patient.id);
-                    onOpenChange(false);
-                  }}
+                  onSelect={handleSelect}
+                  className="cursor-pointer"
                 >
                   <Check
                     className={cn(
@@ -92,13 +121,16 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
                       selectedPatientId === patient.id ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  {patient.first_name} {patient.last_name}
+                  <div>
+                    <span className="font-medium">{patient.first_name} {patient.last_name}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">({patient.id})</span>
+                  </div>
                 </CommandItem>
               ))}
-              {patientsList.length > displayLimit && (
+              {!searchQuery && patientsList.length > displayLimit && (
                 <div className="py-2 px-2 text-xs text-muted-foreground text-center">
                   Showing {displayLimit} of {patientsList.length} patients. 
-                  Please use search to find specific patients.
+                  Type to search for more patients.
                 </div>
               )}
             </CommandGroup>
