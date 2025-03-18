@@ -47,6 +47,14 @@ interface Assessment {
   evaluator_name?: string;
 }
 
+// Define the API response structure that includes pagination
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 interface AssessmentListProps {
   onStartAssessment: (patientId: string, facilityId: string) => void;
 }
@@ -57,12 +65,13 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch assessments using React Query
-  const { data: assessments, isLoading, error } = useQuery({
+  // Fetch assessments using React Query with proper typing
+  const { data, isLoading, error } = useQuery({
     queryKey: ['assessments'],
     queryFn: async () => {
-      const response = await api.get('/assessments/');
-      return response.data as Assessment[];
+      const response = await api.get<PaginatedResponse<Assessment>>('/assessments/');
+      // Return the results array from the paginated response
+      return response.results || [];
     }
   });
 
@@ -77,7 +86,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   };
 
   // Filter assessments based on search query
-  const filteredAssessments = assessments?.filter((assessment: Assessment) => {
+  const filteredAssessments = data?.filter((assessment: Assessment) => {
     const searchText = searchQuery.toLowerCase();
     return (
       String(assessment.id).includes(searchText) ||
@@ -147,14 +156,14 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAssessments?.length === 0 ? (
+                {!filteredAssessments || filteredAssessments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                       No assessments found. Create a new assessment to get started.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredAssessments?.map((assessment: Assessment) => {
+                  filteredAssessments.map((assessment: Assessment) => {
                     // Calculate score color based on value
                     const scoreColor = 
                       assessment.score >= 80 ? 'bg-emerald-500' : 
