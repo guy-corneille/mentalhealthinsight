@@ -6,6 +6,7 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList
 } from '@/components/ui/command';
 import {
   Popover,
@@ -38,7 +39,10 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
   onOpenChange,
   onSelect,
 }) => {
-  if (!patients || patients.length === 0) {
+  // Safety check - ensure patients is always an array even if undefined is passed
+  const patientsList = patients || [];
+  
+  if (patientsList.length === 0) {
     return (
       <div className="text-sm text-muted-foreground">
         No patients available. Please add patients first.
@@ -47,7 +51,10 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
   }
 
   // Find the selected patient for display
-  const selectedPatient = patients.find((patient) => patient.id === selectedPatientId);
+  const selectedPatient = patientsList.find((patient) => patient.id === selectedPatientId);
+  
+  // Handle large patient lists by limiting displayed results initially
+  const displayLimit = 100; // Limit to prevent performance issues with very large lists
   
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
@@ -67,27 +74,35 @@ const PatientSelector: React.FC<PatientSelectorProps> = ({
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
           <CommandInput placeholder="Search patients..." />
-          <CommandEmpty>No patient found.</CommandEmpty>
-          <CommandGroup className="max-h-[300px] overflow-auto">
-            {patients.map((patient) => (
-              <CommandItem
-                key={patient.id}
-                value={`${patient.first_name} ${patient.last_name}`}
-                onSelect={() => {
-                  onSelect(patient.id);
-                  onOpenChange(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    selectedPatientId === patient.id ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                {patient.first_name} {patient.last_name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          <CommandList className="max-h-[300px] overflow-auto">
+            <CommandEmpty>No patient found.</CommandEmpty>
+            <CommandGroup>
+              {patientsList.slice(0, displayLimit).map((patient) => (
+                <CommandItem
+                  key={patient.id}
+                  value={`${patient.first_name} ${patient.last_name}`}
+                  onSelect={() => {
+                    onSelect(patient.id);
+                    onOpenChange(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      selectedPatientId === patient.id ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {patient.first_name} {patient.last_name}
+                </CommandItem>
+              ))}
+              {patientsList.length > displayLimit && (
+                <div className="py-2 px-2 text-xs text-muted-foreground text-center">
+                  Showing {displayLimit} of {patientsList.length} patients. 
+                  Please use search to find specific patients.
+                </div>
+              )}
+            </CommandGroup>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
