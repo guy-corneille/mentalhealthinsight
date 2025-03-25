@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -100,7 +101,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     staleTime: 0,
-    cacheTime: 0 // Don't cache at all
+    gcTime: 0 // Updated from cacheTime to gcTime
   });
 
   // Refetch on mount and on dialog close
