@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +39,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [viewingAssessment, setViewingAssessment] = useState<Assessment | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const paginationChangedRef = useRef(false);
   
   // Data fetching with pagination
   const fetchAssessments = useCallback(async () => {
@@ -72,16 +72,24 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     queryKey: ['assessments', currentPage, itemsPerPage, searchQuery],
     queryFn: fetchAssessments,
     refetchOnWindowFocus: false,
-    // Replace placeholderData with more explicit staleTime and refetchInterval for better control
-    staleTime: 30000, // Consider data fresh for 30 seconds
-    refetchInterval: false // Don't auto-refetch
+    staleTime: 10000, // Consider data fresh for only 10 seconds
+    refetchInterval: false, // Don't auto-refetch
   });
+
+  // Ensure we refetch when pagination changes
+  useEffect(() => {
+    if (paginationChangedRef.current) {
+      console.log("Pagination changed, forcing refetch");
+      refetch();
+      paginationChangedRef.current = false;
+    }
+  }, [currentPage, itemsPerPage, refetch]);
 
   // Force a refetch when currentPage changes
   const handlePageChange = (page: number) => {
-    console.log(`Changing to page ${page}`);
+    console.log(`Changing to page ${page} from ${currentPage}`);
     setCurrentPage(page);
-    // The refetch will happen automatically due to queryKey dependency
+    paginationChangedRef.current = true;
   };
 
   // When search query changes, reset to first page
@@ -89,16 +97,19 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     setCurrentPage(1);
   }, [searchQuery, itemsPerPage]);
 
-  // Mutation for deleting assessments
+  // Mutation for deleting assessments - updated to handle string IDs
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => {
-      console.log(`Deleting assessment with ID: ${id}`);
+    mutationFn: (id: number | string) => {
+      console.log(`Deleting assessment with ID: ${id} (type: ${typeof id})`);
       return api.delete(`/assessments/${id}/`);
     },
     onSuccess: () => {
+      console.log("Delete successful, invalidating queries");
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      
       console.log('Assessment deleted, refetching data');
       refetch();
+      
       toast({
         title: "Assessment deleted",
         description: "The assessment has been successfully deleted.",
@@ -241,23 +252,24 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     });
   };
 
-  const handleDeleteAssessment = (id: number) => {
+  const handleDeleteAssessment = (id: number | string) => {
     if (confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
       // Log the ID that's being deleted for debugging
-      console.log(`Confirming deletion of assessment ID: ${id}`);
+      console.log(`Confirming deletion of assessment ID: ${id} (type: ${typeof id})`);
       deleteMutation.mutate(id);
     }
   };
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    // setCurrentPage(1) is now handled in the useEffect hook
+    // Reset to first page handled in useEffect
   };
 
   const handleItemsPerPageChange = (value: string) => {
     const newItemsPerPage = Number(value);
+    console.log(`Changing items per page to ${newItemsPerPage}`);
     setItemsPerPage(newItemsPerPage);
-    // setCurrentPage(1) is now handled in the useEffect hook
+    // Reset to first page handled in useEffect
   };
 
   // Get filtered assessments from the API response
@@ -281,9 +293,9 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       />
       
       {/* Loading indicator for fetching */}
-      {isFetching && !isLoading && (
-        <div className="text-sm text-muted-foreground text-center py-2">
-          Refreshing data...
+      {isFetching && (
+        <div className="text-sm text-muted-foreground text-center py-2 bg-muted/30 rounded">
+          Loading assessment data...
         </div>
       )}
       
