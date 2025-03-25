@@ -45,8 +45,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
         }
       });
       
-      console.log(`API Success - Results count: ${response.data.results?.length}, Total: ${response.data.count}`);
-      return response.data.results || [];
+      console.log(`API Success - Results count: ${response.results?.length}, Total: ${response.count}`);
+      return response.results || [];
     } catch (error) {
       console.error('Error fetching assessments:', error);
       throw error;
