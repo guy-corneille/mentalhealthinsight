@@ -35,11 +35,19 @@ const AssessmentActions: React.FC<AssessmentActionsProps> = ({
 }) => {
   // Handle the case where assessment.id might be a string or number
   const handleDelete = () => {
-    // Convert id to number if it's a string
-    const numericId = typeof assessment.id === 'string' 
-      ? parseInt(assessment.id, 10) 
-      : assessment.id;
-      
+    // Ensure we're using the numeric part of the ID
+    // This is critical for proper API endpoint construction
+    let numericId: number;
+    
+    if (typeof assessment.id === 'string') {
+      // If the ID is something like "S-1234", extract just the numeric part
+      const match = assessment.id.match(/\d+/);
+      numericId = match ? parseInt(match[0], 10) : 0;
+      console.log(`Converting string ID "${assessment.id}" to numeric ID: ${numericId}`);
+    } else {
+      numericId = assessment.id;
+    }
+    
     onDeleteAssessment(numericId);
   };
 

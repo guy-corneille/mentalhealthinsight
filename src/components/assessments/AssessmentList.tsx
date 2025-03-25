@@ -76,7 +76,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   useEffect(() => {
     console.log('Component mounted or dialog closed, refetching assessments');
     refetch();
-  }, [refetch, isDialogOpen]);
+  }, [refetch, isDialogOpen, currentPage]); // Add currentPage to dependencies to ensure refetch on page change
 
   // When search query changes, reset to first page
   useEffect(() => {
@@ -85,7 +85,10 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
 
   // Mutation for deleting assessments
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => api.delete(`/assessments/${id}/`),
+    mutationFn: (id: number) => {
+      console.log(`Deleting assessment with ID: ${id}`);
+      return api.delete(`/assessments/${id}/`);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
       console.log('Assessment deleted, refetching data');
@@ -234,6 +237,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
 
   const handleDeleteAssessment = (id: number) => {
     if (confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
+      // Log the ID that's being deleted for debugging
+      console.log(`Confirming deletion of assessment ID: ${id}`);
       deleteMutation.mutate(id);
     }
   };
