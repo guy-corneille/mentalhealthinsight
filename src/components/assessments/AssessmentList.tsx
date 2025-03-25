@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -15,6 +14,13 @@ import {
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -57,7 +63,6 @@ interface Assessment {
   updated_at?: string;
 }
 
-// Define the API response structure that includes pagination
 interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -77,11 +82,10 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // Increased from 5 to 10 items per page
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [viewingAssessment, setViewingAssessment] = useState<Assessment | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   
-  // Function to fetch assessments data
   const fetchAssessments = useCallback(async () => {
     console.log('Fetching assessments from API');
     const response = await api.get<PaginatedResponse<Assessment>>('/assessments/');
@@ -89,7 +93,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     return response.results || [];
   }, []);
 
-  // Fetch assessments using React Query with proper typing
   const { 
     data, 
     isLoading, 
@@ -101,22 +104,20 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     staleTime: 0,
-    gcTime: 0 // Updated from cacheTime to gcTime
+    gcTime: 0
   });
 
-  // Refetch on mount and on dialog close
   useEffect(() => {
     console.log('Component mounted or dialog closed, refetching assessments');
     refetch();
   }, [refetch, isDialogOpen]);
 
-  // Delete assessment mutation
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/assessments/${id}/`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
       console.log('Assessment deleted, refetching data');
-      refetch(); // Explicitly refetch after deletion
+      refetch();
       toast({
         title: "Assessment deleted",
         description: "The assessment has been successfully deleted.",
@@ -148,16 +149,13 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   };
 
   const handleEditAssessment = (assessment: Assessment) => {
-    // For now, let's just show a toast notification
     toast({
       title: "Edit Assessment",
       description: `Editing assessment ${assessment.id} is not implemented yet.`,
     });
-    // In a real implementation, you would navigate to an edit page or open an edit modal
   };
 
   const handlePrintReport = (assessment: Assessment) => {
-    // Create a print-friendly version of the assessment report
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       toast({
@@ -170,7 +168,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
 
     const evaluatorName = assessment.evaluator_name || assessment.evaluator || user?.displayName || user?.username || 'Unknown';
     
-    // Create print-friendly HTML content
     printWindow.document.write(`
       <html>
         <head>
@@ -246,7 +243,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
           </div>
           
           <script>
-            // Auto print when loaded
             window.onload = function() {
               window.print();
             }
@@ -269,7 +265,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     }
   };
 
-  // Filter assessments based on search query
   const filteredAssessments = data?.filter((assessment: Assessment) => {
     const searchText = searchQuery.toLowerCase();
     return (
@@ -280,20 +275,17 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     );
   });
 
-  // Calculate pagination
   const totalItems = filteredAssessments?.length || 0;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   
-  // Get current page items
   const currentItems = filteredAssessments?.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Format date for display
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
-    return format(new Date(dateString), 'PPP p'); // Format like "Apr 29, 2023, 2:15 PM"
+    return format(new Date(dateString), 'PPP p');
   };
 
   return (
@@ -365,7 +357,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                   </TableRow>
                 ) : (
                   currentItems.map((assessment: Assessment) => {
-                    // Calculate score color based on value
                     const scoreColor = 
                       assessment.score >= 80 ? 'bg-emerald-500' : 
                       assessment.score >= 60 ? 'bg-amber-500' : 
@@ -444,7 +435,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                       value={itemsPerPage.toString()} 
                       onValueChange={(value) => {
                         setItemsPerPage(Number(value));
-                        setCurrentPage(1); // Reset to first page when changing items per page
+                        setCurrentPage(1);
                       }}
                     >
                       <SelectTrigger className="w-[120px]">
@@ -470,7 +461,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
         )}
       </div>
 
-      {/* Assessment Details Dialog */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -514,7 +504,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                   <p>{viewingAssessment.evaluator_name || viewingAssessment.evaluator || user?.displayName || user?.username || 'Current User'}</p>
                 </div>
 
-                {/* Added timestamps */}
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Completed On</h4>
                   <p className="text-sm">{formatDate(viewingAssessment.created_at)}</p>
