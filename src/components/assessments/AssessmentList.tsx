@@ -43,7 +43,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   
   // Data fetching with pagination
   const fetchAssessments = useCallback(async () => {
-    console.log(`Fetching assessments page ${currentPage} with ${itemsPerPage} items per page`);
+    console.log(`Fetching assessments page ${currentPage} with ${itemsPerPage} items per page, search: ${searchQuery || 'none'}`);
     try {
       // We need to pass pagination parameters to the API
       const response = await api.get<PaginatedResponse<Assessment>>('/assessments/', {
@@ -53,7 +53,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
           search: searchQuery || undefined // Only send if there's a search query
         }
       });
-      console.log('Assessment API response:', response);
+      console.log('Assessment API response count:', response.count);
+      console.log('Assessment API results length:', response.results?.length);
       return response;
     } catch (error) {
       console.error('Error fetching assessments:', error);
@@ -65,23 +66,28 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     data, 
     isLoading, 
     error,
-    refetch 
+    refetch,
+    isFetching
   } = useQuery({
     queryKey: ['assessments', currentPage, itemsPerPage, searchQuery],
     queryFn: fetchAssessments,
-    refetchOnWindowFocus: false, // Don't refetch when window gains focus
-    placeholderData: (previousData) => previousData, // Use this instead of keepPreviousData
+    refetchOnWindowFocus: false,
+    // Replace placeholderData with more explicit staleTime and refetchInterval for better control
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchInterval: false // Don't auto-refetch
   });
 
-  useEffect(() => {
-    console.log('Component mounted or dialog closed, refetching assessments');
-    refetch();
-  }, [refetch, isDialogOpen, currentPage]); // Add currentPage to dependencies to ensure refetch on page change
+  // Force a refetch when currentPage changes
+  const handlePageChange = (page: number) => {
+    console.log(`Changing to page ${page}`);
+    setCurrentPage(page);
+    // The refetch will happen automatically due to queryKey dependency
+  };
 
   // When search query changes, reset to first page
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, itemsPerPage]);
 
   // Mutation for deleting assessments
   const deleteMutation = useMutation({
@@ -251,13 +257,19 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const handleItemsPerPageChange = (value: string) => {
     const newItemsPerPage = Number(value);
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset to first page when changing items per page
+    // setCurrentPage(1) is now handled in the useEffect hook
   };
 
   // Get filtered assessments from the API response
   const assessments = data?.results || [];
   const totalItems = data?.count || 0;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  // Debug information for pagination
+  useEffect(() => {
+    console.log(`Current page: ${currentPage}, Total pages: ${totalPages}, Items per page: ${itemsPerPage}`);
+    console.log(`Total items from API: ${totalItems}, Current items count: ${assessments.length}`);
+  }, [currentPage, totalPages, itemsPerPage, totalItems, assessments.length]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -267,6 +279,13 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
         onSearchChange={handleSearchChange}
         onNewAssessmentClick={() => setIsDialogOpen(true)}
       />
+      
+      {/* Loading indicator for fetching */}
+      {isFetching && !isLoading && (
+        <div className="text-sm text-muted-foreground text-center py-2">
+          Refreshing data...
+        </div>
+      )}
       
       {/* Assessment Table */}
       <div className="bg-card rounded-lg border shadow-sm overflow-hidden animate-scale-in">
@@ -308,7 +327,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
             <PaginationControls
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={setCurrentPage}
+              onPageChange={handlePageChange}
             />
           </div>
         )}

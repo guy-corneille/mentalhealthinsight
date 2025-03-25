@@ -35,20 +35,27 @@ const AssessmentActions: React.FC<AssessmentActionsProps> = ({
 }) => {
   // Handle the case where assessment.id might be a string or number
   const handleDelete = () => {
-    // Ensure we're using the numeric part of the ID
-    // This is critical for proper API endpoint construction
-    let numericId: number;
+    // Use the exact ID as provided by the API without trying to extract numeric parts
+    // This ensures we're using the correct identifier for API operations
+    const id = assessment.id;
     
-    if (typeof assessment.id === 'string') {
-      // If the ID is something like "S-1234", extract just the numeric part
-      const match = assessment.id.match(/\d+/);
-      numericId = match ? parseInt(match[0], 10) : 0;
-      console.log(`Converting string ID "${assessment.id}" to numeric ID: ${numericId}`);
-    } else {
-      numericId = assessment.id;
+    // Since onDeleteAssessment expects a number, ensure we convert string IDs to numbers when possible
+    if (typeof id === 'number') {
+      onDeleteAssessment(id);
+    } else if (typeof id === 'string') {
+      // Try to convert the entire string to a number if possible
+      const numId = Number(id);
+      
+      // Check if conversion was successful and resulted in a valid number
+      if (!isNaN(numId)) {
+        console.log(`Converting string ID "${id}" to number: ${numId}`);
+        onDeleteAssessment(numId);
+      } else {
+        // If the ID is a complex string (like a UUID), log this issue
+        console.error(`Cannot convert assessment ID "${id}" to a number. API expects numeric IDs.`);
+        alert("Error: This assessment has a non-numeric ID and cannot be deleted through this interface.");
+      }
     }
-    
-    onDeleteAssessment(numericId);
   };
 
   return (
