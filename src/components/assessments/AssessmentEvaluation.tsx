@@ -28,6 +28,7 @@ import {
   calculateWeightedScoreWithExclusions 
 } from '@/utils/ratingUtils';
 import { useAssessmentCriteria } from '@/services/criteriaService';
+import { usePatient } from '@/services/patientService';
 import api from '@/services/api';
 
 interface AssessmentEvaluationProps {
@@ -67,6 +68,9 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [notes, setNotes] = useState('');
   const [overallScore, setOverallScore] = useState(0);
+  
+  // Fetch patient details
+  const { data: patient } = usePatient(patientId);
   
   // Use the React Query hook to fetch criteria
   const { data: apiCriteria, isLoading, error } = useAssessmentCriteria('assessment');
@@ -147,7 +151,6 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
         assessment_date: new Date().toISOString(),
         score: overallScore,
         notes: notes,
-        // Add criteria ID - this was missing and causing the 400 error
         criteria: criteria[0]?.id, 
         indicator_scores: criteria.flatMap(criterion => 
           criterion.indicators.map(indicator => ({
@@ -166,7 +169,6 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
         assessment_date: new Date().toISOString(),
         score: overallScore,
         notes: notes,
-        // Add criteria ID - this was missing and causing the 400 error
         criteria: criteria[0]?.id,
         indicator_scores: criteria.flatMap(criterion => 
           criterion.indicators.map(indicator => ({
@@ -179,11 +181,12 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
       };
       
       // Submit assessment to API
-      await api.post('/assessments/', assessmentData);
+      const response = await api.post('/assessments/', assessmentData);
+      console.log('Assessment created successfully:', response);
       
       toast({
         title: "Assessment Completed",
-        description: `Assessment for patient has been saved successfully.`,
+        description: `Assessment for patient ${patientId} has been saved successfully.`,
       });
       
       onComplete();
@@ -238,7 +241,7 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
       <CardHeader>
         <CardTitle>Patient Assessment</CardTitle>
         <CardDescription>
-          Evaluate patient {patientId}
+          Evaluate patient {patientId} {patient && `(${patient.first_name} ${patient.last_name})`}
         </CardDescription>
       </CardHeader>
       <CardContent>

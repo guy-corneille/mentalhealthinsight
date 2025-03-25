@@ -73,7 +73,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useAuth(); // Access the authenticated user
+  const { user } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -85,10 +85,16 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const { data, isLoading, error } = useQuery({
     queryKey: ['assessments'],
     queryFn: async () => {
+      console.log('Fetching assessments from API');
       const response = await api.get<PaginatedResponse<Assessment>>('/assessments/');
+      console.log('Assessment API response:', response);
       // Return the results array from the paginated response
       return response.results || [];
-    }
+    },
+    // This ensures data is refreshed when returning to the list after adding a new assessment
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0
   });
 
   // Delete assessment mutation
@@ -221,6 +227,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Patient ID</TableHead>
                   <TableHead>Patient</TableHead>
                   <TableHead>
                     <Button variant="ghost" className="p-0 h-auto font-semibold flex items-center text-xs">
@@ -237,7 +244,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
               <TableBody>
                 {!filteredAssessments || filteredAssessments.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                       No assessments found. Create a new assessment to get started.
                     </TableCell>
                   </TableRow>
@@ -251,7 +258,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                       
                     return (
                       <TableRow key={assessment.id}>
-                        <TableCell>{assessment.patient_name || assessment.patient}</TableCell>
+                        <TableCell>{assessment.patient}</TableCell>
+                        <TableCell>{assessment.patient_name || 'Unknown'}</TableCell>
                         <TableCell>{new Date(assessment.assessment_date).toLocaleDateString()}</TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
@@ -336,8 +344,12 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h4 className="text-sm font-medium text-muted-foreground">Patient</h4>
-                  <p>{viewingAssessment.patient_name || viewingAssessment.patient}</p>
+                  <h4 className="text-sm font-medium text-muted-foreground">Patient ID</h4>
+                  <p>{viewingAssessment.patient}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-muted-foreground">Patient Name</h4>
+                  <p>{viewingAssessment.patient_name || 'Unknown'}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-medium text-muted-foreground">Facility</h4>
