@@ -78,14 +78,14 @@ const AssessmentTable: React.FC<AssessmentTableProps> = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {!assessments || assessments.length === 0 ? (
+          {!currentItems || currentItems.length === 0 ? (
             <TableRow>
               <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                 No assessments found. Create a new assessment to get started.
               </TableCell>
             </TableRow>
           ) : (
-            currentItems?.map((assessment: Assessment) => {
+            currentItems.map((assessment: Assessment) => {
               const scoreColor = 
                 assessment.score >= 80 ? 'bg-emerald-500' : 
                 assessment.score >= 60 ? 'bg-amber-500' : 

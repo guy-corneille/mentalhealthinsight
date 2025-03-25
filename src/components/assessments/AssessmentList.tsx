@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -6,21 +7,13 @@ import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/services/api';
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import PaginationControls from '@/components/common/PaginationControls';
 import NewAssessmentDialog from './NewAssessmentDialog';
 
 // Import refactored components
 import AssessmentTable from './components/AssessmentTable';
 import AssessmentDetailsDialog from './components/AssessmentDetailsDialog';
 import AssessmentFilters from './components/AssessmentFilters';
-import { Assessment, PaginatedResponse } from './types';
+import { Assessment } from './types';
 
 interface AssessmentListProps {
   onStartAssessment: (patientId: string, facilityId: string) => void;
@@ -35,61 +28,43 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   // State management
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [viewingAssessment, setViewingAssessment] = useState<Assessment | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [totalItems, setTotalItems] = useState(0);
   
-  // Data fetching with pagination
+  // Data fetching without pagination
   const fetchAssessments = useCallback(async () => {
-    console.log(`Fetching assessments page ${currentPage} with ${itemsPerPage} items per page, search: ${searchQuery || 'none'}`);
+    console.log(`Fetching all assessments, search: ${searchQuery || 'none'}`);
     
     try {
-      const response = await api.get<PaginatedResponse<Assessment>>('/assessments/', {
+      // Setting a large page_size to effectively get all items
+      // We're removing pagination, so we'll request a large number of items
+      const response = await api.get('/assessments/', {
         params: {
-          page: currentPage,
-          page_size: itemsPerPage,
-          search: searchQuery || undefined
+          search: searchQuery || undefined,
+          page_size: 1000 // Request a large number to get all items
         }
       });
       
-      console.log(`API Success - Results count: ${response.results?.length}, Total: ${response.count}`);
-      // Update the total items count from the API response
-      setTotalItems(response.count || 0);
-      return response;
+      console.log(`API Success - Results count: ${response.data.results?.length}, Total: ${response.data.count}`);
+      return response.data.results || [];
     } catch (error) {
       console.error('Error fetching assessments:', error);
       throw error;
     }
-  }, [currentPage, itemsPerPage, searchQuery]);
+  }, [searchQuery]);
 
   const { 
-    data, 
+    data: assessments, 
     isLoading, 
     error,
     isFetching,
     refetch
   } = useQuery({
-    queryKey: ['assessments', currentPage, itemsPerPage, searchQuery],
+    queryKey: ['assessments', searchQuery],
     queryFn: fetchAssessments,
     refetchOnWindowFocus: false,
-    staleTime: 0, // Always consider data stale to ensure fresh data
+    staleTime: 0, // Always refetch when needed
   });
-
-  // Calculate total pages based on total items and items per page
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-  // When search query or items per page changes, reset to first page
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, itemsPerPage]);
-
-  // Log pagination details for debugging
-  useEffect(() => {
-    console.log(`Current page: ${currentPage}, Total pages: ${totalPages}, Items per page: ${itemsPerPage}`);
-    console.log(`Total items: ${totalItems}, Items in current view: ${data?.results?.length || 0}`);
-  }, [currentPage, totalPages, itemsPerPage, totalItems, data?.results?.length]);
 
   // Mutation for deleting assessments
   const deleteMutation = useMutation({
@@ -98,23 +73,14 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       return api.delete(`/assessments/${id}/`);
     },
     onSuccess: () => {
-      // After successful deletion, we need to handle pagination properly
       toast({
         title: "Assessment deleted",
         description: "The assessment has been successfully deleted.",
       });
       
-      // Invalidate the entire assessments query to ensure fresh data
+      // Invalidate and refetch to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
-      
-      // Check if we need to adjust the current page
-      // If we're on the last page and there's only one item, go back a page
-      if (data?.results?.length === 1 && currentPage > 1) {
-        setCurrentPage(prev => prev - 1);
-      } else {
-        // Otherwise just refetch the current page
-        refetch();
-      }
+      refetch();
     },
     onError: (error) => {
       console.error('Error deleting assessment:', error);
@@ -125,14 +91,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       });
     }
   });
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    console.log(`Changing to page ${page} from ${currentPage}`);
-    if (page !== currentPage) {
-      setCurrentPage(page);
-    }
-  };
 
   // Event handlers
   const handleCreateAssessment = (patientId: string, facilityId: string) => {
@@ -270,18 +228,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    // Reset to first page handled in useEffect
   };
-
-  const handleItemsPerPageChange = (value: string) => {
-    const newItemsPerPage = Number(value);
-    console.log(`Changing items per page to ${newItemsPerPage}`);
-    setItemsPerPage(newItemsPerPage);
-    // Reset to first page handled in useEffect
-  };
-
-  // Get assessments from the API response
-  const assessments = data?.results || [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -305,48 +252,12 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
           assessments={assessments}
           isLoading={isLoading}
           error={error as Error}
-          currentItems={assessments}
+          currentItems={assessments} // Pass all items directly
           onViewDetails={handleViewAssessment}
           onEditAssessment={handleEditAssessment}
           onPrintReport={handlePrintReport}
           onDeleteAssessment={handleDeleteAssessment}
         />
-        
-        {/* Pagination */}
-        {(assessments.length > 0 || totalItems > 0) && (
-          <div className="px-4 py-2 border-t">
-            <div className="flex justify-between items-center">
-              <div className="text-sm text-muted-foreground">
-                {totalItems > 0 ? (
-                  `Showing ${Math.min(totalItems, (currentPage - 1) * itemsPerPage + 1)} to ${Math.min(totalItems, currentPage * itemsPerPage)} of ${totalItems} assessments`
-                ) : (
-                  'No assessments found'
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Select 
-                  value={itemsPerPage.toString()} 
-                  onValueChange={handleItemsPerPageChange}
-                >
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="10 per page" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 per page</SelectItem>
-                    <SelectItem value="10">10 per page</SelectItem>
-                    <SelectItem value="20">20 per page</SelectItem>
-                    <SelectItem value="50">50 per page</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </div>
-        )}
       </div>
 
       {/* Assessment Details Dialog */}
