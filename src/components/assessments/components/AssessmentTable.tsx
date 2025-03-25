@@ -24,7 +24,7 @@ interface AssessmentTableProps {
   onViewDetails: (assessment: Assessment) => void;
   onEditAssessment: (assessment: Assessment) => void;
   onPrintReport: (assessment: Assessment) => void;
-  onDeleteAssessment: (id: number) => void;
+  onDeleteAssessment: (id: number | string) => void;
 }
 
 const AssessmentTable: React.FC<AssessmentTableProps> = ({

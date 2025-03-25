@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -39,22 +39,24 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [viewingAssessment, setViewingAssessment] = useState<Assessment | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const paginationChangedRef = useRef(false);
+  const [totalItems, setTotalItems] = useState(0);
   
   // Data fetching with pagination
   const fetchAssessments = useCallback(async () => {
     console.log(`Fetching assessments page ${currentPage} with ${itemsPerPage} items per page, search: ${searchQuery || 'none'}`);
+    
     try {
-      // We need to pass pagination parameters to the API
       const response = await api.get<PaginatedResponse<Assessment>>('/assessments/', {
         params: {
           page: currentPage,
           page_size: itemsPerPage,
-          search: searchQuery || undefined // Only send if there's a search query
+          search: searchQuery || undefined
         }
       });
-      console.log('Assessment API response count:', response.count);
-      console.log('Assessment API results length:', response.results?.length);
+      
+      console.log(`API Success - Results count: ${response.results?.length}, Total: ${response.count}`);
+      // Update the total items count from the API response
+      setTotalItems(response.count || 0);
       return response;
     } catch (error) {
       console.error('Error fetching assessments:', error);
@@ -66,54 +68,53 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     data, 
     isLoading, 
     error,
-    refetch,
-    isFetching
+    isFetching,
+    refetch
   } = useQuery({
     queryKey: ['assessments', currentPage, itemsPerPage, searchQuery],
     queryFn: fetchAssessments,
     refetchOnWindowFocus: false,
-    staleTime: 10000, // Consider data fresh for only 10 seconds
-    refetchInterval: false, // Don't auto-refetch
+    staleTime: 0, // Always consider data stale to ensure fresh data
   });
 
-  // Ensure we refetch when pagination changes
-  useEffect(() => {
-    if (paginationChangedRef.current) {
-      console.log("Pagination changed, forcing refetch");
-      refetch();
-      paginationChangedRef.current = false;
-    }
-  }, [currentPage, itemsPerPage, refetch]);
+  // Calculate total pages based on total items and items per page
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  // Force a refetch when currentPage changes
-  const handlePageChange = (page: number) => {
-    console.log(`Changing to page ${page} from ${currentPage}`);
-    setCurrentPage(page);
-    paginationChangedRef.current = true;
-  };
-
-  // When search query changes, reset to first page
+  // When search query or items per page changes, reset to first page
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, itemsPerPage]);
 
-  // Mutation for deleting assessments - updated to handle string IDs
+  // Log pagination details for debugging
+  useEffect(() => {
+    console.log(`Current page: ${currentPage}, Total pages: ${totalPages}, Items per page: ${itemsPerPage}`);
+    console.log(`Total items: ${totalItems}, Items in current view: ${data?.results?.length || 0}`);
+  }, [currentPage, totalPages, itemsPerPage, totalItems, data?.results?.length]);
+
+  // Mutation for deleting assessments
   const deleteMutation = useMutation({
     mutationFn: (id: number | string) => {
       console.log(`Deleting assessment with ID: ${id} (type: ${typeof id})`);
       return api.delete(`/assessments/${id}/`);
     },
     onSuccess: () => {
-      console.log("Delete successful, invalidating queries");
-      queryClient.invalidateQueries({ queryKey: ['assessments'] });
-      
-      console.log('Assessment deleted, refetching data');
-      refetch();
-      
+      // After successful deletion, we need to handle pagination properly
       toast({
         title: "Assessment deleted",
         description: "The assessment has been successfully deleted.",
       });
+      
+      // Invalidate the entire assessments query to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      
+      // Check if we need to adjust the current page
+      // If we're on the last page and there's only one item, go back a page
+      if (data?.results?.length === 1 && currentPage > 1) {
+        setCurrentPage(prev => prev - 1);
+      } else {
+        // Otherwise just refetch the current page
+        refetch();
+      }
     },
     onError: (error) => {
       console.error('Error deleting assessment:', error);
@@ -124,6 +125,14 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       });
     }
   });
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    console.log(`Changing to page ${page} from ${currentPage}`);
+    if (page !== currentPage) {
+      setCurrentPage(page);
+    }
+  };
 
   // Event handlers
   const handleCreateAssessment = (patientId: string, facilityId: string) => {
@@ -254,7 +263,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
 
   const handleDeleteAssessment = (id: number | string) => {
     if (confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
-      // Log the ID that's being deleted for debugging
       console.log(`Confirming deletion of assessment ID: ${id} (type: ${typeof id})`);
       deleteMutation.mutate(id);
     }
@@ -272,16 +280,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     // Reset to first page handled in useEffect
   };
 
-  // Get filtered assessments from the API response
+  // Get assessments from the API response
   const assessments = data?.results || [];
-  const totalItems = data?.count || 0;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-
-  // Debug information for pagination
-  useEffect(() => {
-    console.log(`Current page: ${currentPage}, Total pages: ${totalPages}, Items per page: ${itemsPerPage}`);
-    console.log(`Total items from API: ${totalItems}, Current items count: ${assessments.length}`);
-  }, [currentPage, totalPages, itemsPerPage, totalItems, assessments.length]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -313,11 +313,15 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
         />
         
         {/* Pagination */}
-        {assessments.length > 0 && (
+        {(assessments.length > 0 || totalItems > 0) && (
           <div className="px-4 py-2 border-t">
             <div className="flex justify-between items-center">
               <div className="text-sm text-muted-foreground">
-                Showing {Math.min(totalItems, (currentPage - 1) * itemsPerPage + 1)} to {Math.min(totalItems, currentPage * itemsPerPage)} of {totalItems} assessments
+                {totalItems > 0 ? (
+                  `Showing ${Math.min(totalItems, (currentPage - 1) * itemsPerPage + 1)} to ${Math.min(totalItems, currentPage * itemsPerPage)} of ${totalItems} assessments`
+                ) : (
+                  'No assessments found'
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <Select 

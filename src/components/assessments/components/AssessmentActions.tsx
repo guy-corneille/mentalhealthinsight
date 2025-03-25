@@ -33,7 +33,7 @@ const AssessmentActions: React.FC<AssessmentActionsProps> = ({
   onPrintReport,
   onDeleteAssessment
 }) => {
-  // Simply pass the ID directly to the delete handler without trying to convert it
+  // Pass the ID directly to the delete handler
   const handleDelete = () => {
     console.log(`Deleting assessment with ID: ${assessment.id} (type: ${typeof assessment.id})`);
     onDeleteAssessment(assessment.id);
