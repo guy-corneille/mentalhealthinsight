@@ -5,26 +5,44 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AuditList from '@/components/assessments/audits/AuditList';
 import AuditTrends from '@/components/assessments/audits/AuditTrends';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { Plus } from 'lucide-react';
+import NewAuditDialog from '@/components/assessments/audits/NewAuditDialog';
 
 const Audits: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const defaultTab = location.hash === '#trends' ? 'trends' : 'list';
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [isNewAuditDialogOpen, setIsNewAuditDialogOpen] = useState(false);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     navigate(`/audits${value === 'trends' ? '#trends' : ''}`);
   };
 
+  const handleFacilitySelect = (facilityId: number) => {
+    navigate(`/facilities/audit/${facilityId}`);
+  };
+
   return (
     <Layout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Audits</h1>
-          <p className="text-muted-foreground mt-1">
-            View and manage facility audits and evaluation results.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Audits</h1>
+            <p className="text-muted-foreground mt-1">
+              View and manage facility audits and evaluation results.
+            </p>
+          </div>
+          
+          <Button 
+            className="bg-healthiq-600 hover:bg-healthiq-700"
+            onClick={() => setIsNewAuditDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Audit
+          </Button>
         </div>
         
         <Tabs defaultValue={defaultTab} value={activeTab} className="w-full" onValueChange={handleTabChange}>
@@ -42,6 +60,12 @@ const Audits: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
+      
+      <NewAuditDialog 
+        open={isNewAuditDialogOpen}
+        onOpenChange={setIsNewAuditDialogOpen}
+        onFacilitySelect={handleFacilitySelect}
+      />
     </Layout>
   );
 };

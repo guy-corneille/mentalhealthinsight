@@ -5,13 +5,26 @@ import Layout from '@/components/layout/Layout';
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from 'lucide-react';
 import AuditForm from "@/components/facilities/audits/AuditForm";
+import { useFacility } from '@/services/facilityService';
+import { Spinner } from "@/components/ui/spinner";
 
 const FacilityAudit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  // In a real app, fetch the facility details
-  const facilityName = "Central Hospital"; // This would come from API
+  // Fetch the facility data instead of using mock data
+  const { data: facility, isLoading } = useFacility(Number(id));
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-full">
+          <Spinner size="lg" />
+          <span className="ml-2">Loading facility details...</span>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -24,11 +37,11 @@ const FacilityAudit: React.FC = () => {
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">New Audit: {facilityName}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">New Audit: {facility?.name}</h1>
         </div>
         
         <div className="p-6 border rounded-lg bg-card">
-          <AuditForm facilityId={Number(id)} facilityName={facilityName} />
+          <AuditForm facilityId={Number(id)} facilityName={facility?.name || ""} />
         </div>
       </div>
     </Layout>
