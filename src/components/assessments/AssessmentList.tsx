@@ -13,7 +13,7 @@ import NewAssessmentDialog from './NewAssessmentDialog';
 import AssessmentTable from './components/AssessmentTable';
 import AssessmentDetailsDialog from './components/AssessmentDetailsDialog';
 import AssessmentFilters from './components/AssessmentFilters';
-import { Assessment } from './types';
+import { Assessment, PaginatedResponse } from './types';
 
 interface AssessmentListProps {
   onStartAssessment: (patientId: string, facilityId: string) => void;
@@ -38,7 +38,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     try {
       // Setting a large page_size to effectively get all items
       // We're removing pagination, so we'll request a large number of items
-      const response = await api.get('/assessments/', {
+      const response = await api.get<PaginatedResponse<Assessment>>('/assessments/', {
         params: {
           search: searchQuery || undefined,
           page_size: 1000 // Request a large number to get all items
