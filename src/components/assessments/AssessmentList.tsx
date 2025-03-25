@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -69,7 +70,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     queryKey: ['assessments', currentPage, itemsPerPage, searchQuery],
     queryFn: fetchAssessments,
     refetchOnWindowFocus: false, // Don't refetch when window gains focus
-    keepPreviousData: true, // Keep previous data while loading new data
+    placeholderData: (previousData) => previousData, // Use this instead of keepPreviousData
   });
 
   useEffect(() => {

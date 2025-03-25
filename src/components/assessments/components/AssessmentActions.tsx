@@ -33,6 +33,16 @@ const AssessmentActions: React.FC<AssessmentActionsProps> = ({
   onPrintReport,
   onDeleteAssessment
 }) => {
+  // Handle the case where assessment.id might be a string or number
+  const handleDelete = () => {
+    // Convert id to number if it's a string
+    const numericId = typeof assessment.id === 'string' 
+      ? parseInt(assessment.id, 10) 
+      : assessment.id;
+      
+    onDeleteAssessment(numericId);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -58,7 +68,7 @@ const AssessmentActions: React.FC<AssessmentActionsProps> = ({
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           className="text-rose-600"
-          onClick={() => onDeleteAssessment(assessment.id)}
+          onClick={handleDelete}
         >
           <Trash2Icon className="h-4 w-4 mr-2" />
           Delete
