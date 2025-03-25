@@ -1,4 +1,3 @@
-
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -206,10 +205,11 @@ const facilityService = {
  */
 
 // Hook for fetching all facilities
-export const useFacilities = () => {
+export const useFacilities = (options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: ['facilities'],
     queryFn: facilityService.getAllFacilities,
+    ...options
   });
 };
 

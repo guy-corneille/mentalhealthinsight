@@ -17,22 +17,37 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import SearchInput from '@/components/common/SearchInput';
 
+interface Facility {
+  id: number;
+  name: string;
+  location?: string;
+  city?: string;
+  province?: string;
+}
+
 interface NewAuditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onFacilitySelect: (facilityId: number) => void;
+  facilities?: Facility[]; // Added this prop to fix the TypeScript error
 }
 
 const NewAuditDialog: React.FC<NewAuditDialogProps> = ({ 
   open, 
   onOpenChange,
-  onFacilitySelect
+  onFacilitySelect,
+  facilities: propFacilities // Renamed to avoid conflict with the hook result
 }) => {
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
-  // Fetch facilities using API instead of mock data
-  const { data: facilities, isLoading } = useFacilities();
+  // Fetch facilities using API if not provided via props
+  const { data: apiFacilities, isLoading } = useFacilities({
+    enabled: !propFacilities // Only fetch from API if facilities weren't provided via props
+  });
+
+  // Use facilities from props if provided, otherwise use from API
+  const facilities = propFacilities || apiFacilities;
 
   const handleStartAudit = () => {
     if (selectedFacilityId) {
