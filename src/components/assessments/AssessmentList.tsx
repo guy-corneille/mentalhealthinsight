@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   SearchIcon,
@@ -80,28 +79,41 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const [itemsPerPage] = useState(5);
   const [viewingAssessment, setViewingAssessment] = useState<Assessment | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  
+  // Function to fetch assessments data
+  const fetchAssessments = useCallback(async () => {
+    console.log('Fetching assessments from API');
+    const response = await api.get<PaginatedResponse<Assessment>>('/assessments/');
+    console.log('Assessment API response:', response);
+    return response.results || [];
+  }, []);
 
   // Fetch assessments using React Query with proper typing
-  const { data, isLoading, error } = useQuery({
+  const { 
+    data, 
+    isLoading, 
+    error,
+    refetch 
+  } = useQuery({
     queryKey: ['assessments'],
-    queryFn: async () => {
-      console.log('Fetching assessments from API');
-      const response = await api.get<PaginatedResponse<Assessment>>('/assessments/');
-      console.log('Assessment API response:', response);
-      // Return the results array from the paginated response
-      return response.results || [];
-    },
-    // This ensures data is refreshed when returning to the list after adding a new assessment
+    queryFn: fetchAssessments,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    staleTime: 0
+    staleTime: 0,
+    cacheTime: 0 // Don't cache at all
   });
+
+  // Refetch on mount and on dialog close
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   // Delete assessment mutation
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api.delete(`/assessments/${id}/`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
+      refetch(); // Explicitly refetch after deletion
       toast({
         title: "Assessment deleted",
         description: "The assessment has been successfully deleted.",

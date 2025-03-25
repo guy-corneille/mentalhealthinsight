@@ -47,17 +47,23 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
   // Fetch patients and facilities
   const { data: patients, isLoading: isPatientsLoading } = usePatients();
   const { data: facilities, isLoading: isFacilitiesLoading } = useFacilities();
-  const { data: selectedPatient } = usePatient(selectedPatientId);
+  const { data: selectedPatient, isLoading: isPatientLoading } = usePatient(selectedPatientId);
 
   // Auto-select facility when patient is selected
   useEffect(() => {
     if (selectedPatient && selectedPatient.facility) {
+      // Convert facility to string since we're storing it as a string in state
       setSelectedFacilityId(selectedPatient.facility.toString());
+      console.log('Auto-selected facility ID:', selectedPatient.facility.toString());
     }
   }, [selectedPatient]);
 
   const handleStartAssessment = () => {
     if (selectedPatientId && selectedFacilityId) {
+      console.log('Starting assessment with:', { 
+        patientId: selectedPatientId, 
+        facilityId: selectedFacilityId 
+      });
       onCreateAssessment(selectedPatientId, selectedFacilityId);
       handleClose();
     }
@@ -88,10 +94,10 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
   // Get facility name for display
   const getFacilityName = (facilityId: string) => {
     const facility = facilities?.find(f => f.id.toString() === facilityId);
-    return facility ? facility.name : '';
+    return facility ? facility.name : 'Unknown Facility';
   };
 
-  const isLoading = isPatientsLoading || isFacilitiesLoading;
+  const isLoading = isPatientsLoading || isFacilitiesLoading || isPatientLoading;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -168,14 +174,25 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
                 )}
               </div>
               
-              {selectedPatientId && selectedFacilityId && (
+              {selectedPatientId && (
                 <div>
                   <Label className="text-sm font-medium mb-2 block">
                     Facility
                   </Label>
-                  <div className="px-3 py-2 border rounded-md bg-muted/50">
-                    {getFacilityName(selectedFacilityId)}
-                  </div>
+                  {isPatientLoading ? (
+                    <div className="flex items-center">
+                      <Spinner size="sm" />
+                      <span className="ml-2 text-sm">Loading facility...</span>
+                    </div>
+                  ) : selectedFacilityId ? (
+                    <div className="px-3 py-2 border rounded-md bg-muted/50">
+                      {getFacilityName(selectedFacilityId)}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      No facility associated with this patient
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -188,7 +205,7 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
           </Button>
           <Button 
             onClick={handleStartAssessment} 
-            disabled={!selectedPatientId || isLoading}
+            disabled={!selectedPatientId || !selectedFacilityId || isLoading}
             className="bg-healthiq-600 hover:bg-healthiq-700"
           >
             <FileText className="mr-2 h-4 w-4" />
