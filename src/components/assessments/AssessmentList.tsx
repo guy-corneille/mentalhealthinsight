@@ -43,11 +43,21 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   
   // Data fetching
   const fetchAssessments = useCallback(async () => {
-    console.log('Fetching assessments from API');
-    const response = await api.get<PaginatedResponse<Assessment>>('/assessments/');
-    console.log('Assessment API response:', response);
-    return response.results || [];
-  }, []);
+    console.log('Fetching assessments from API with pagination params');
+    try {
+      const response = await api.get<PaginatedResponse<Assessment>>('/assessments/', {
+        params: {
+          page: currentPage,
+          page_size: itemsPerPage
+        }
+      });
+      console.log('Assessment API response:', response);
+      return response;
+    } catch (error) {
+      console.error('Error fetching assessments:', error);
+      throw error;
+    }
+  }, [currentPage, itemsPerPage]);
 
   const { 
     data, 
@@ -55,7 +65,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     error,
     refetch 
   } = useQuery({
-    queryKey: ['assessments'],
+    queryKey: ['assessments', currentPage, itemsPerPage],
     queryFn: fetchAssessments,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
@@ -229,7 +239,9 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   };
 
   // Filter and pagination logic
-  const filteredAssessments = data?.filter((assessment: Assessment) => {
+  const filteredAssessments = data?.results?.filter((assessment: Assessment) => {
+    if (!searchQuery) return true;
+    
     const searchText = searchQuery.toLowerCase();
     return (
       String(assessment.id).includes(searchText) ||
@@ -239,13 +251,19 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     );
   });
 
-  const totalItems = filteredAssessments?.length || 0;
+  const totalItems = searchQuery ? filteredAssessments?.length || 0 : data?.count || 0;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   
-  const currentItems = filteredAssessments?.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // If we're filtering locally, handle pagination locally too
+  const currentItems = searchQuery 
+    ? filteredAssessments?.slice(0, itemsPerPage)
+    : filteredAssessments;
+
+  const handleItemsPerPageChange = (value: string) => {
+    const newItemsPerPage = Number(value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -270,7 +288,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
         />
         
         {/* Pagination */}
-        {filteredAssessments && filteredAssessments.length > 0 && (
+        {data && data.count > 0 && (
           <div className="px-4 py-2 border-t">
             <div className="flex justify-between items-center">
               <div className="text-sm text-muted-foreground">
@@ -279,10 +297,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
               <div className="flex items-center gap-2">
                 <Select 
                   value={itemsPerPage.toString()} 
-                  onValueChange={(value) => {
-                    setItemsPerPage(Number(value));
-                    setCurrentPage(1);
-                  }}
+                  onValueChange={handleItemsPerPageChange}
                 >
                   <SelectTrigger className="w-[120px]">
                     <SelectValue placeholder="10 per page" />
