@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -41,14 +40,16 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const [viewingAssessment, setViewingAssessment] = useState<Assessment | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   
-  // Data fetching
+  // Data fetching with pagination
   const fetchAssessments = useCallback(async () => {
-    console.log('Fetching assessments from API with pagination params');
+    console.log(`Fetching assessments page ${currentPage} with ${itemsPerPage} items per page`);
     try {
+      // We need to pass pagination parameters to the API
       const response = await api.get<PaginatedResponse<Assessment>>('/assessments/', {
         params: {
           page: currentPage,
-          page_size: itemsPerPage
+          page_size: itemsPerPage,
+          search: searchQuery || undefined // Only send if there's a search query
         }
       });
       console.log('Assessment API response:', response);
@@ -57,7 +58,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       console.error('Error fetching assessments:', error);
       throw error;
     }
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, searchQuery]);
 
   const { 
     data, 
@@ -65,18 +66,21 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     error,
     refetch 
   } = useQuery({
-    queryKey: ['assessments', currentPage, itemsPerPage],
+    queryKey: ['assessments', currentPage, itemsPerPage, searchQuery],
     queryFn: fetchAssessments,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    staleTime: 0,
-    gcTime: 0
+    refetchOnWindowFocus: false, // Don't refetch when window gains focus
+    keepPreviousData: true, // Keep previous data while loading new data
   });
 
   useEffect(() => {
     console.log('Component mounted or dialog closed, refetching assessments');
     refetch();
   }, [refetch, isDialogOpen]);
+
+  // When search query changes, reset to first page
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   // Mutation for deleting assessments
   const deleteMutation = useMutation({
@@ -235,35 +239,19 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1); // Reset to first page on search
+    // setCurrentPage(1) is now handled in the useEffect hook
   };
-
-  // Filter and pagination logic
-  const filteredAssessments = data?.results?.filter((assessment: Assessment) => {
-    if (!searchQuery) return true;
-    
-    const searchText = searchQuery.toLowerCase();
-    return (
-      String(assessment.id).includes(searchText) ||
-      (assessment.patient_name || assessment.patient).toLowerCase().includes(searchText) ||
-      (assessment.facility_name || assessment.facility).toLowerCase().includes(searchText) ||
-      (assessment.notes && assessment.notes.toLowerCase().includes(searchText))
-    );
-  });
-
-  const totalItems = searchQuery ? filteredAssessments?.length || 0 : data?.count || 0;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  
-  // If we're filtering locally, handle pagination locally too
-  const currentItems = searchQuery 
-    ? filteredAssessments?.slice(0, itemsPerPage)
-    : filteredAssessments;
 
   const handleItemsPerPageChange = (value: string) => {
     const newItemsPerPage = Number(value);
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset to first page when changing items per page
   };
+
+  // Get filtered assessments from the API response
+  const assessments = data?.results || [];
+  const totalItems = data?.count || 0;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -277,10 +265,10 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       {/* Assessment Table */}
       <div className="bg-card rounded-lg border shadow-sm overflow-hidden animate-scale-in">
         <AssessmentTable
-          assessments={filteredAssessments}
+          assessments={assessments}
           isLoading={isLoading}
           error={error as Error}
-          currentItems={currentItems}
+          currentItems={assessments}
           onViewDetails={handleViewAssessment}
           onEditAssessment={handleEditAssessment}
           onPrintReport={handlePrintReport}
@@ -288,7 +276,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
         />
         
         {/* Pagination */}
-        {data && data.count > 0 && (
+        {assessments.length > 0 && (
           <div className="px-4 py-2 border-t">
             <div className="flex justify-between items-center">
               <div className="text-sm text-muted-foreground">
