@@ -9,37 +9,39 @@ export function useAssessments() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  // Data fetching without pagination
+  // Data fetching with pagination
   const fetchAssessments = useCallback(async () => {
-    console.log(`Fetching all assessments, search: ${searchQuery || 'none'}`);
+    console.log(`Fetching assessments, page: ${currentPage}, size: ${pageSize}, search: ${searchQuery || 'none'}`);
     
     try {
-      // Setting a large page_size to effectively get all items
       const response = await api.get<PaginatedResponse<Assessment>>('/assessments/', {
         params: {
           search: searchQuery || undefined,
-          page_size: 1000 // Request a large number to get all items
+          page: currentPage,
+          page_size: pageSize
         }
       });
       
       console.log(`API Success - Results count: ${response.results?.length}, Total: ${response.count}`);
-      return response.results || [];
+      return response;
     } catch (error) {
       console.error('Error fetching assessments:', error);
       throw error;
     }
-  }, [searchQuery]);
+  }, [searchQuery, currentPage, pageSize]);
 
   // Query for assessment data
   const { 
-    data: assessments, 
+    data: paginatedData, 
     isLoading, 
     error,
     isFetching,
     refetch
   } = useQuery({
-    queryKey: ['assessments', searchQuery],
+    queryKey: ['assessments', searchQuery, currentPage, pageSize],
     queryFn: fetchAssessments,
     refetchOnWindowFocus: false,
     staleTime: 0, // Always refetch when needed
@@ -73,6 +75,7 @@ export function useAssessments() {
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
+    setCurrentPage(1); // Reset to first page on new search
   };
 
   const handleDeleteAssessment = (id: number | string) => {
@@ -82,13 +85,27 @@ export function useAssessments() {
     }
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
   return {
-    assessments,
+    assessments: paginatedData?.results || [],
+    totalCount: paginatedData?.count || 0,
+    currentPage,
+    pageSize,
     isLoading,
     error,
     isFetching,
     searchQuery,
     handleSearchChange,
     handleDeleteAssessment,
+    handlePageChange,
+    handlePageSizeChange,
   };
 }

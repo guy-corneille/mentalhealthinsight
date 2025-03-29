@@ -8,6 +8,7 @@ import NewAssessmentDialog from './NewAssessmentDialog';
 import AssessmentTable from './components/AssessmentTable';
 import AssessmentDetailsDialog from './components/AssessmentDetailsDialog';
 import AssessmentFilters from './components/AssessmentFilters';
+import PaginationControls from '@/components/common/PaginationControls';
 import { Assessment } from './types';
 
 // Import custom hooks
@@ -30,12 +31,17 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   // Custom hooks for assessments and reports
   const { 
     assessments, 
+    totalCount,
+    currentPage,
+    pageSize,
     isLoading, 
     error, 
     isFetching, 
     searchQuery, 
     handleSearchChange, 
-    handleDeleteAssessment 
+    handleDeleteAssessment,
+    handlePageChange,
+    handlePageSizeChange
   } = useAssessments();
   
   const { handlePrintReport } = useReportActions();
@@ -63,6 +69,9 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     });
   };
 
+  // Calculate total pages
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Search and Filter Controls */}
@@ -85,13 +94,42 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
           assessments={assessments}
           isLoading={isLoading}
           error={error as Error}
-          currentItems={assessments} // Pass all items directly
+          currentItems={assessments}
           onViewDetails={handleViewAssessment}
           onEditAssessment={handleEditAssessment}
           onPrintReport={handlePrintReport}
           onDeleteAssessment={handleDeleteAssessment}
         />
       </div>
+
+      {/* Pagination Controls */}
+      {!isLoading && totalCount > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {assessments.length} of {totalCount} assessments
+          </div>
+          
+          <PaginationControls
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Items per page:</span>
+            <select 
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="text-sm bg-muted/50 border rounded px-2 py-1"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Assessment Details Dialog */}
       <AssessmentDetailsDialog
