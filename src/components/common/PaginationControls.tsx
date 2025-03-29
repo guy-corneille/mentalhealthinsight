@@ -69,6 +69,8 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
     return pages;
   };
 
+  console.log(`PaginationControls - Current page: ${currentPage}, Total pages: ${totalPages}`);
+
   return (
     <Pagination className="mt-4">
       <PaginationContent>

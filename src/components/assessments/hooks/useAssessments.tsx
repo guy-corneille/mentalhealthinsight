@@ -47,6 +47,14 @@ export function useAssessments() {
     staleTime: 0, // Always refetch when needed
   });
 
+  // Ensure we have the correct total count
+  const totalCount = paginatedData?.count || 0;
+  const assessments = paginatedData?.results || [];
+
+  // Log pagination details for debugging
+  console.log(`Current page: ${currentPage}, Page size: ${pageSize}, Total count: ${totalCount}`);
+  console.log(`Number of assessments displayed: ${assessments.length}`);
+  
   // Mutation for deleting assessments
   const deleteMutation = useMutation({
     mutationFn: (id: number | string) => {
@@ -86,17 +94,19 @@ export function useAssessments() {
   };
 
   const handlePageChange = (page: number) => {
+    console.log(`Changing to page ${page}`);
     setCurrentPage(page);
   };
 
   const handlePageSizeChange = (size: number) => {
+    console.log(`Changing page size to ${size}`);
     setPageSize(size);
     setCurrentPage(1); // Reset to first page when changing page size
   };
 
   return {
-    assessments: paginatedData?.results || [],
-    totalCount: paginatedData?.count || 0,
+    assessments,
+    totalCount,
     currentPage,
     pageSize,
     isLoading,

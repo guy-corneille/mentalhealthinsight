@@ -71,6 +71,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
 
   // Calculate total pages
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  
+  console.log(`AssessmentList - Total count: ${totalCount}, Page size: ${pageSize}, Total pages: ${totalPages}`);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -106,7 +108,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       {!isLoading && totalCount > 0 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="text-sm text-muted-foreground">
-            Showing {assessments.length} of {totalCount} assessments
+            Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)} - {Math.min(currentPage * pageSize, totalCount)} of {totalCount} assessments
           </div>
           
           <PaginationControls
