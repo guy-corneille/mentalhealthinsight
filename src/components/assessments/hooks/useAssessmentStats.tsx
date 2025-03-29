@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, subMonths, parseISO, startOfYear } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
@@ -137,7 +137,7 @@ export function useAssessmentStats() {
   const chartData = apiData ? formatChartData(apiData) : null;
 
   // Reset error state when filters change
-  React.useEffect(() => {
+  useEffect(() => {
     setHasShownError(false);
   }, [timeRange, patientGroup, facilityId]);
 
