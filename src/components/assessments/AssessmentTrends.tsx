@@ -1,18 +1,41 @@
-
 import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AssessmentStats from './AssessmentStats';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Area, AreaChart } from 'recharts';
 import { format } from 'date-fns';
 import { useAssessmentTrends } from './hooks/useAssessmentTrends';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Download, PieChart as PieChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon, ArrowUp, ArrowDown } from "lucide-react";
-import { Spinner } from '@/components/ui/spinner';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { ChevronDown, Download, PieChart as PieChartIcon, BarChart as BarChartIcon, LineChart as LineChartIcon } from "lucide-react";
+import { Spinner } from '@/components/ui/spinner';
 import StatCard from '@/components/ui/StatCard';
 
 const AssessmentTrends: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('statistics');
+  
+  return (
+    <div className="space-y-6">
+      <Tabs defaultValue="statistics" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-2 w-full sm:w-[400px]">
+          <TabsTrigger value="statistics">Statistics</TabsTrigger>
+          <TabsTrigger value="trends">Outcome Trends</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="statistics" className="mt-4">
+          <AssessmentStats />
+        </TabsContent>
+        
+        <TabsContent value="trends" className="mt-4">
+          <TrendsContent />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+const TrendsContent: React.FC = () => {
   const { 
     patientGroup, 
     setPatientGroup, 
@@ -22,29 +45,12 @@ const AssessmentTrends: React.FC = () => {
     chartData
   } = useAssessmentTrends();
   
-  // State for collapsible sections
-  const [openSections, setOpenSections] = useState({
-    volume: true,
-    outcomes: true,
-    severity: true
-  });
-  
-  // Handle section toggle
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections({
-      ...openSections,
-      [section]: !openSections[section]
-    });
-  };
-  
-  // Export chart data to CSV
   const exportData = (chartType: string) => {
     if (!chartData) return;
     
     let csvContent = "data:text/csv;charset=utf-8,";
     let data: any[] = [];
     
-    // Prepare data based on chart type
     if (chartType === 'volume') {
       csvContent += "Month,Initial Assessments,Follow-up Assessments,Discharge Assessments\n";
       data = chartData.assessmentCountData;
@@ -65,7 +71,6 @@ const AssessmentTrends: React.FC = () => {
       });
     }
     
-    // Create download link and trigger it
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -86,7 +91,6 @@ const AssessmentTrends: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select value={patientGroup} onValueChange={setPatientGroup}>
           <SelectTrigger>
@@ -117,7 +121,6 @@ const AssessmentTrends: React.FC = () => {
         </Select>
       </div>
       
-      {/* Summary Statistics */}
       {chartData && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard 
@@ -153,10 +156,8 @@ const AssessmentTrends: React.FC = () => {
         </div>
       )}
       
-      {/* Charts */}
       <div className="space-y-4">
         <Accordion type="multiple" defaultValue={["volume", "outcomes", "severity"]} className="space-y-4">
-          {/* Assessment Volume Chart */}
           <AccordionItem value="volume" className="border rounded-lg overflow-hidden">
             <div className="bg-white dark:bg-slate-900 border-b">
               <div className="flex justify-between items-center px-6 py-4">
@@ -256,7 +257,6 @@ const AssessmentTrends: React.FC = () => {
             </AccordionContent>
           </AccordionItem>
           
-          {/* Treatment Outcomes Chart */}
           <AccordionItem value="outcomes" className="border rounded-lg overflow-hidden">
             <div className="bg-white dark:bg-slate-900 border-b">
               <div className="flex justify-between items-center px-6 py-4">
@@ -326,7 +326,6 @@ const AssessmentTrends: React.FC = () => {
             </AccordionContent>
           </AccordionItem>
           
-          {/* Severity Trends Chart */}
           <AccordionItem value="severity" className="border rounded-lg overflow-hidden">
             <div className="bg-white dark:bg-slate-900 border-b">
               <div className="flex justify-between items-center px-6 py-4">
