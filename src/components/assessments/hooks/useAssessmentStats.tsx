@@ -10,6 +10,7 @@ export function useAssessmentStats() {
   const [timeRange, setTimeRange] = useState('12months');
   const [facilityId, setFacilityId] = useState<string | undefined>(undefined);
   const [patientGroup, setPatientGroup] = useState('all');
+  const [hasShownError, setHasShownError] = useState(false);
 
   // Calculate date range based on selected time range
   const getDateRange = useCallback(() => {
@@ -111,14 +112,21 @@ export function useAssessmentStats() {
       };
       
       try {
-        return await reportService.getAssessmentStatistics(filters);
+        setHasShownError(false); // Reset error state before each new attempt
+        const result = await reportService.getAssessmentStatistics(filters);
+        return result;
       } catch (error) {
         console.error('Error fetching assessment statistics:', error);
-        toast({
-          title: "Failed to load statistics",
-          description: "Could not retrieve assessment statistics data",
-          variant: "destructive"
-        });
+        
+        // Only show error toast once per query
+        if (!hasShownError) {
+          toast({
+            title: "Failed to load statistics",
+            description: "Using backup data instead",
+            variant: "destructive",
+          });
+          setHasShownError(true);
+        }
         throw error;
       }
     },
@@ -127,6 +135,11 @@ export function useAssessmentStats() {
   });
   
   const chartData = apiData ? formatChartData(apiData) : null;
+
+  // Reset error state when filters change
+  React.useEffect(() => {
+    setHasShownError(false);
+  }, [timeRange, patientGroup, facilityId]);
 
   return {
     timeRange,

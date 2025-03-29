@@ -32,8 +32,30 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   // Calculate unread notifications
   const unreadCount = notifications.filter(notification => !notification.read).length;
 
+  // Track recently shown notifications to prevent duplicates
+  const [recentNotifications, setRecentNotifications] = useState<Map<string, number>>(new Map());
+
   // Add a new notification
   const addNotification = useCallback((title: string, message: string, type: NotificationType) => {
+    // Create a key to identify this notification
+    const notificationKey = `${title}:${message}:${type}`;
+    const now = Date.now();
+    
+    // Check if we've shown this notification recently (within 3 seconds)
+    if (recentNotifications.has(notificationKey)) {
+      const lastShown = recentNotifications.get(notificationKey) || 0;
+      if (now - lastShown < 3000) {
+        // Skip showing this notification again
+        return;
+      }
+    }
+    
+    // Update our record of recently shown notifications
+    const updatedRecentNotifications = new Map(recentNotifications);
+    updatedRecentNotifications.set(notificationKey, now);
+    setRecentNotifications(updatedRecentNotifications);
+    
+    // Create and add the notification
     const newNotification: Notification = {
       id: Date.now().toString(),
       title,
@@ -45,20 +67,11 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     setNotifications(prevNotifications => [newNotification, ...prevNotifications]);
 
-    // Display a toast notification using sonner
+    // Use only one toast system - sonner for all notifications
     toast[type](title, {
       description: message,
     });
-
-    // Also use shadcn toast for some notifications
-    if (type === 'error') {
-      shadcnToast({
-        variant: "destructive",
-        title,
-        description: message,
-      });
-    }
-  }, [shadcnToast]);
+  }, [recentNotifications]);
 
   // Mark a notification as read
   const markAsRead = useCallback((id: string) => {
