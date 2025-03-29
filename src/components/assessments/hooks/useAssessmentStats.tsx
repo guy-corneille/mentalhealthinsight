@@ -114,16 +114,21 @@ export function useAssessmentStats() {
         return await reportService.getAssessmentStatistics(filters);
       } catch (error) {
         console.error('Error fetching assessment statistics:', error);
-        toast({
-          title: "Failed to load statistics",
-          description: "Could not retrieve assessment statistics data",
-          variant: "destructive"
-        });
         throw error;
       }
     },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1, // Only retry once to avoid multiple error messages
+    meta: {
+      onError: (error: Error) => {
+        toast({
+          title: "Failed to load statistics",
+          description: "Could not retrieve assessment statistics data",
+          variant: "destructive"
+        });
+      }
+    }
   });
   
   const chartData = apiData ? formatChartData(apiData) : null;
