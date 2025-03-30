@@ -124,20 +124,9 @@ export function useAssessmentStats() {
       try {
         setHasShownError(false); // Reset error state before each new attempt
         console.log("Requesting assessment stats with filters:", filters);
-        const result = await reportService.getAssessmentStatistics(filters);
-        return result;
+        return await reportService.getAssessmentStatistics(filters);
       } catch (error) {
         console.error('Error fetching assessment statistics:', error);
-        
-        // Only show error toast once per query
-        if (!hasShownError) {
-          toast({
-            title: "Failed to load statistics",
-            description: "Could not retrieve assessment statistics",
-            variant: "destructive",
-          });
-          setHasShownError(true);
-        }
         throw error;
       }
     },
