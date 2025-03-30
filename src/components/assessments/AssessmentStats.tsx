@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { Download, BarChart as BarChartIcon, PieChart as PieChartIcon } from "lucide-react";
+import { Download, BarChart as BarChartIcon, PieChart as PieChartIcon, LineChart as LineChartIcon } from "lucide-react";
 import { Spinner } from '@/components/ui/spinner';
 import { useAssessmentStats } from './hooks/useAssessmentStats';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -45,6 +45,12 @@ const AssessmentStats: React.FC = () => {
     } else if (chartType === 'type') {
       csvContent += "Assessment Type,Count\n";
       data = chartData.typeData;
+      data.forEach(item => {
+        csvContent += `${item.name},${item.value}\n`;
+      });
+    } else if (chartType === 'criteria') {
+      csvContent += "Criteria,Average Score\n";
+      data = chartData.scoreByCriteriaData || [];
       data.forEach(item => {
         csvContent += `${item.name},${item.value}\n`;
       });
@@ -126,27 +132,27 @@ const AssessmentStats: React.FC = () => {
           title="Completion Rate" 
           value={`${chartData.summary.completionRate}%`} 
           icon={<PieChartIcon className="h-5 w-5 text-emerald-600" />}
-          description="Assessments completed on time"
+          description="Assessments with scores"
         />
         
         <StatCard 
-          title="Most Common Type" 
-          value={chartData.summary.mostCommonType} 
-          icon={<BarChartIcon className="h-5 w-5 text-purple-600" />}
-          description="Assessment type"
+          title="Average Score" 
+          value={`${chartData.summary.averageScore.toFixed(1)}`} 
+          icon={<LineChartIcon className="h-5 w-5 text-purple-600" />}
+          description="Overall assessment score"
         />
         
         <StatCard 
-          title="Most Active Location" 
-          value={chartData.summary.mostActiveLocation} 
-          icon={<BarChartIcon className="h-5 w-5 text-orange-600" />}
-          description="Highest assessment volume"
+          title="Patient Coverage" 
+          value={`${chartData.summary.patientCoverage}%`} 
+          icon={<PieChartIcon className="h-5 w-5 text-orange-600" />}
+          description="Patients assessed"
         />
       </div>
       
       {/* Charts */}
       <div className="space-y-4">
-        <Accordion type="multiple" defaultValue={["period", "facility", "type"]} className="space-y-4">
+        <Accordion type="multiple" defaultValue={["period", "facility", "type", "criteria"]} className="space-y-4">
           {/* Assessments by Period */}
           <AccordionItem value="period" className="border rounded-lg overflow-hidden">
             <div className="bg-white dark:bg-slate-900 border-b">
@@ -409,6 +415,75 @@ const AssessmentStats: React.FC = () => {
               </div>
               <div className="text-sm text-muted-foreground mt-2 px-4">
                 Distribution of assessments by type (Initial, Follow-up, Discharge).
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          
+          {/* Scores by Criteria */}
+          <AccordionItem value="criteria" className="border rounded-lg overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 border-b">
+              <div className="flex justify-between items-center px-6 py-4">
+                <div className="flex items-center gap-2">
+                  <LineChartIcon className="h-5 w-5 text-blue-600" />
+                  <h3 className="text-lg font-medium">Average Score by Assessment Criteria</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => exportData('criteria')}
+                    className="flex items-center gap-1"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">Export</span>
+                  </Button>
+                  <AccordionTrigger className="p-0 m-0 hover:no-underline" />
+                </div>
+              </div>
+            </div>
+            <AccordionContent>
+              <div className="p-4 pt-0">
+                <div className="h-[350px] w-full mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData.scoreByCriteriaData || []}
+                      layout="vertical"
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      className="animate-fade-in"
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis type="number" domain={[0, 100]} />
+                      <YAxis 
+                        type="category" 
+                        dataKey="name" 
+                        width={150}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          borderRadius: '8px', 
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                          border: '1px solid #e5e7eb'
+                        }} 
+                      />
+                      <Legend />
+                      <Bar 
+                        dataKey="value" 
+                        name="Average Score" 
+                        fill="#3b82f6"
+                        radius={[0, 5, 5, 0]}
+                        animationDuration={1000}
+                      >
+                        {(chartData.scoreByCriteriaData || []).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">
+                  Average assessment scores by evaluation criteria.
+                </div>
               </div>
             </AccordionContent>
           </AccordionItem>

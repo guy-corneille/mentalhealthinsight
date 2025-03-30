@@ -62,14 +62,24 @@ export function useAssessmentStats() {
       { name: 'Follow-up', value: apiData.countByType.followup, color: '#3b82f6' },
       { name: 'Discharge', value: apiData.countByType.discharge, color: '#6366f1' }
     ];
+
+    // Format average scores by criteria
+    const scoreByCriteriaData = apiData.scoreByCriteria?.map(item => ({
+      name: item.criteriaName,
+      value: item.averageScore,
+      color: getRandomColor(item.criteriaId)
+    })) || [];
     
     return {
       countByPeriodData,
       facilityData,
       typeData,
+      scoreByCriteriaData,
       summary: {
         totalCount: apiData.totalCount,
         completionRate: apiData.completionRate,
+        averageScore: apiData.averageScore || 0,
+        patientCoverage: apiData.patientCoverage || 0,
         mostCommonType: getMostCommonType(apiData.countByType),
         mostActiveLocation: getMostActiveLocation(apiData.countByFacility)
       }
@@ -123,7 +133,7 @@ export function useAssessmentStats() {
         if (!hasShownError) {
           toast({
             title: "Failed to load statistics",
-            description: "Using backup data instead",
+            description: "Could not retrieve assessment statistics",
             variant: "destructive",
           });
           setHasShownError(true);

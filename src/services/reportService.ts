@@ -1,4 +1,3 @@
-
 import api from './api';
 import { format, subMonths, startOfYear } from 'date-fns';
 
@@ -213,16 +212,14 @@ const reportService = {
     try {
       console.log("Fetching assessment statistics with filters:", filters);
       
-      // Try to get data from API
+      // Send request to the backend endpoint with filters
       const response = await api.get<AssessmentStatistics>('/reports/assessment-statistics/', { 
-        params: filters  // Send filters directly, not nested under 'params'
+        params: filters
       });
       return response;
     } catch (error) {
       console.error('Error fetching assessment statistics from API:', error);
-      // Fall back to mock data if API fails
-      console.log('Falling back to mock data for assessment statistics');
-      return generateMockStatistics(filters);
+      throw error;
     }
   }
 };

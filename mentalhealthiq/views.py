@@ -8,6 +8,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.pagination import PageNumberPagination
 import logging
 from datetime import datetime, timedelta
+from django.utils import timezone
+from django.db.models import Count, Avg, Q, F, Case, When, Value, IntegerField, Min
+from django.db.models.functions import TruncMonth, ExtractMonth, ExtractYear
 import random
 from .models import (
     User, PendingUser, Facility, StaffMember, StaffQualification,
@@ -344,53 +347,138 @@ class ReportViewSet(viewsets.ModelViewSet):
             # Log the received parameters
             logger.info(f"Received assessment statistics request with params: start_date={start_date}, end_date={end_date}, patient_group={patient_group}, facility_id={facility_id}")
             
-            # Get facility data for the statistics
-            facilities = Facility.objects.filter(status='Active')
+            # Set up base queryset for assessments
+            assessments = Assessment.objects.filter(assessment_date__gte=start_date, assessment_date__lte=end_date)
+            
+            # Apply facility filter if provided
             if facility_id:
-                facilities = facilities.filter(id=facility_id)
+                assessments = assessments.filter(facility=facility_id)
             
-            # Generate facility stats
-            facility_stats = []
-            for facility in facilities[:3]:  # Limit to 3 facilities for simplicity
-                facility_stats.append({
-                    "facilityId": str(facility.id),
-                    "facilityName": facility.name,
-                    "count": random.randint(30, 100)
-                })
-            
-            # Generate assessment type distribution
-            type_counts = {
-                "initial": random.randint(80, 120),
-                "followup": random.randint(100, 180),
-                "discharge": random.randint(50, 90)
-            }
-            
-            # Generate period data (monthly counts)
-            period_data = []
-            current_date = datetime.now()
-            
-            # Generate 12 months of data by default
-            for i in range(12):
-                month_date = current_date - timedelta(days=30 * i)
-                period_string = month_date.strftime("%Y-%m")
-                period_data.append({
-                    "period": period_string + "-01",  # Format as YYYY-MM-01
-                    "count": random.randint(15, 35)
-                })
-            
-            # Reverse to get chronological order
-            period_data.reverse()
+            # Apply patient group filter if provided
+            if patient_group:
+                if patient_group == 'children':
+                    # Assuming we can identify children by age or some other field
+                    assessments = assessments.filter(patient__age__lt=18)
+                elif patient_group == 'elderly':
+                    # Assuming we can identify elderly by age
+                    assessments = assessments.filter(patient__age__gte=65)
+                elif patient_group == 'adults':
+                    # Adults between 18 and 65
+                    assessments = assessments.filter(patient__age__gte=18, patient__age__lt=65)
             
             # Calculate total count
-            total_count = sum(item["count"] for item in period_data)
+            total_count = assessments.count()
             
-            # Create the response object
+            # Calculate counts by facility
+            facility_counts = assessments.values('facility').annotate(
+                count=Count('id')
+            ).order_by('-count')
+            
+            # Enrich with facility names
+            facility_stats = []
+            for fc in facility_counts:
+                try:
+                    facility = Facility.objects.get(id=fc['facility'])
+                    facility_stats.append({
+                        "facilityId": str(fc['facility']),
+                        "facilityName": facility.name,
+                        "count": fc['count']
+                    })
+                except Facility.DoesNotExist:
+                    continue
+            
+            # Calculate counts by period (month)
+            period_counts = assessments.annotate(
+                period=TruncMonth('assessment_date')
+            ).values('period').annotate(
+                count=Count('id')
+            ).order_by('period')
+            
+            period_data = [{
+                "period": item['period'].strftime("%Y-%m-%d"),
+                "count": item['count']
+            } for item in period_counts]
+            
+            # Determine assessment types 
+            # For this implementation, we'll infer types based on patient history:
+            # - First assessment for a patient = initial
+            # - Last assessment for a patient with status indicating discharge = discharge
+            # - All others = followup
+            
+            # Get patients with their first assessment date
+            patient_first_assessments = Assessment.objects.values('patient').annotate(
+                first_date=Min('assessment_date')
+            )
+            
+            # Create a set of (patient_id, first_date) tuples for faster lookup
+            first_assessment_set = {
+                (item['patient'], item['first_date'].strftime('%Y-%m-%d')) 
+                for item in patient_first_assessments
+            }
+            
+            # Count assessment types
+            initial_count = 0
+            followup_count = 0
+            discharge_count = 0
+            
+            # This is a simplistic approach - in a real system we would likely 
+            # have a field indicating assessment type
+            for assessment in assessments:
+                patient_id = assessment.patient.id
+                assessment_date_str = assessment.assessment_date.strftime('%Y-%m-%d')
+                
+                # Check if this is the first assessment for the patient
+                if (patient_id, assessment_date_str) in first_assessment_set:
+                    initial_count += 1
+                # Check if this assessment indicates discharge (simplified approach)
+                elif hasattr(assessment, 'notes') and assessment.notes and 'discharge' in assessment.notes.lower():
+                    discharge_count += 1
+                # Otherwise, it's a followup
+                else:
+                    followup_count += 1
+            
+            # Calculate completion rate (percentage of assessments with scores)
+            # Here we define completion as having a valid score value
+            completed_assessments = assessments.exclude(score=None).count()
+            completion_rate = int((completed_assessments / total_count) * 100) if total_count > 0 else 0
+            
+            # Calculate average assessment score
+            average_score = assessments.exclude(score=None).aggregate(avg_score=Avg('score'))['avg_score'] or 0
+            
+            # Calculate patient coverage (percentage of patients who have been assessed)
+            total_patients = Patient.objects.count()
+            assessed_patients = Assessment.objects.values('patient').distinct().count()
+            patient_coverage = int((assessed_patients / total_patients) * 100) if total_patients > 0 else 0
+            
+            # Calculate scores by criteria
+            criteria_scores = []
+            criteria_with_assessments = AssessmentCriteria.objects.filter(assessment__in=assessments).distinct()
+            
+            for criteria in criteria_with_assessments:
+                avg_score = assessments.filter(criteria=criteria).exclude(score=None).aggregate(
+                    avg_score=Avg('score')
+                )['avg_score'] or 0
+                
+                criteria_scores.append({
+                    "criteriaId": str(criteria.id),
+                    "criteriaName": criteria.name,
+                    "averageScore": round(avg_score, 1)
+                })
+            
+            # Create the response object with real data
             statistics = {
                 "totalCount": total_count,
                 "countByFacility": facility_stats,
-                "countByType": type_counts,
+                "countByType": {
+                    "initial": initial_count,
+                    "followup": followup_count,
+                    "discharge": discharge_count
+                },
                 "countByPeriod": period_data,
-                "completionRate": random.randint(80, 95)
+                "completionRate": completion_rate,
+                "averageScore": round(average_score, 1),
+                "patientCoverage": patient_coverage,
+                "scoreByCriteria": criteria_scores
             }
             
             return Response(statistics)
