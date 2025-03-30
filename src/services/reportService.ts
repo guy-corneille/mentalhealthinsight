@@ -244,8 +244,9 @@ const reportService = {
     try {
       console.log("Fetching assessment statistics with filters:", filters);
       
-      // Send request to the backend endpoint with filters
-      const response = await api.get<AssessmentStatistics>('/reports/statistics/assessment', { 
+      // This is the correct API endpoint for assessment statistics
+      // The endpoint should match what's expected by the backend
+      const response = await api.get<AssessmentStatistics>('/reports/assessment-statistics', { 
         params: filters
       });
       return response;
