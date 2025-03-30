@@ -211,8 +211,12 @@ const reportService = {
   // Get assessment statistics
   getAssessmentStatistics: async (filters: ReportFilter = {}) => {
     try {
+      console.log("Fetching assessment statistics with filters:", filters);
+      
       // Try to get data from API
-      const response = await api.get<AssessmentStatistics>('/reports/assessment-statistics/', { params: filters });
+      const response = await api.get<AssessmentStatistics>('/reports/assessment-statistics/', { 
+        params: filters  // Send filters directly, not nested under 'params'
+      });
       return response;
     } catch (error) {
       console.error('Error fetching assessment statistics from API:', error);

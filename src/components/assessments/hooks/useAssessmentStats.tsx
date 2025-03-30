@@ -113,6 +113,7 @@ export function useAssessmentStats() {
       
       try {
         setHasShownError(false); // Reset error state before each new attempt
+        console.log("Requesting assessment stats with filters:", filters);
         const result = await reportService.getAssessmentStatistics(filters);
         return result;
       } catch (error) {
