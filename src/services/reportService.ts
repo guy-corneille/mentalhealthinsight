@@ -68,6 +68,13 @@ export interface AssessmentStatistics {
     count: number;
   }>;
   completionRate: number;
+  averageScore?: number;
+  patientCoverage?: number;
+  scoreByCriteria?: Array<{
+    criteriaId: string;
+    criteriaName: string;
+    averageScore: number;
+  }>;
 }
 
 // Function to generate mock statistics based on filters
