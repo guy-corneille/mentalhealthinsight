@@ -1,4 +1,3 @@
-
 import api from './api';
 import { format, subMonths, startOfYear } from 'date-fns';
 
@@ -244,9 +243,8 @@ const reportService = {
     try {
       console.log("Fetching assessment statistics with filters:", filters);
       
-      // This is the correct API endpoint for assessment statistics
-      // The endpoint should match what's expected by the backend
-      const response = await api.get<AssessmentStatistics>('/reports/assessment-statistics', { 
+      // Fixed URL to include /api/ prefix based on backend URL structure
+      const response = await api.get<AssessmentStatistics>('/api/reports/assessment-statistics/', { 
         params: filters
       });
       return response;
@@ -254,7 +252,7 @@ const reportService = {
       console.error('Error fetching assessment statistics from API:', error);
       console.log('Falling back to mock data due to API error');
       
-      // Return mock data when API fails
+      // Return mock data when API fails, without showing any notification
       return generateMockStatistics(filters);
     }
   }

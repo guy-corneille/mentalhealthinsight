@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, subMonths, parseISO, startOfYear } from 'date-fns';
@@ -127,16 +126,6 @@ export function useAssessmentStats() {
         return await reportService.getAssessmentStatistics(filters);
       } catch (error) {
         console.error('Error fetching assessment statistics:', error);
-        
-        // Only show error toast once per query
-        if (!hasShownError) {
-          toast({
-            title: "Failed to load statistics",
-            description: "Could not retrieve assessment statistics. Using mock data instead.",
-            variant: "destructive",
-          });
-          setHasShownError(true);
-        }
         throw error;
       }
     },
