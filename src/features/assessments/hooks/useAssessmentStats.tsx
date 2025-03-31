@@ -5,7 +5,7 @@
  * This hook provides functionality to fetch and format assessment statistics data.
  * It handles:
  * - Time range selection (3 months, 6 months, YTD, 12 months)
- * - Filtering by facility and patient group
+ * - Filtering by facility
  * - Data formatting for charts and summaries
  */
 import React, { useState, useCallback, useEffect } from 'react';
@@ -119,14 +119,14 @@ export function useAssessmentStats() {
 
   // Fetch assessment statistics
   const { isLoading, error, data: apiData } = useQuery({
-    queryKey: ['assessmentStats', timeRange, patientGroup, facilityId],
+    queryKey: ['assessmentStats', timeRange, facilityId],
     queryFn: async () => {
       const { startDate, endDate } = getDateRange();
       const filters: ReportFilter = {
         startDate,
         endDate,
-        patientGroup: patientGroup !== 'all' ? patientGroup : undefined,
         facilityId
+        // Removed patientGroup filter since it's causing backend issues
       };
       
       try {

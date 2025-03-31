@@ -18,6 +18,8 @@ const StatsOverview: React.FC = () => {
   const facilityCount = facilities?.length || 0;
   const staffCount = staff?.length || 0;
   const patientCount = patients?.length || 0;
+  
+  // Get the assessment count from the API data
   const assessmentCount = chartData?.summary?.totalCount || 0;
 
   return (
