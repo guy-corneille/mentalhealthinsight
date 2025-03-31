@@ -1,3 +1,4 @@
+
 /**
  * Assessment Statistics Hook
  * 
@@ -85,7 +86,6 @@ export function useAssessmentStats() {
       scoreByCriteriaData,
       summary: {
         totalCount: apiData.totalCount,
-        completionRate: apiData.completionRate,
         averageScore: apiData.averageScore || 0,
         patientCoverage: apiData.patientCoverage || 0,
         mostCommonType: getMostCommonType(apiData.countByType),

@@ -6,7 +6,6 @@ import { BarChart as BarChartIcon, PieChart as PieChartIcon, LineChart as LineCh
 type StatsSummaryCardsProps = {
   summary: {
     totalCount: number;
-    completionRate: number;
     averageScore: number;
     patientCoverage: number;
   };
@@ -15,19 +14,12 @@ type StatsSummaryCardsProps = {
 
 const StatsSummaryCards: React.FC<StatsSummaryCardsProps> = ({ summary, timeRange }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <StatCard 
         title="Total Assessments" 
         value={summary.totalCount.toLocaleString()} 
         icon={<BarChartIcon className="h-5 w-5 text-blue-600" />}
         description={`${timeRange === 'ytd' ? 'Year to date' : `Last ${timeRange}`}`}
-      />
-      
-      <StatCard 
-        title="Completion Rate" 
-        value={`${summary.completionRate}%`} 
-        icon={<PieChartIcon className="h-5 w-5 text-emerald-600" />}
-        description="Assessments with scores"
       />
       
       <StatCard 

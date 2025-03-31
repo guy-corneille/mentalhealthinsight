@@ -1,3 +1,10 @@
+
+/**
+ * Report Service (Re-export)
+ * 
+ * This file re-exports the report service from the features directory
+ * to maintain backward compatibility with existing imports.
+ */
 from rest_framework import viewsets, filters, status
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
@@ -437,11 +444,6 @@ class ReportViewSet(viewsets.ModelViewSet):
                 else:
                     followup_count += 1
             
-            # Calculate completion rate (percentage of assessments with scores)
-            # Here we define completion as having a valid score value
-            completed_assessments = assessments.exclude(score=None).count()
-            completion_rate = int((completed_assessments / total_count) * 100) if total_count > 0 else 0
-            
             # Calculate average assessment score
             average_score = assessments.exclude(score=None).aggregate(avg_score=Avg('score'))['avg_score'] or 0
             
@@ -475,7 +477,6 @@ class ReportViewSet(viewsets.ModelViewSet):
                     "discharge": discharge_count
                 },
                 "countByPeriod": period_data,
-                "completionRate": completion_rate,
                 "averageScore": round(average_score, 1),
                 "patientCoverage": patient_coverage,
                 "scoreByCriteria": criteria_scores

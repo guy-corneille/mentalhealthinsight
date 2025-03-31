@@ -1,4 +1,3 @@
-
 /**
  * Report Service
  * 
@@ -75,7 +74,6 @@ export type AssessmentStatistics = {
     period: string;
     count: number;
   }>;
-  completionRate: number;
   averageScore?: number;
   patientCoverage?: number;
   scoreByCriteria?: Array<{
@@ -171,7 +169,6 @@ const generateMockStatistics = (filters: ReportFilter = {}): AssessmentStatistic
     countByFacility,
     countByType,
     countByPeriod,
-    completionRate: 85 + Math.round(Math.random() * 10),
     averageScore,
     patientCoverage,
     scoreByCriteria
