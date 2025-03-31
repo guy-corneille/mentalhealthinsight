@@ -182,7 +182,7 @@ const reportService = {
   // Get assessment report data
   getAssessmentReports: async (filters: ReportFilter = {}) => {
     try {
-      return await api.get<AssessmentTrendData>('/reports/assessments/', { params: filters });
+      return await api.get<AssessmentTrendData>('/api/reports/assessments/', { params: filters });
     } catch (error) {
       console.error('Error fetching assessment reports:', error);
       throw error;
@@ -192,7 +192,7 @@ const reportService = {
   // Get assessment completion rates
   getCompletionRates: async (filters: ReportFilter = {}) => {
     try {
-      return await api.get<CompletionRateData[]>('/reports/completion-rates/', { params: filters });
+      return await api.get<CompletionRateData[]>('/api/reports/completion-rates/', { params: filters });
     } catch (error) {
       console.error('Error fetching completion rates:', error);
       throw error;
@@ -202,7 +202,7 @@ const reportService = {
   // Get criteria distribution data
   getCriteriaDistribution: async (filters: ReportFilter = {}) => {
     try {
-      return await api.get<DistributionData[]>('/reports/criteria-distribution/', { params: filters });
+      return await api.get<DistributionData[]>('/api/reports/criteria-distribution/', { params: filters });
     } catch (error) {
       console.error('Error fetching criteria distribution:', error);
       throw error;
@@ -212,7 +212,7 @@ const reportService = {
   // Get audit report data
   getAuditReports: async (filters: ReportFilter = {}) => {
     try {
-      return await api.get<any[]>('/reports/audits/', { params: filters });
+      return await api.get<any[]>('/api/reports/audits/', { params: filters });
     } catch (error) {
       console.error('Error fetching audit reports:', error);
       throw error;
@@ -222,7 +222,7 @@ const reportService = {
   // Get audit scores by category
   getAuditCategoryScores: async (filters: ReportFilter = {}) => {
     try {
-      return await api.get<any[]>('/reports/audit-categories/', { params: filters });
+      return await api.get<any[]>('/api/reports/audit-categories/', { params: filters });
     } catch (error) {
       console.error('Error fetching audit category scores:', error);
       throw error;
@@ -232,7 +232,7 @@ const reportService = {
   // Get improvement trends data
   getImprovementTrends: async (filters: ReportFilter = {}) => {
     try {
-      return await api.get<any[]>('/reports/improvement-trends/', { params: filters });
+      return await api.get<any[]>('/api/reports/improvement-trends/', { params: filters });
     } catch (error) {
       console.error('Error fetching improvement trends:', error);
       throw error;
@@ -242,7 +242,7 @@ const reportService = {
   // Export reports to CSV
   getExportData: async (reportType: string, filters: ReportFilter = {}) => {
     try {
-      return await api.get<any[]>(`/reports/export/${reportType}/`, { params: filters });
+      return await api.get<any[]>(`/api/reports/export/${reportType}/`, { params: filters });
     } catch (error) {
       console.error('Error exporting report data:', error);
       throw error;
@@ -254,9 +254,10 @@ const reportService = {
     try {
       console.log("Fetching assessment statistics with filters:", filters);
       
-      // Use the correct endpoint URL that matches the Django backend route
-      // Removing the /api/ prefix since it's already in the baseURL in api.ts
-      const response = await api.get<AssessmentStatistics>('/reports/assessment-statistics/', { 
+      // Use the correct endpoint URL that matches the Django backend route:
+      // The endpoint is registered on the ReportViewSet with the action name 'assessment_statistics'
+      // In Django URLs, this becomes '/api/reports/assessment-statistics/'
+      const response = await api.get<AssessmentStatistics>('/api/reports/assessment-statistics/', { 
         params: filters
       });
       return response;
