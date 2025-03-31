@@ -351,7 +351,7 @@ class ReportViewSet(viewsets.ModelViewSet):
             facility_id = request.query_params.get('facilityId')
             
             # Log the received parameters
-            logger.info(f"Received assessment statistics request with params: start_date={start_date}, end_date={end_date}, patient_group={patient_group}, facility_id={facility_id}")
+            logging.info(f"Received assessment statistics request with params: start_date={start_date}, end_date={end_date}, patient_group={patient_group}, facility_id={facility_id}")
             
             # Set up base queryset for assessments
             assessments = Assessment.objects.filter(assessment_date__gte=start_date, assessment_date__lte=end_date)
@@ -484,7 +484,7 @@ class ReportViewSet(viewsets.ModelViewSet):
             return Response(statistics)
         
         except Exception as e:
-            logger.error(f"Error generating assessment statistics: {str(e)}")
+            logging.error(f"Error generating assessment statistics: {str(e)}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['post'])
