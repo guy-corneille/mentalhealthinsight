@@ -254,8 +254,9 @@ const reportService = {
     try {
       console.log("Fetching assessment statistics with filters:", filters);
       
-      // Fixed URL to include /api/ prefix based on backend URL structure
-      const response = await api.get<AssessmentStatistics>('/api/reports/assessment-statistics/', { 
+      // Use the correct endpoint URL that matches the Django backend route
+      // Removing the /api/ prefix since it's already in the baseURL in api.ts
+      const response = await api.get<AssessmentStatistics>('/reports/assessment-statistics/', { 
         params: filters
       });
       return response;

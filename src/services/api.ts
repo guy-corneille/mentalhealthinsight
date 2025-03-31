@@ -1,4 +1,15 @@
-
+/**
+ * Core API Service
+ * 
+ * This service provides the base API client configuration and error handling.
+ * It's used by all other services to make API requests.
+ * 
+ * Features:
+ * - Base URL configuration
+ * - Request/response interceptors
+ * - Error handling with toast notifications
+ * - Automatic error logging
+ */
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
 
@@ -15,7 +26,7 @@ interface ApiErrorResponse {
 // This is where API requests are configured
 const api = axios.create({
   // Base URL for all API requests - adjust this to match your backend
-  baseURL: 'http://localhost:8000/api',
+  baseURL: 'http://localhost:8000',  // Removed /api to handle endpoint paths correctly
   
   // Default headers for all requests
   headers: {

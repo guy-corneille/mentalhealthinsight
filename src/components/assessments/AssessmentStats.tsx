@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Download, BarChart as BarChartIcon, PieChart as PieChartIcon, LineChart as LineChartIcon } from "lucide-react";
 import { Spinner } from '@/components/ui/spinner';
-import { useAssessmentStats } from './hooks/useAssessmentStats';
+import { useAssessmentStats } from '@/features/assessments/hooks/useAssessmentStats';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import StatCard from '@/components/ui/StatCard';
 import { format } from 'date-fns';
@@ -22,14 +21,12 @@ const AssessmentStats: React.FC = () => {
     chartData 
   } = useAssessmentStats();
   
-  // Export chart data to CSV
   const exportData = (chartType: string) => {
     if (!chartData) return;
     
     let csvContent = "data:text/csv;charset=utf-8,";
     let data: any[] = [];
     
-    // Prepare data based on chart type
     if (chartType === 'period') {
       csvContent += "Month,Assessment Count\n";
       data = chartData.countByPeriodData;
@@ -56,7 +53,6 @@ const AssessmentStats: React.FC = () => {
       });
     }
     
-    // Create download link and trigger it
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -88,7 +84,6 @@ const AssessmentStats: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select value={patientGroup} onValueChange={setPatientGroup}>
           <SelectTrigger>
@@ -119,7 +114,6 @@ const AssessmentStats: React.FC = () => {
         </Select>
       </div>
       
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Total Assessments" 
@@ -150,10 +144,8 @@ const AssessmentStats: React.FC = () => {
         />
       </div>
       
-      {/* Charts */}
       <div className="space-y-4">
         <Accordion type="multiple" defaultValue={["period", "facility", "type", "criteria"]} className="space-y-4">
-          {/* Assessments by Period */}
           <AccordionItem value="period" className="border rounded-lg overflow-hidden">
             <div className="bg-white dark:bg-slate-900 border-b">
               <div className="flex justify-between items-center px-6 py-4">
@@ -217,7 +209,6 @@ const AssessmentStats: React.FC = () => {
             </AccordionContent>
           </AccordionItem>
           
-          {/* Assessments by Facility */}
           <AccordionItem value="facility" className="border rounded-lg overflow-hidden">
             <div className="bg-white dark:bg-slate-900 border-b">
               <div className="flex justify-between items-center px-6 py-4">
@@ -318,7 +309,6 @@ const AssessmentStats: React.FC = () => {
             </AccordionContent>
           </AccordionItem>
           
-          {/* Assessments by Type */}
           <AccordionItem value="type" className="border rounded-lg overflow-hidden">
             <div className="bg-white dark:bg-slate-900 border-b">
               <div className="flex justify-between items-center px-6 py-4">
@@ -419,7 +409,6 @@ const AssessmentStats: React.FC = () => {
             </AccordionContent>
           </AccordionItem>
           
-          {/* Scores by Criteria */}
           <AccordionItem value="criteria" className="border rounded-lg overflow-hidden">
             <div className="bg-white dark:bg-slate-900 border-b">
               <div className="flex justify-between items-center px-6 py-4">
