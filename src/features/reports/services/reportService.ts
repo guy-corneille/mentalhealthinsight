@@ -1,3 +1,4 @@
+
 /**
  * Report Service
  * 
@@ -9,34 +10,34 @@ import api from '@/services/api';
 import { format, subMonths, startOfYear } from 'date-fns';
 
 // Type definitions for reports
-export interface AssessmentReportData {
+export type AssessmentReportData = {
   month: string;
   criteria_scores: Record<string, number>;
   average: number;
-}
+};
 
-export interface CompletionRateData {
+export type CompletionRateData = {
   month: string;
   completion_rate: number;
   target_rate: number;
-}
+};
 
-export interface DistributionData {
+export type DistributionData = {
   name: string;
   count: number;
   color?: string;
-}
+};
 
-export interface ReportFilter {
+export type ReportFilter = {
   timeRange?: string;
   criteriaType?: string;
   facilityId?: string;
   startDate?: string;
   endDate?: string;
   patientGroup?: string;
-}
+};
 
-export interface AssessmentTrendData {
+export type AssessmentTrendData = {
   assessment_counts: Array<{
     month: string;
     initial_count: number;
@@ -56,9 +57,9 @@ export interface AssessmentTrendData {
     moderate: number;
     mild: number;
   }>;
-}
+};
 
-export interface AssessmentStatistics {
+export type AssessmentStatistics = {
   totalCount: number;
   countByFacility: Array<{
     facilityId: string;
@@ -82,7 +83,7 @@ export interface AssessmentStatistics {
     criteriaName: string;
     averageScore: number;
   }>;
-}
+};
 
 /**
  * Generate mock statistics when API is unavailable

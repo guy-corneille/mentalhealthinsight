@@ -10,5 +10,3 @@
 export * from './assessments/types';
 export * from './facilities';
 export type * from './reports/services/reportService';
-
-

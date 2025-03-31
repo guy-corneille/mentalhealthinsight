@@ -5,17 +5,20 @@ import { Users, Building2, UserCheck, FileText } from 'lucide-react';
 import { useFacilities } from '@/services/facilityService';
 import { useStaff } from '@/services/staffService';
 import { usePatients } from '@/services/patientService';
+import { useAssessmentStats } from '@/features/assessments/hooks/useAssessmentStats';
 
 const StatsOverview: React.FC = () => {
   // Fetch real data from our API services
   const { data: facilities, isLoading: facilitiesLoading } = useFacilities();
   const { data: staff, isLoading: staffLoading } = useStaff();
   const { data: patients, isLoading: patientsLoading } = usePatients();
+  const { chartData, isLoading: assessmentsLoading } = useAssessmentStats();
 
   // Calculate real counts from our data
   const facilityCount = facilities?.length || 0;
   const staffCount = staff?.length || 0;
   const patientCount = patients?.length || 0;
+  const assessmentCount = chartData?.summary?.totalCount || 0;
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -43,12 +46,12 @@ const StatsOverview: React.FC = () => {
         description="Patients under care"
       />
       
-      {/* Assessment Card - Coming Soon */}
+      {/* Assessment Card - Real Data */}
       <StatCard
         title="Assessments"
-        value="Coming Soon"
+        value={assessmentsLoading ? "Loading..." : assessmentCount}
         icon={<FileText className="h-4 w-4 text-healthiq-600" />}
-        description="Assessment functionality in development"
+        description="Total completed assessments"
       />
     </div>
   );
