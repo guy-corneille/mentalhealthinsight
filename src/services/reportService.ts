@@ -6,16 +6,16 @@
  * to maintain backward compatibility with existing imports.
  */
 import reportService, { 
-  AssessmentReportData, 
-  CompletionRateData, 
-  DistributionData, 
-  ReportFilter,
-  AssessmentTrendData,
-  AssessmentStatistics
+  type AssessmentReportData, 
+  type CompletionRateData, 
+  type DistributionData, 
+  type ReportFilter,
+  type AssessmentTrendData,
+  type AssessmentStatistics
 } from '@/features/reports/services/reportService';
 
 // Re-export the service and all its types
-export {
+export type {
   AssessmentReportData, 
   CompletionRateData, 
   DistributionData, 

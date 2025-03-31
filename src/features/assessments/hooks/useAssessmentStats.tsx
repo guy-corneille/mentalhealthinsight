@@ -1,4 +1,3 @@
-
 /**
  * Assessment Statistics Hook
  * 
@@ -12,7 +11,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, subMonths, parseISO, startOfYear } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
-import reportService, { ReportFilter, AssessmentStatistics } from '@/features/reports/services/reportService';
+import reportService, { type ReportFilter, type AssessmentStatistics } from '@/features/reports/services/reportService';
 
 export function useAssessmentStats() {
   const { toast } = useToast();
