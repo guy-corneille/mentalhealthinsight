@@ -1,4 +1,3 @@
-
 /**
  * Report Service
  * 
@@ -176,6 +175,98 @@ const generateMockStatistics = (filters: ReportFilter = {}): AssessmentStatistic
   };
 };
 
+/**
+ * Generate mock audit statistics when API is unavailable
+ * This keeps the application functional even when backend is down
+ */
+const generateMockAuditStatistics = (filters: ReportFilter = {}): AssessmentStatistics => {
+  const endDate = new Date();
+  let startDate;
+  
+  // Determine time range
+  if (filters.timeRange === '3months') {
+    startDate = subMonths(endDate, 3);
+  } else if (filters.timeRange === '6months') {
+    startDate = subMonths(endDate, 6);
+  } else if (filters.timeRange === 'ytd') {
+    startDate = startOfYear(endDate);
+  } else {
+    // Default to 12 months
+    startDate = subMonths(endDate, 12);
+  }
+  
+  // Generate periods (months) between start and end date
+  const periods: string[] = [];
+  let currentDate = new Date(startDate);
+  
+  while (currentDate <= endDate) {
+    periods.push(format(currentDate, 'yyyy-MM'));
+    currentDate.setMonth(currentDate.getMonth() + 1);
+  }
+  
+  // Generate random counts
+  const baseCount = 5;
+  
+  // Generate count by period
+  const countByPeriod = periods.map((period, index) => {
+    // Create a slight upward trend over time
+    const trendFactor = 1 + (index * 0.08);
+    return {
+      period,
+      count: Math.round(baseCount * trendFactor * (0.8 + Math.random() * 0.4))
+    };
+  });
+  
+  // Calculate total from periods
+  const totalCount = countByPeriod.reduce((sum, item) => sum + item.count, 0);
+  
+  // Mock facility distribution
+  const countByFacility = [
+    { facilityId: '1', facilityName: 'Central Hospital', count: Math.round(totalCount * 0.3) },
+    { facilityId: '2', facilityName: 'Eastern District Clinic', count: Math.round(totalCount * 0.25) },
+    { facilityId: '3', facilityName: 'Northern Community Center', count: Math.round(totalCount * 0.2) },
+    { facilityId: '4', facilityName: 'Southern District Hospital', count: Math.round(totalCount * 0.25) }
+  ];
+  
+  // Mock audit type distribution (using the same structure as assessments but with audit-specific names)
+  const countByType = {
+    initial: Math.round(totalCount * 0.4), // Infrastructure audits
+    followup: Math.round(totalCount * 0.35), // Staffing audits
+    discharge: Math.round(totalCount * 0.25) // Treatment audits
+  };
+  
+  // Generate random scores for criteria
+  const criteriaTypes = [
+    { id: "1", name: "Infrastructure & Safety" },
+    { id: "2", name: "Staffing & Training" },
+    { id: "3", name: "Treatment & Care" },
+    { id: "4", name: "Patient Rights" },
+    { id: "5", name: "Documentation" }
+  ];
+  
+  const scoreByCriteria = criteriaTypes.map(criteria => ({
+    criteriaId: criteria.id,
+    criteriaName: criteria.name,
+    averageScore: Math.round(65 + Math.random() * 25)
+  }));
+  
+  // Generate average score
+  const averageScore = scoreByCriteria.reduce((sum, item) => sum + item.averageScore, 0) / scoreByCriteria.length;
+  
+  // Mock completion rate
+  const patientCoverage = 70 + Math.round(Math.random() * 20);
+  
+  return {
+    totalCount,
+    countByFacility,
+    countByType,
+    countByPeriod,
+    averageScore,
+    patientCoverage,
+    scoreByCriteria
+  };
+};
+
 const reportService = {
   // Get assessment report data
   getAssessmentReports: async (filters: ReportFilter = {}) => {
@@ -262,6 +353,28 @@ const reportService = {
       
       // Return mock data when API fails, without showing any notification
       return generateMockStatistics(filters);
+    }
+  },
+
+  // Get audit statistics
+  getAuditStatistics: async (filters: ReportFilter = {}) => {
+    try {
+      console.log("Fetching audit statistics with filters:", filters);
+      
+      // In a real implementation, this would call a different endpoint
+      // For now, we'll mock it using our mock generator
+      // return await api.get<AssessmentStatistics>('/api/reports/audit-statistics/', { 
+      //  params: filters
+      // });
+      
+      // Since we don't have a real endpoint yet, return mock data
+      return generateMockAuditStatistics(filters);
+    } catch (error) {
+      console.error('Error fetching audit statistics from API:', error);
+      console.log('Falling back to mock data due to API error');
+      
+      // Return mock data when API fails, without showing any notification
+      return generateMockAuditStatistics(filters);
     }
   }
 };

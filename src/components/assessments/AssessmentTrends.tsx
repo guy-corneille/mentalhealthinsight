@@ -19,7 +19,7 @@ const AssessmentTrends: React.FC = () => {
       </div>
       
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
+        <TabsList className="grid w-full sm:w-auto grid-cols-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="trends">Detailed Trends</TabsTrigger>
         </TabsList>
@@ -29,7 +29,9 @@ const AssessmentTrends: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="trends" className="pt-6">
-          <AssessmentStats />
+          <div className="animate-fade-in">
+            <AssessmentStats />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
