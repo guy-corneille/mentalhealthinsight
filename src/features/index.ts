@@ -9,3 +9,5 @@
 // Re-export all feature modules
 export * from './assessments/types';
 export * from './facilities';
+export * from './reports/services/reportService';
+

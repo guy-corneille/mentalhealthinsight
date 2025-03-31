@@ -254,13 +254,11 @@ const reportService = {
     try {
       console.log("Fetching assessment statistics with filters:", filters);
       
-      // Use the correct endpoint URL that matches the Django backend route:
-      // The endpoint is registered on the ReportViewSet with the action name 'assessment_statistics'
-      // In Django URLs, this becomes '/api/reports/assessment-statistics/'
-      const response = await api.get<AssessmentStatistics>('/api/reports/assessment-statistics/', { 
+      // The Django backend route is defined in the ReportViewSet with action 'assessment_statistics'
+      // Matching the URL structure in Django
+      return await api.get<AssessmentStatistics>('/api/reports/assessment-statistics/', { 
         params: filters
       });
-      return response;
     } catch (error) {
       console.error('Error fetching assessment statistics from API:', error);
       console.log('Falling back to mock data due to API error');

@@ -27,7 +27,7 @@ interface ApiErrorResponse {
 // This is where API requests are configured
 const api = axios.create({
   // Base URL for all API requests - adjust this to match your backend
-  baseURL: 'http://localhost:8000',  // Removed /api to handle endpoint paths correctly
+  baseURL: 'http://localhost:8000',  // Base URL without trailing slash
   
   // Default headers for all requests
   headers: {
