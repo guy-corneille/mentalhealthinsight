@@ -26,8 +26,8 @@ interface ApiErrorResponse {
 // Create a base API instance with common configuration
 // This is where API requests are configured
 const api = axios.create({
-  // Base URL for all API requests - adjust this to match your backend
-  baseURL: 'http://localhost:8000/api',
+  // Base URL for all API requests - standardize to match the service/api.ts version
+  baseURL: 'http://localhost:8000',
   
   // Default headers for all requests
   headers: {

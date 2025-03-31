@@ -1,3 +1,4 @@
+
 /**
  * Report Service
  * 
@@ -251,8 +252,7 @@ const reportService = {
     try {
       console.log("Fetching assessment statistics with filters:", filters);
       
-      // The Django backend route is defined in the ReportViewSet with action 'assessment_statistics'
-      // Matching the URL structure in Django
+      // Update the URL path to match the Django URL pattern with explicit url_path
       return await api.get<AssessmentStatistics>('/api/reports/assessment-statistics/', { 
         params: filters
       });

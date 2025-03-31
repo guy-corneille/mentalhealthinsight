@@ -1,4 +1,3 @@
-
 /**
  * Report Service (Re-export)
  * 
@@ -338,7 +337,7 @@ class ReportViewSet(viewsets.ModelViewSet):
     ordering_fields = ['generated_at', 'title']
     permission_classes = [AllowAny]  # Allow any user to access these endpoints
     
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='assessment-statistics')
     def assessment_statistics(self, request):
         """
         Get assessment statistics based on provided filters
