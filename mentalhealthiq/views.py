@@ -662,28 +662,23 @@ class ReportViewSet(viewsets.ModelViewSet):
             # For simplicity, we use a proxy percentage here - in a real implementation, 
             # this might represent the percentage of required audit criteria that were evaluated
             total_criteria = AssessmentCriteria.objects.filter(purpose='Audit').count()
-            covered_criteria = AuditCriteria.objects.filter(audit__in=audits).values('criteria').distinct().count()
+            covered_criteria = AuditCriteria.objects.filter(audit__in=audits).values('criteria_name').distinct().count()
             coverage = int((covered_criteria / total_criteria) * 100) if total_criteria > 0 else 70
             
             # Calculate scores by criteria
             criteria_scores = []
-            audit_criteria = AuditCriteria.objects.filter(audit__in=audits).values('criteria').annotate(
+            audit_criteria = AuditCriteria.objects.filter(audit__in=audits).values('criteria_name').annotate(
                 avg_score=Avg('score')
             )
             
             for ac in audit_criteria:
-                try:
-                    criteria_id = ac['criteria']
-                    if criteria_id is not None:
-                        criteria = AssessmentCriteria.objects.get(id=criteria_id)
-                        criteria_scores.append({
-                            "criteriaId": str(criteria_id),
-                            "criteriaName": criteria.name,
-                            "averageScore": round(ac['avg_score'], 1) if ac['avg_score'] else 0
-                        })
-                except AssessmentCriteria.DoesNotExist:
-                    # Skip if criteria doesn't exist
-                    continue
+                criteria_name = ac['criteria_name']
+                if criteria_name is not None:
+                    criteria_scores.append({
+                        "criteriaId": criteria_name,
+                        "criteriaName": criteria_name,
+                        "averageScore": round(ac['avg_score'], 1) if ac['avg_score'] else 0
+                    })
             
             # Create the response object
             statistics = {

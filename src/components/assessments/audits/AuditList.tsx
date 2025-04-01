@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -17,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, FileEdit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Eye, FileEdit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
@@ -172,6 +173,8 @@ const AuditList: React.FC = () => {
     );
   }
 
+  console.log(`AuditList - Current page: ${currentPage}, Total audits: ${totalAudits}, Page size: ${pageSize}`);
+
   return (
     <div className="space-y-4">
       <Table>
@@ -244,8 +247,12 @@ const AuditList: React.FC = () => {
         </TableBody>
       </Table>
       
-      {totalAudits > pageSize && (
-        <div className="mt-4 flex justify-center">
+      {totalAudits > 0 && (
+        <div className="mt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {Math.min((currentPage - 1) * pageSize + 1, totalAudits)} - {Math.min(currentPage * pageSize, totalAudits)} of {totalAudits} audits
+          </div>
+          
           <PaginationControls 
             currentPage={currentPage}
             totalItems={totalAudits}
@@ -253,6 +260,20 @@ const AuditList: React.FC = () => {
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
           />
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Items per page:</span>
+            <select 
+              value={pageSize}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="text-sm bg-muted/50 border rounded px-2 py-1"
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
         </div>
       )}
     </div>
