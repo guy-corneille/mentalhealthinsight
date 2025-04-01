@@ -17,12 +17,15 @@ const Audits: React.FC = () => {
   const [isNewAuditDialogOpen, setIsNewAuditDialogOpen] = useState(false);
 
   const handleTabChange = (value: string) => {
+    console.log("Tab changed to:", value);
     setActiveTab(value);
     navigate(`/audits${value === 'trends' ? '#trends' : ''}`);
   };
 
   const handleFacilitySelect = (facilityId: number) => {
+    console.log("Selected facility for audit:", facilityId);
     navigate(`/facilities/audit/${facilityId}`);
+    setIsNewAuditDialogOpen(false);
   };
 
   return (

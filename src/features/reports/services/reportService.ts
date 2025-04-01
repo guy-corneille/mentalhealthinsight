@@ -1,3 +1,4 @@
+
 /**
  * Report Service
  * 
@@ -180,6 +181,7 @@ const generateMockStatistics = (filters: ReportFilter = {}): AssessmentStatistic
  * This keeps the application functional even when backend is down
  */
 const generateMockAuditStatistics = (filters: ReportFilter = {}): AssessmentStatistics => {
+  console.log("Generating mock audit statistics with filters:", filters);
   const endDate = new Date();
   let startDate;
   
@@ -203,6 +205,8 @@ const generateMockAuditStatistics = (filters: ReportFilter = {}): AssessmentStat
     periods.push(format(currentDate, 'yyyy-MM'));
     currentDate.setMonth(currentDate.getMonth() + 1);
   }
+  
+  console.log("Generated periods:", periods);
   
   // Generate random counts
   const baseCount = 5;
@@ -256,7 +260,7 @@ const generateMockAuditStatistics = (filters: ReportFilter = {}): AssessmentStat
   // Mock completion rate
   const patientCoverage = 70 + Math.round(Math.random() * 20);
   
-  return {
+  const result = {
     totalCount,
     countByFacility,
     countByType,
@@ -265,6 +269,9 @@ const generateMockAuditStatistics = (filters: ReportFilter = {}): AssessmentStat
     patientCoverage,
     scoreByCriteria
   };
+
+  console.log("Generated mock audit statistics:", result);
+  return result;
 };
 
 const reportService = {
@@ -359,15 +366,18 @@ const reportService = {
   // Get audit statistics
   getAuditStatistics: async (filters: ReportFilter = {}) => {
     try {
-      console.log("Fetching audit statistics with filters:", filters);
+      console.log("reportService: Fetching audit statistics with filters:", filters);
       
       // Use the real API endpoint
-      return await api.get<AssessmentStatistics>('/api/reports/audit-statistics/', { 
+      const response = await api.get<AssessmentStatistics>('/api/reports/audit-statistics/', { 
         params: filters
       });
+      
+      console.log("reportService: Received audit statistics API response:", response);
+      return response;
     } catch (error) {
-      console.error('Error fetching audit statistics from API:', error);
-      console.log('Falling back to mock data due to API error');
+      console.error('reportService: Error fetching audit statistics from API:', error);
+      console.log('reportService: Falling back to mock data due to API error');
       
       // Return mock data when API fails, without showing any notification
       return generateMockAuditStatistics(filters);

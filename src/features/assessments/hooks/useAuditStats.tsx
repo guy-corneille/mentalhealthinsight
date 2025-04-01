@@ -20,6 +20,11 @@ export function useAuditStats() {
   const [facilityId, setFacilityId] = useState<string | undefined>(undefined);
   const [hasShownError, setHasShownError] = useState(false);
 
+  useEffect(() => {
+    console.log("useAuditStats - Current timeRange:", timeRange);
+    console.log("useAuditStats - Current facilityId:", facilityId);
+  }, [timeRange, facilityId]);
+
   // Calculate date range based on selected time range
   const getDateRange = useCallback(() => {
     const endDate = new Date();
@@ -41,15 +46,23 @@ export function useAuditStats() {
         break;
     }
 
-    return {
+    const result = {
       startDate: format(startDate, 'yyyy-MM-dd'),
       endDate: format(endDate, 'yyyy-MM-dd')
     };
+    
+    console.log("useAuditStats - Date range calculated:", result);
+    return result;
   }, [timeRange]);
 
   // Format chart data for display
   const formatChartData = useCallback((apiData: AssessmentStatistics) => {
-    if (!apiData) return null;
+    if (!apiData) {
+      console.log("useAuditStats - No API data provided to format");
+      return null;
+    }
+    
+    console.log("useAuditStats - Formatting chart data from:", apiData);
     
     // Format audit counts by period for line/bar chart
     const countByPeriodData = apiData.countByPeriod.map((item) => ({
@@ -78,7 +91,7 @@ export function useAuditStats() {
       color: getRandomColor(item.criteriaId)
     })) || [];
     
-    return {
+    const result = {
       countByPeriodData,
       facilityData,
       typeData,
@@ -91,6 +104,9 @@ export function useAuditStats() {
         mostActiveLocation: getMostActiveLocation(apiData.countByFacility)
       }
     };
+    
+    console.log("useAuditStats - Formatted chart data:", result);
+    return result;
   }, []);
   
   // Helper function to determine most common audit type
@@ -129,10 +145,12 @@ export function useAuditStats() {
       
       try {
         setHasShownError(false); // Reset error state before each new attempt
-        console.log("Requesting audit stats with filters:", filters);
-        return await reportService.getAuditStatistics(filters);
+        console.log("useAuditStats - Requesting audit stats with filters:", filters);
+        const result = await reportService.getAuditStatistics(filters);
+        console.log("useAuditStats - Received API response:", result);
+        return result;
       } catch (error) {
-        console.error('Error fetching audit statistics:', error);
+        console.error('useAuditStats - Error fetching audit statistics:', error);
         throw error;
       }
     },

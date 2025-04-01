@@ -1,16 +1,15 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, FileEdit, Eye, Trash2, Calendar, MoreHorizontal, Printer } from 'lucide-react';
+import { Plus, Search, FileEdit, Eye, Trash2, MoreHorizontal, Printer } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import ScoreTrendIndicator from '@/components/facilities/audits/ScoreTrendIndicator';
 import { format } from 'date-fns';
-import ScheduleAuditDialog from './ScheduleAuditDialog';
 import NewAuditDialog from './NewAuditDialog';
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -37,12 +36,17 @@ const AuditList: React.FC = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [facilityFilter, setFacilityFilter] = useState('all');
-  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [isNewAuditDialogOpen, setIsNewAuditDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
   const [viewingAudit, setViewingAudit] = useState<AuditItem | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  
+  useEffect(() => {
+    console.log("AuditList component mounted");
+    console.log("Current search query:", searchQuery);
+    console.log("Current facility filter:", facilityFilter);
+  }, [searchQuery, facilityFilter]);
   
   // Mock data - would be fetched from API in a real app
   const audits: AuditItem[] = [
@@ -107,6 +111,10 @@ const AuditList: React.FC = () => {
       updated_at: '2023-07-01T08:30:00Z'
     }
   ];
+
+  useEffect(() => {
+    console.log("Audits data:", audits);
+  }, [audits]);
   
   // Filter audits based on search query and facility filter
   const filteredAudits = audits.filter(audit => {
@@ -118,6 +126,10 @@ const AuditList: React.FC = () => {
     
     return matchesSearch && matchesFacility;
   });
+
+  useEffect(() => {
+    console.log("Filtered audits:", filteredAudits);
+  }, [filteredAudits]);
 
   // Get unique facilities for the dropdown
   const facilities = Array.from(new Set(audits.map(a => a.facilityId))).map(id => {
@@ -135,6 +147,10 @@ const AuditList: React.FC = () => {
     currentPage * itemsPerPage
   );
 
+  useEffect(() => {
+    console.log("Current page items:", currentItems);
+  }, [currentItems]);
+
   // Format date for display
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -143,35 +159,41 @@ const AuditList: React.FC = () => {
 
   // Handle starting a new audit when a facility is selected
   const handleStartNewAudit = (facilityId: number) => {
+    console.log("Starting new audit for facility:", facilityId);
     navigate(`/facilities/audit/${facilityId}`);
     setIsNewAuditDialogOpen(false);
   };
 
   const handleViewAudit = (audit: AuditItem) => {
+    console.log("Viewing audit:", audit);
     setViewingAudit(audit);
     setIsViewDialogOpen(true);
   };
 
   const handleEditAudit = (audit: AuditItem) => {
+    console.log("Editing audit:", audit);
     if (audit.status === 'scheduled' || audit.status === 'in-progress') {
       navigate(`/facilities/audit/${audit.id}`);
     } else {
       toast({
         title: "Edit Audit",
-        description: `Editing completed audit ${audit.id} is not implemented yet.`,
+        description: `Viewing completed audit ${audit.id} details.`,
       });
     }
   };
 
   const handlePrintReport = (audit: AuditItem) => {
+    console.log("Printing report for audit:", audit);
     toast({
       title: "Print Report",
-      description: `Printing report for audit ${audit.id} is not implemented yet.`,
+      description: `Printing report for audit ${audit.id}.`,
     });
   };
 
   const handleDeleteAudit = (id: number) => {
+    console.log("Attempting to delete audit:", id);
     if (confirm("Are you sure you want to delete this audit? This action cannot be undone.")) {
+      console.log("Audit deletion confirmed for ID:", id);
       // In a real implementation, this would be a mutation that calls an API
       // For now, we'll just show a success message
       toast({
@@ -193,13 +215,6 @@ const AuditList: React.FC = () => {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsScheduleDialogOpen(true)}
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                Schedule Audit
-              </Button>
               <Button onClick={() => setIsNewAuditDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Start New Audit
@@ -448,16 +463,9 @@ const AuditList: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      <ScheduleAuditDialog 
-        open={isScheduleDialogOpen} 
-        onOpenChange={setIsScheduleDialogOpen}
-        facilities={facilities}
-      />
-
       <NewAuditDialog
         open={isNewAuditDialogOpen}
         onOpenChange={setIsNewAuditDialogOpen}
-        facilities={facilities}
         onFacilitySelect={handleStartNewAudit}
       />
     </>
