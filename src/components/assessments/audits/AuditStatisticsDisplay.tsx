@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +20,7 @@ interface AuditStatisticsProps {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 const AuditStatisticsDisplay: React.FC<AuditStatisticsProps> = ({ facilityId, startDate, endDate }) => {
-  const { data: stats, isLoading, error } = useQuery({
+  const { data: stats, isLoading, error, refetch } = useQuery({
     queryKey: ['auditStatistics', facilityId, startDate, endDate],
     queryFn: async () => {
       console.log(`Fetching audit statistics with filters: facilityId=${facilityId}, startDate=${startDate}, endDate=${endDate}`);
@@ -32,12 +31,8 @@ const AuditStatisticsDisplay: React.FC<AuditStatisticsProps> = ({ facilityId, st
         endDate
       };
       
-      try {
-        return await reportService.getAuditStatistics(filters);
-      } catch (error) {
-        console.error('Error fetching audit statistics:', error);
-        throw error;
-      }
+      const response = await reportService.getAuditStatistics(filters);
+      return response;
     },
     refetchOnWindowFocus: false
   });
@@ -56,7 +51,7 @@ const AuditStatisticsDisplay: React.FC<AuditStatisticsProps> = ({ facilityId, st
       <div className="bg-red-50 p-4 rounded-md border border-red-200 my-4">
         <p className="text-red-600">Failed to load audit statistics</p>
         <Button 
-          onClick={() => window.location.reload()} 
+          onClick={() => refetch()} 
           variant="outline" 
           className="mt-2"
         >
@@ -66,7 +61,7 @@ const AuditStatisticsDisplay: React.FC<AuditStatisticsProps> = ({ facilityId, st
     );
   }
 
-  if (!stats) {
+  if (!stats || stats.totalCount === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         No audit data available for the selected filters.

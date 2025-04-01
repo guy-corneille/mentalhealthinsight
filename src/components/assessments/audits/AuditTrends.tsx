@@ -55,18 +55,8 @@ const AuditTrends: React.FC = () => {
         facilityId: facilityId !== 'all' ? facilityId : undefined
       };
       
-      try {
-        console.log("Fetching audit statistics with filters:", filters);
-        return await reportService.getAuditStatistics(filters);
-      } catch (error) {
-        console.error('Error fetching audit statistics:', error);
-        toast({
-          title: "Error fetching audit data",
-          description: "Could not retrieve audit statistics. Using fallback data.",
-          variant: "destructive"
-        });
-        throw error;
-      }
+      console.log("Fetching audit statistics with filters:", filters);
+      return await reportService.getAuditStatistics(filters);
     },
     refetchOnWindowFocus: false,
   });
