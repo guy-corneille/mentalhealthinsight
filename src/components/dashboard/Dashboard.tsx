@@ -1,34 +1,61 @@
 
 import React from 'react';
 import StatsOverview from './StatsOverview';
-import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Dashboard: React.FC = () => {
-  const navigate = useNavigate();
-
-  const navigateToFacilities = () => navigate('/facilities');
-  const navigateToStaff = () => navigate('/staff');
-  const navigateToPatients = () => navigate('/patients');
-  const navigateToAssessments = () => navigate('/assessments');
-  const navigateToAudits = () => navigate('/audits');
-  const navigateToBenchmarking = () => {
-    // This will be implemented in the future
-    alert('Benchmarking feature coming soon!');
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <h1 className="text-3xl font-bold tracking-tight mb-6">Dashboard</h1>
       
-      {/* Interactive stats cards that redirect to corresponding pages */}
-      <StatsOverview 
-        onFacilityClick={navigateToFacilities}
-        onStaffClick={navigateToStaff}
-        onPatientClick={navigateToPatients}
-        onAssessmentClick={navigateToAssessments}
-        onAuditClick={navigateToAudits}
-        onBenchmarkingClick={navigateToBenchmarking}
-      />
+      {/* Real stats from our API data */}
+      <StatsOverview />
+      
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Compliance Stats - Coming Soon */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Compliance Stats</CardTitle>
+            <CardDescription>Facility compliance overview</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center py-8">
+            <p className="text-muted-foreground">Coming Soon</p>
+          </CardContent>
+        </Card>
+        
+        {/* Recent Assessments - Coming Soon */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Assessments</CardTitle>
+            <CardDescription>Latest patient assessments</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center py-8">
+            <p className="text-muted-foreground">Coming Soon</p>
+          </CardContent>
+        </Card>
+        
+        {/* Improvement Trends - Coming Soon */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Improvement Trends</CardTitle>
+            <CardDescription>Patient outcome metrics</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center py-8">
+            <p className="text-muted-foreground">Coming Soon</p>
+          </CardContent>
+        </Card>
+        
+        {/* Performance Metrics - Coming Soon */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance Metrics</CardTitle>
+            <CardDescription>Staff performance overview</CardDescription>
+          </CardHeader>
+          <CardContent className="text-center py-8">
+            <p className="text-muted-foreground">Coming Soon</p>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

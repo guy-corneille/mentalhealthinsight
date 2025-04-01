@@ -17,7 +17,7 @@ import reportService, { type ReportFilter, type AssessmentStatistics } from '@/f
 export function useAuditStats() {
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState('12months');
-  const [facilityId, setFacilityId] = useState<string>('all');
+  const [facilityId, setFacilityId] = useState<string>('all'); // Changed to initialize with 'all'
   const [hasShownError, setHasShownError] = useState(false);
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export function useAuditStats() {
       { name: 'Treatment', value: apiData.countByType.discharge, color: '#6366f1' }
     ];
 
-    // Format average scores by criteria - make sure we handle the format safely
+    // Format average scores by criteria
     const scoreByCriteriaData = apiData.scoreByCriteria?.map(item => ({
       name: item.criteriaName,
       value: item.averageScore,
@@ -129,11 +129,6 @@ export function useAuditStats() {
   };
   
   const getRandomColor = (id: string) => {
-    // Make sure id is not undefined or null
-    if (!id) {
-      return '#6366f1'; // Default color
-    }
-    
     const colors = ['#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e'];
     const index = parseInt(id, 10) % colors.length;
     return colors[index >= 0 ? index : 0];
@@ -147,7 +142,7 @@ export function useAuditStats() {
       const filters: ReportFilter = {
         startDate,
         endDate,
-        facilityId: facilityId !== 'all' ? facilityId : undefined
+        facilityId: facilityId && facilityId !== 'all' ? facilityId : undefined
       };
       
       try {

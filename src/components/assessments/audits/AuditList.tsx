@@ -22,7 +22,6 @@ import { MoreHorizontal, Eye, FileEdit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
-import PaginationControls from '@/components/common/PaginationControls';
 
 interface AuditData {
   id: number;
@@ -49,9 +48,6 @@ const AuditList: React.FC = () => {
   const [audits, setAudits] = useState<AuditData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [totalAudits, setTotalAudits] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -59,22 +55,16 @@ const AuditList: React.FC = () => {
     const fetchAudits = async () => {
       setLoading(true);
       try {
-        console.log(`Fetching audits from API endpoint: /api/audits/?page=${currentPage}&page_size=${pageSize}`);
-        const response = await api.get<ApiResponse | AuditData[]>('/api/audits/', {
-          params: {
-            page: currentPage,
-            page_size: pageSize
-          }
-        });
+        console.log('Fetching audits from API endpoint: /api/audits/');
+        // We need to get ALL audits, not just paginated ones
+        const response = await api.get<ApiResponse | AuditData[]>('/api/audits/');
         console.log('Audit data received:', response);
         
         if (response && 'results' in response && Array.isArray(response.results)) {
           setAudits(response.results);
-          setTotalAudits(response.count || 0);
           console.log('Got paginated audit results:', response.results);
         } else if (Array.isArray(response)) {
           setAudits(response);
-          setTotalAudits(response.length);
           console.log('Got direct audit array:', response);
         } else {
           console.error('Unexpected API response format:', response);
@@ -95,16 +85,7 @@ const AuditList: React.FC = () => {
     };
 
     fetchAudits();
-  }, [toast, currentPage, pageSize]);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size);
-    setCurrentPage(1); // Reset to first page when changing page size
-  };
+  }, [toast]);
 
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this audit?')) {
@@ -172,8 +153,6 @@ const AuditList: React.FC = () => {
       </div>
     );
   }
-
-  console.log(`AuditList - Current page: ${currentPage}, Total audits: ${totalAudits}, Page size: ${pageSize}`);
 
   return (
     <div className="space-y-4">
@@ -246,36 +225,6 @@ const AuditList: React.FC = () => {
           ))}
         </TableBody>
       </Table>
-      
-      {totalAudits > 0 && (
-        <div className="mt-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-sm text-muted-foreground">
-            Showing {Math.min((currentPage - 1) * pageSize + 1, totalAudits)} - {Math.min(currentPage * pageSize, totalAudits)} of {totalAudits} audits
-          </div>
-          
-          <PaginationControls 
-            currentPage={currentPage}
-            totalItems={totalAudits}
-            pageSize={pageSize}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-          />
-          
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Items per page:</span>
-            <select 
-              value={pageSize}
-              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              className="text-sm bg-muted/50 border rounded px-2 py-1"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
