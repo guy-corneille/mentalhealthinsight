@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -32,7 +31,7 @@ export interface AuditStatsFiltersProps {
   timeRange?: string;
   setTimeRange?: (value: string) => void;
   facilityId?: number | string;
-  setFacilityId?: (value: number | string) => void;
+  setFacilityId?: (value: string) => void; // Modified to only accept string
 }
 
 const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({ 
@@ -43,7 +42,9 @@ const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({
   setFacilityId: setExternalFacilityId
 }) => {
   const [localFacilityId, setLocalFacilityId] = useState<number | undefined>(
-    typeof externalFacilityId === 'number' ? externalFacilityId : undefined
+    typeof externalFacilityId === 'number' ? externalFacilityId : 
+    (typeof externalFacilityId === 'string' && externalFacilityId !== '' ? 
+      parseInt(externalFacilityId, 10) : undefined)
   );
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -59,8 +60,8 @@ const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({
     });
 
     // If we have external state management, update that too
-    if (setExternalFacilityId && typeof localFacilityId === 'number') {
-      setExternalFacilityId(localFacilityId);
+    if (setExternalFacilityId && localFacilityId !== undefined) {
+      setExternalFacilityId(localFacilityId.toString());
     }
   };
   

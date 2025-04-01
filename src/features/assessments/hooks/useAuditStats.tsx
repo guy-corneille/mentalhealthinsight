@@ -17,7 +17,7 @@ import reportService, { type ReportFilter, type AssessmentStatistics } from '@/f
 export function useAuditStats() {
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState('12months');
-  const [facilityId, setFacilityId] = useState<string | undefined>(undefined);
+  const [facilityId, setFacilityId] = useState<string>(''); // Changed to initialize with empty string
   const [hasShownError, setHasShownError] = useState(false);
 
   useEffect(() => {
@@ -140,7 +140,7 @@ export function useAuditStats() {
       const filters: ReportFilter = {
         startDate,
         endDate,
-        facilityId
+        facilityId: facilityId && facilityId !== '' ? facilityId : undefined
       };
       
       try {
