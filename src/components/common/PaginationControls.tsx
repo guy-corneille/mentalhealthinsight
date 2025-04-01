@@ -11,15 +11,22 @@ import {
 
 interface PaginationControlsProps {
   currentPage: number;
-  totalPages: number;
+  totalItems: number;
+  pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }
 
 const PaginationControls: React.FC<PaginationControlsProps> = ({
   currentPage,
-  totalPages,
+  totalItems,
+  pageSize,
   onPageChange,
+  onPageSizeChange,
 }) => {
+  // Calculate total pages from totalItems and pageSize
+  const totalPages = Math.ceil(totalItems / pageSize);
+
   // Create an array of page numbers to display
   const getPageNumbers = () => {
     const pages = [];
