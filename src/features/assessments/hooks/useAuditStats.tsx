@@ -17,7 +17,7 @@ import reportService, { type ReportFilter, type AssessmentStatistics } from '@/f
 export function useAuditStats() {
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState('12months');
-  const [facilityId, setFacilityId] = useState<string>('all'); // Changed to initialize with 'all'
+  const [facilityId, setFacilityId] = useState<string>('all');
   const [hasShownError, setHasShownError] = useState(false);
 
   useEffect(() => {
@@ -84,11 +84,11 @@ export function useAuditStats() {
       { name: 'Treatment', value: apiData.countByType.discharge, color: '#6366f1' }
     ];
 
-    // Format average scores by criteria
+    // Format average scores by criteria - make sure we handle the format safely
     const scoreByCriteriaData = apiData.scoreByCriteria?.map(item => ({
       name: item.criteriaName,
       value: item.averageScore,
-      color: getRandomColor(item.criteriaId)
+      color: getRandomColor(item.criteriaId || '')
     })) || [];
     
     // Include the date range in the result for use in components
