@@ -11,7 +11,11 @@ const AuditTrends: React.FC = () => {
     endDate: undefined as string | undefined,
   });
 
-  const handleFilterChange = (newFilters: any) => {
+  const handleFilterChange = (newFilters: {
+    facilityId?: number;
+    startDate?: string;
+    endDate?: string;
+  }) => {
     console.log('Filter changed:', newFilters);
     setFilters(newFilters);
   };
