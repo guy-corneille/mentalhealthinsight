@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   CheckCircleIcon, 
@@ -28,12 +29,14 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 import api from '@/services/api';
-import { Rating, getRatingValue } from '@/utils/ratingUtils';
 
 interface AuditFormProps {
   facilityId: number;
   facilityName: string;
 }
+
+// Define the rating types to match assessments
+type Rating = "good" | "limited" | "poor" | "not-applicable" | "not-rated";
 
 // Define the audit criterion structure
 interface AuditCriterion {
@@ -186,14 +189,13 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
 
   const categories = ["Infrastructure & Safety", "Staffing & Training", "Treatment & Care", "Rights & Dignity"];
 
-  // Rating utilities
+  // Rating utilities with simplified options matching assessment style
   const getRatingValue = (rating: Rating): number => {
     switch (rating) {
-      case "pass": return 1;
-      case "high-partial": return 0.8;
-      case "partial": return 0.5;
-      case "low-partial": return 0.3;
-      case "fail": return 0;
+      case "good": return 1;
+      case "limited": return 0.5;
+      case "poor": return 0;
+      case "not-applicable": return 0;
       default: return 0;
     }
   };
@@ -262,23 +264,36 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
     try {
       const score = calculateScore();
       
+      // Create criteria scores
+      const criteriaScores = Object.keys(ratings).map(criterionId => {
+        const rating = ratings[criterionId];
+        const criterion = auditCriteria.flat().find(c => c.id === criterionId);
+        
+        return {
+          criteria_name: criterion?.description || criterionId,
+          score: rating.rating === "not-applicable" ? null : getRatingValue(rating.rating) * 100,
+          notes: rating.notes || ""
+        };
+      });
+      
+      // Create audit data matching backend expectations
       const auditData = {
         facility: facilityId,
-        score: score,
-        date_performed: new Date().toISOString().split('T')[0],
-        details: JSON.stringify({
-          categories: categories,
-          ratings: ratings,
-          criteria: auditCriteria
-        }),
-        status: "completed"
+        overall_score: score,
+        audit_date: new Date().toISOString().split('T')[0],
+        status: "completed",
+        notes: "Facility audit completed",
+        criteria_scores: criteriaScores
       };
       
       console.log("Sending audit data to API:", auditData);
       
-      await api.post('/audits/', auditData);
+      // POST to the audits endpoint based on Django API
+      const response = await api.post('/api/audits/', auditData);
+      console.log("Audit submission response:", response);
       
-      await api.patch(`/facilities/${facilityId}/`, {
+      // Update facility's last inspection date
+      await api.patch(`/api/facilities/${facilityId}/`, {
         last_inspection_date: new Date().toISOString().split('T')[0]
       });
       
@@ -385,44 +400,28 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
               <div className="flex flex-col space-y-4">
                 <div className="flex flex-wrap gap-2">
                   <Button
-                    variant={ratings[criterion.id]?.rating === "pass" ? "default" : "outline"}
-                    className={ratings[criterion.id]?.rating === "pass" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
-                    onClick={() => handleRatingChange(criterion.id, "pass")}
+                    variant={ratings[criterion.id]?.rating === "good" ? "default" : "outline"}
+                    className={ratings[criterion.id]?.rating === "good" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                    onClick={() => handleRatingChange(criterion.id, "good")}
                   >
                     <CheckCircleIcon className="h-4 w-4 mr-2" />
-                    Pass
+                    Good
                   </Button>
                   <Button
-                    variant={ratings[criterion.id]?.rating === "high-partial" ? "default" : "outline"}
-                    className={ratings[criterion.id]?.rating === "high-partial" ? "bg-lime-600 hover:bg-lime-700" : ""}
-                    onClick={() => handleRatingChange(criterion.id, "high-partial")}
+                    variant={ratings[criterion.id]?.rating === "limited" ? "default" : "outline"}
+                    className={ratings[criterion.id]?.rating === "limited" ? "bg-amber-600 hover:bg-amber-700" : ""}
+                    onClick={() => handleRatingChange(criterion.id, "limited")}
                   >
                     <AlertCircleIcon className="h-4 w-4 mr-2" />
-                    High Partial
+                    Limited
                   </Button>
                   <Button
-                    variant={ratings[criterion.id]?.rating === "partial" ? "default" : "outline"}
-                    className={ratings[criterion.id]?.rating === "partial" ? "bg-amber-600 hover:bg-amber-700" : ""}
-                    onClick={() => handleRatingChange(criterion.id, "partial")}
-                  >
-                    <AlertCircleIcon className="h-4 w-4 mr-2" />
-                    Partial
-                  </Button>
-                  <Button
-                    variant={ratings[criterion.id]?.rating === "low-partial" ? "default" : "outline"}
-                    className={ratings[criterion.id]?.rating === "low-partial" ? "bg-orange-600 hover:bg-orange-700" : ""}
-                    onClick={() => handleRatingChange(criterion.id, "low-partial")}
-                  >
-                    <AlertCircleIcon className="h-4 w-4 mr-2" />
-                    Low Partial
-                  </Button>
-                  <Button
-                    variant={ratings[criterion.id]?.rating === "fail" ? "default" : "outline"}
-                    className={ratings[criterion.id]?.rating === "fail" ? "bg-rose-600 hover:bg-rose-700" : ""}
-                    onClick={() => handleRatingChange(criterion.id, "fail")}
+                    variant={ratings[criterion.id]?.rating === "poor" ? "default" : "outline"}
+                    className={ratings[criterion.id]?.rating === "poor" ? "bg-rose-600 hover:bg-rose-700" : ""}
+                    onClick={() => handleRatingChange(criterion.id, "poor")}
                   >
                     <XCircleIcon className="h-4 w-4 mr-2" />
-                    Fail
+                    Poor
                   </Button>
                   <Button
                     variant={ratings[criterion.id]?.rating === "not-applicable" ? "default" : "outline"}
