@@ -1,4 +1,3 @@
-
 /**
  * Audit Statistics Hook
  * 
@@ -17,7 +16,7 @@ import reportService, { type ReportFilter, type AssessmentStatistics } from '@/f
 export function useAuditStats() {
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState('12months');
-  const [facilityId, setFacilityId] = useState<string>(''); // Changed to initialize with empty string
+  const [facilityId, setFacilityId] = useState<string>('all'); // Changed to initialize with 'all'
   const [hasShownError, setHasShownError] = useState(false);
 
   useEffect(() => {
@@ -109,7 +108,7 @@ export function useAuditStats() {
     return result;
   }, []);
   
-  // Helper function to determine most common audit type
+  // Helper functions
   const getMostCommonType = (countByType: { initial: number, followup: number, discharge: number }) => {
     const { initial, followup, discharge } = countByType;
     if (initial > followup && initial > discharge) return 'Infrastructure';
@@ -117,7 +116,6 @@ export function useAuditStats() {
     return 'Treatment';
   };
   
-  // Helper function to determine most active location
   const getMostActiveLocation = (countByFacility: Array<{ facilityId: string, facilityName: string, count: number }>) => {
     if (!countByFacility.length) return '';
     return countByFacility.reduce((max, facility) => 
@@ -125,7 +123,6 @@ export function useAuditStats() {
     ).facilityName;
   };
   
-  // Helper function to generate consistent colors based on ID
   const getRandomColor = (id: string) => {
     const colors = ['#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e'];
     const index = parseInt(id, 10) % colors.length;
@@ -140,7 +137,7 @@ export function useAuditStats() {
       const filters: ReportFilter = {
         startDate,
         endDate,
-        facilityId: facilityId && facilityId !== '' ? facilityId : undefined
+        facilityId: facilityId && facilityId !== 'all' ? facilityId : undefined
       };
       
       try {

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -43,7 +44,7 @@ const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({
 }) => {
   const [localFacilityId, setLocalFacilityId] = useState<number | undefined>(
     typeof externalFacilityId === 'number' ? externalFacilityId : 
-    (typeof externalFacilityId === 'string' && externalFacilityId !== '' ? 
+    (typeof externalFacilityId === 'string' && externalFacilityId !== '' && externalFacilityId !== 'all' ? 
       parseInt(externalFacilityId, 10) : undefined)
   );
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -60,8 +61,12 @@ const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({
     });
 
     // If we have external state management, update that too
-    if (setExternalFacilityId && localFacilityId !== undefined) {
-      setExternalFacilityId(localFacilityId.toString());
+    if (setExternalFacilityId) {
+      if (localFacilityId !== undefined) {
+        setExternalFacilityId(localFacilityId.toString());
+      } else {
+        setExternalFacilityId('all');
+      }
     }
   };
   
@@ -78,13 +83,13 @@ const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({
 
     // If we have external state management, update that too
     if (setExternalFacilityId) {
-      setExternalFacilityId('');
+      setExternalFacilityId('all');
     }
   };
 
   // Handle facility selection
   const handleFacilityChange = (value: string) => {
-    const numValue = value ? Number(value) : undefined;
+    const numValue = value === 'all' ? undefined : Number(value);
     setLocalFacilityId(numValue);
     
     // If we have external state management, update that too
@@ -101,14 +106,14 @@ const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({
         <div className="space-y-2">
           <Label htmlFor="facility">Facility</Label>
           <Select
-            value={localFacilityId?.toString() || ""}
+            value={localFacilityId !== undefined ? localFacilityId.toString() : 'all'}
             onValueChange={handleFacilityChange}
           >
             <SelectTrigger id="facility">
               <SelectValue placeholder="All Facilities" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Facilities</SelectItem>
+              <SelectItem value="all">All Facilities</SelectItem>
               {facilities?.map((facility) => (
                 <SelectItem key={facility.id} value={facility.id.toString()}>
                   {facility.name}
