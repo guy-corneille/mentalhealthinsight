@@ -361,14 +361,10 @@ const reportService = {
     try {
       console.log("Fetching audit statistics with filters:", filters);
       
-      // In a real implementation, this would call a different endpoint
-      // For now, we'll mock it using our mock generator
-      // return await api.get<AssessmentStatistics>('/api/reports/audit-statistics/', { 
-      //  params: filters
-      // });
-      
-      // Since we don't have a real endpoint yet, return mock data
-      return generateMockAuditStatistics(filters);
+      // Use the real API endpoint
+      return await api.get<AssessmentStatistics>('/api/reports/audit-statistics/', { 
+        params: filters
+      });
     } catch (error) {
       console.error('Error fetching audit statistics from API:', error);
       console.log('Falling back to mock data due to API error');
