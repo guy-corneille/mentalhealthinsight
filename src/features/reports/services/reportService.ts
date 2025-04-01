@@ -132,6 +132,7 @@ const reportService = {
       if (filters?.startDate) params.append('start_date', filters.startDate);
       if (filters?.endDate) params.append('end_date', filters.endDate);
       if (filters?.facilityId) params.append('facility', filters.facilityId);
+      // Don't include criteria_id as it's not needed in this context
       
       const response = await api.get<AssessmentStatistics>('/api/reports/audit-statistics/', { params });
       

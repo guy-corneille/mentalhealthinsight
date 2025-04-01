@@ -6,15 +6,17 @@ import { Spinner } from '@/components/ui/spinner';
 import AssessmentReports from '@/components/reports/AssessmentReports';
 import AuditReports from '@/components/reports/AuditReports';
 import { useQuery } from '@tanstack/react-query';
-import reportService, { AssessmentStatistics } from '@/services/reportService';
+import reportService, { AssessmentStatistics } from '@/features/reports/services/reportService';
 import { useToast } from '@/hooks/use-toast';
+import { AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState("assessments");
   const { toast } = useToast();
 
   // Pre-fetch both data sets to make switching tabs faster
-  const { isLoading: isLoadingAssessments } = useQuery({
+  const { isLoading: isLoadingAssessments, error: assessmentError } = useQuery({
     queryKey: ['assessmentReports'],
     queryFn: () => reportService.getAssessmentStatistics(),
     enabled: activeTab === "assessments",
@@ -30,7 +32,7 @@ const Reports: React.FC = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  const { isLoading: isLoadingAudits } = useQuery({
+  const { isLoading: isLoadingAudits, error: auditError } = useQuery({
     queryKey: ['auditReports'],
     queryFn: () => reportService.getAuditStatistics(),
     enabled: activeTab === "audits",
@@ -48,6 +50,9 @@ const Reports: React.FC = () => {
 
   const isLoading = (activeTab === "assessments" && isLoadingAssessments) || 
                     (activeTab === "audits" && isLoadingAudits);
+  
+  const error = (activeTab === "assessments" && assessmentError) ||
+                (activeTab === "audits" && auditError);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -73,6 +78,14 @@ const Reports: React.FC = () => {
             <div className="w-full flex justify-center py-20">
               <Spinner size="lg" />
             </div>
+          ) : error ? (
+            <Alert variant="destructive" className="my-6">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>
+                {error instanceof Error ? error.message : "An unexpected error occurred loading reports"}
+              </AlertDescription>
+            </Alert>
           ) : (
             <>
               <TabsContent value="assessments" className="mt-0">

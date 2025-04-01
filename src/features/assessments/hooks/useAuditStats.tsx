@@ -88,7 +88,7 @@ export function useAuditStats() {
     const scoreByCriteriaData = apiData.scoreByCriteria?.map(item => ({
       name: item.criteriaName,
       value: item.averageScore,
-      color: getRandomColor(item.criteriaId || '')
+      color: getRandomColor(item.criteriaId)
     })) || [];
     
     // Include the date range in the result for use in components
@@ -147,7 +147,7 @@ export function useAuditStats() {
       const filters: ReportFilter = {
         startDate,
         endDate,
-        facilityId: facilityId && facilityId !== 'all' ? facilityId : undefined
+        facilityId: facilityId !== 'all' ? facilityId : undefined
       };
       
       try {
