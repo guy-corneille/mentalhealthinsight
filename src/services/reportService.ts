@@ -7,12 +7,12 @@
  */
 import reportService from '@/features/reports/services/reportService';
 export type { 
+  ReportFilter,
+  AssessmentStatistics,
   AssessmentReportData, 
   CompletionRateData, 
-  DistributionData, 
-  ReportFilter,
-  AssessmentTrendData,
-  AssessmentStatistics
+  DistributionData,
+  AssessmentTrendData
 } from '@/features/reports/services/reportService';
 
 export default reportService;

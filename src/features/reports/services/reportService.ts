@@ -19,7 +19,7 @@ export interface AssessmentStatistics {
     count: number;
   }>;
   countByFacility: Array<{
-    facilityId: string | number;
+    facilityId: string;
     facilityName: string;
     count: number;
   }>;
@@ -29,10 +29,34 @@ export interface AssessmentStatistics {
     discharge: number;
   };
   scoreByCriteria: Array<{
-    criteriaId: string | number;
+    criteriaId: string;
     criteriaName: string;
     averageScore: number;
   }>;
+}
+
+// Additional types needed for exports
+export interface AssessmentReportData {
+  id: string;
+  title: string;
+  date: string;
+  type: string;
+  data: any;
+}
+
+export interface CompletionRateData {
+  period: string;
+  rate: number;
+}
+
+export interface DistributionData {
+  name: string;
+  value: number;
+}
+
+export interface AssessmentTrendData {
+  period: string;
+  count: number;
 }
 
 /**
@@ -60,7 +84,7 @@ const reportService = {
    * @param filters Optional filters for the statistics
    * @returns Promise with assessment statistics
    */
-  getAssessmentStatistics: async (filters?: ReportFilter) => {
+  getAssessmentStatistics: async (filters?: ReportFilter): Promise<AssessmentStatistics> => {
     try {
       console.log('reportService: Fetching assessment statistics with filters:', filters);
       
@@ -73,7 +97,7 @@ const reportService = {
       if (filters?.criteriaId) params.append('criteria', String(filters.criteriaId));
       if (filters?.status) params.append('status', filters.status);
       
-      const response = await api.get('/api/reports/assessment-statistics/', { params });
+      const response = await api.get<AssessmentStatistics>('/api/reports/assessment-statistics/', { params });
       return response;
     } catch (error) {
       console.error('reportService: Error fetching assessment statistics from API:', error);
@@ -86,7 +110,7 @@ const reportService = {
    * @param filters Optional filters for the statistics
    * @returns Promise with audit statistics
    */
-  getAuditStatistics: async (filters?: ReportFilter) => {
+  getAuditStatistics: async (filters?: ReportFilter): Promise<AssessmentStatistics> => {
     try {
       console.log('reportService: Fetching audit statistics with filters:', filters);
       
@@ -96,10 +120,38 @@ const reportService = {
       if (filters?.endDate) params.append('end_date', filters.endDate);
       if (filters?.facilityId) params.append('facility', String(filters.facilityId));
       
-      const response = await api.get('/api/reports/audit-statistics/', { params });
+      const response = await api.get<AssessmentStatistics>('/api/reports/audit-statistics/', { params });
       return response;
     } catch (error) {
       console.error('reportService: Error fetching audit statistics from API:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get assessment reports
+   * @returns Promise with assessment reports list
+   */
+  getAssessmentReports: async () => {
+    try {
+      const response = await api.get('/api/reports/assessments/');
+      return response;
+    } catch (error) {
+      console.error('reportService: Error fetching assessment reports:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get audit reports
+   * @returns Promise with audit reports list
+   */
+  getAuditReports: async () => {
+    try {
+      const response = await api.get('/api/reports/audits/');
+      return response;
+    } catch (error) {
+      console.error('reportService: Error fetching audit reports:', error);
       throw error;
     }
   },

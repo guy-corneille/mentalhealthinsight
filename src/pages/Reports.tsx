@@ -16,7 +16,7 @@ const Reports: React.FC = () => {
   // Pre-fetch both data sets to make switching tabs faster
   const { isLoading: isLoadingAssessments } = useQuery({
     queryKey: ['assessmentReports'],
-    queryFn: () => reportService.getAssessmentReports(),
+    queryFn: () => reportService.getAssessmentStatistics(),
     enabled: activeTab === "assessments",
     meta: {
       onError: (error: Error) => {
@@ -32,7 +32,7 @@ const Reports: React.FC = () => {
 
   const { isLoading: isLoadingAudits } = useQuery({
     queryKey: ['auditReports'],
-    queryFn: () => reportService.getAuditReports(),
+    queryFn: () => reportService.getAuditStatistics(),
     enabled: activeTab === "audits",
     meta: {
       onError: (error: Error) => {
