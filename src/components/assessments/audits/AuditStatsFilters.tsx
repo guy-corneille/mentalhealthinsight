@@ -28,25 +28,44 @@ export interface AuditStatsFiltersProps {
     startDate?: string;
     endDate?: string;
   }) => void;
+  // Optional timeRange and facilityId props to support both usage patterns
+  timeRange?: string;
+  setTimeRange?: (value: string) => void;
+  facilityId?: number | string;
+  setFacilityId?: (value: number | string) => void;
 }
 
-const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({ onFilterChange }) => {
-  const [facilityId, setFacilityId] = useState<number | undefined>(undefined);
+const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({ 
+  onFilterChange,
+  timeRange,
+  setTimeRange,
+  facilityId: externalFacilityId,
+  setFacilityId: setExternalFacilityId
+}) => {
+  const [localFacilityId, setLocalFacilityId] = useState<number | undefined>(
+    typeof externalFacilityId === 'number' ? externalFacilityId : undefined
+  );
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   
   const { data: facilities } = useFacilities();
   
   const handleApplyFilters = () => {
+    // Call onFilterChange with the current filter values
     onFilterChange({
-      facilityId: facilityId,
+      facilityId: localFacilityId,
       startDate: startDate ? format(startDate, 'yyyy-MM-dd') : undefined,
       endDate: endDate ? format(endDate, 'yyyy-MM-dd') : undefined,
     });
+
+    // If we have external state management, update that too
+    if (setExternalFacilityId && typeof localFacilityId === 'number') {
+      setExternalFacilityId(localFacilityId);
+    }
   };
   
   const handleResetFilters = () => {
-    setFacilityId(undefined);
+    setLocalFacilityId(undefined);
     setStartDate(undefined);
     setEndDate(undefined);
     
@@ -55,6 +74,22 @@ const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({ onFilterChange })
       startDate: undefined,
       endDate: undefined,
     });
+
+    // If we have external state management, update that too
+    if (setExternalFacilityId) {
+      setExternalFacilityId('');
+    }
+  };
+
+  // Handle facility selection
+  const handleFacilityChange = (value: string) => {
+    const numValue = value ? Number(value) : undefined;
+    setLocalFacilityId(numValue);
+    
+    // If we have external state management, update that too
+    if (setExternalFacilityId) {
+      setExternalFacilityId(value);
+    }
   };
 
   return (
@@ -65,8 +100,8 @@ const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({ onFilterChange })
         <div className="space-y-2">
           <Label htmlFor="facility">Facility</Label>
           <Select
-            value={facilityId?.toString() || ""}
-            onValueChange={(value) => setFacilityId(value ? Number(value) : undefined)}
+            value={localFacilityId?.toString() || ""}
+            onValueChange={handleFacilityChange}
           >
             <SelectTrigger id="facility">
               <SelectValue placeholder="All Facilities" />
@@ -82,6 +117,25 @@ const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({ onFilterChange })
           </Select>
         </div>
         
+        {/* Time range selector (for backward compatibility) */}
+        {timeRange !== undefined && setTimeRange && (
+          <div className="space-y-2">
+            <Label htmlFor="timeRange">Time Range</Label>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger id="timeRange">
+                <SelectValue placeholder="Select time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3months">Last 3 Months</SelectItem>
+                <SelectItem value="6months">Last 6 Months</SelectItem>
+                <SelectItem value="12months">Last 12 Months</SelectItem>
+                <SelectItem value="ytd">Year to Date</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        
+        {/* Start date field */}
         <div className="space-y-2">
           <Label htmlFor="startDate">Start Date</Label>
           <Popover>
@@ -109,6 +163,7 @@ const AuditStatsFilters: React.FC<AuditStatsFiltersProps> = ({ onFilterChange })
           </Popover>
         </div>
         
+        {/* End date field */}
         <div className="space-y-2">
           <Label htmlFor="endDate">End Date</Label>
           <Popover>

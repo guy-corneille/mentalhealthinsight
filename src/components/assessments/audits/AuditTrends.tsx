@@ -17,7 +17,10 @@ const AuditTrends: React.FC = () => {
     endDate?: string;
   }) => {
     console.log('Filter changed:', newFilters);
-    setFilters(newFilters);
+    setFilters({
+      ...filters,
+      ...newFilters
+    });
   };
 
   return (

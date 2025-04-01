@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from '@/components/ui/spinner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { useAuditStats } from '@/features/assessments/hooks/useAuditStats';
@@ -20,6 +19,17 @@ const AuditStatsOverview: React.FC = () => {
     error,
     chartData
   } = useAuditStats();
+
+  const handleFilterChange = (filters: {
+    facilityId?: number;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    // We'll just use the facilityId from the filters in this component
+    if (filters.facilityId !== undefined && setFacilityId) {
+      setFacilityId(filters.facilityId.toString());
+    }
+  };
 
   if (isLoading) {
     return (
@@ -52,6 +62,7 @@ const AuditStatsOverview: React.FC = () => {
   return (
     <div className="space-y-6">
       <AuditStatsFilters
+        onFilterChange={handleFilterChange}
         timeRange={timeRange}
         setTimeRange={setTimeRange}
         facilityId={facilityId}

@@ -19,6 +19,17 @@ const AuditStatsDetails: React.FC = () => {
     chartData
   } = useAuditStats();
 
+  const handleFilterChange = (filters: {
+    facilityId?: number;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    // We'll just use the facilityId from the filters in this component
+    if (filters.facilityId !== undefined && setFacilityId) {
+      setFacilityId(filters.facilityId.toString());
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -73,6 +84,7 @@ const AuditStatsDetails: React.FC = () => {
   return (
     <div className="space-y-6">
       <AuditStatsFilters
+        onFilterChange={handleFilterChange}
         timeRange={timeRange}
         setTimeRange={setTimeRange}
         facilityId={facilityId}
