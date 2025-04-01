@@ -63,7 +63,7 @@ def audit_statistics(request):
             try:
                 facility = Facility.objects.get(id=facility_id)
                 count_by_facility.append({
-                    "facilityId": str(facility_id),  # Convert to string to ensure consistent type
+                    "facilityId": str(facility_id),  # Convert to string for consistency
                     "facilityName": facility.name,
                     "count": fc['count']
                 })
@@ -85,8 +85,9 @@ def audit_statistics(request):
         covered_criteria = AuditCriteria.objects.filter(audit__in=audits).values('criteria_name').distinct().count()
         coverage = int((covered_criteria / total_criteria) * 100) if total_criteria > 0 else 70
         
-        # Calculate scores by criteria
+        # Calculate scores by criteria - use criteria_name, not criteria
         criteria_scores = []
+        # Ensure we're using only fields that exist in the model
         audit_criteria = AuditCriteria.objects.filter(audit__in=audits).values('criteria_name').annotate(
             avg_score=Avg('score')
         )
@@ -95,7 +96,7 @@ def audit_statistics(request):
             criteria_name = ac['criteria_name']
             if criteria_name is not None:
                 criteria_scores.append({
-                    "criteriaId": str(criteria_name),  # Convert to string to match expected type
+                    "criteriaId": str(criteria_name),  # Convert to string for consistency
                     "criteriaName": criteria_name,
                     "averageScore": round(ac['avg_score'], 1) if ac['avg_score'] else 0
                 })
@@ -114,4 +115,10 @@ def audit_statistics(request):
         return Response(statistics, status=status.HTTP_200_OK)
         
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Add more detailed error info for debugging
+        import traceback
+        error_details = {
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+        return Response(error_details, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

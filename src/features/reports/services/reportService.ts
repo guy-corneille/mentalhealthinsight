@@ -94,11 +94,12 @@ const reportService = {
       if (filters?.endDate) params.append('end_date', filters.endDate);
       if (filters?.facilityId) params.append('facility', String(filters.facilityId));
       if (filters?.patientId) params.append('patient', String(filters.patientId));
-      if (filters?.criteriaId) params.append('criteria', String(filters.criteriaId));
       if (filters?.status) params.append('status', filters.status);
+      // Don't use criteria as a filter parameter - it doesn't exist in the model
+      // if (filters?.criteriaId) params.append('criteria', String(filters.criteriaId));
       
       const response = await api.get<AssessmentStatistics>('/api/reports/assessment-statistics/', { params });
-      return response;
+      return response as AssessmentStatistics;
     } catch (error) {
       console.error('reportService: Error fetching assessment statistics from API:', error);
       throw error;
@@ -119,9 +120,11 @@ const reportService = {
       if (filters?.startDate) params.append('start_date', filters.startDate);
       if (filters?.endDate) params.append('end_date', filters.endDate);
       if (filters?.facilityId) params.append('facility', String(filters.facilityId));
+      // Don't use criteria as a filter parameter - it doesn't exist in the model
+      // if (filters?.criteriaId) params.append('criteria', String(filters.criteriaId));
       
       const response = await api.get<AssessmentStatistics>('/api/reports/audit-statistics/', { params });
-      return response;
+      return response as AssessmentStatistics;
     } catch (error) {
       console.error('reportService: Error fetching audit statistics from API:', error);
       throw error;
@@ -132,9 +135,9 @@ const reportService = {
    * Get assessment reports
    * @returns Promise with assessment reports list
    */
-  getAssessmentReports: async () => {
+  getAssessmentReports: async (): Promise<AssessmentReportData[]> => {
     try {
-      const response = await api.get('/api/reports/assessments/');
+      const response = await api.get<AssessmentReportData[]>('/api/reports/assessments/');
       return response;
     } catch (error) {
       console.error('reportService: Error fetching assessment reports:', error);
@@ -146,9 +149,9 @@ const reportService = {
    * Get audit reports
    * @returns Promise with audit reports list
    */
-  getAuditReports: async () => {
+  getAuditReports: async (): Promise<AssessmentReportData[]> => {
     try {
-      const response = await api.get('/api/reports/audits/');
+      const response = await api.get<AssessmentReportData[]>('/api/reports/audits/');
       return response;
     } catch (error) {
       console.error('reportService: Error fetching audit reports:', error);

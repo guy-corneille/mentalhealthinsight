@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/spinner';
 import AssessmentReports from '@/components/reports/AssessmentReports';
 import AuditReports from '@/components/reports/AuditReports';
 import { useQuery } from '@tanstack/react-query';
-import reportService from '@/services/reportService';
+import reportService, { AssessmentStatistics } from '@/services/reportService';
 import { useToast } from '@/hooks/use-toast';
 
 const Reports: React.FC = () => {
