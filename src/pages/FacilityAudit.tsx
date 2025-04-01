@@ -63,7 +63,7 @@ const FacilityAudit: React.FC = () => {
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">New Audit: {facility?.name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Facility Audit: {facility?.name}</h1>
         </div>
         
         <div className="p-6 border rounded-lg bg-card">

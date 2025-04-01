@@ -35,8 +35,8 @@ interface AuditFormProps {
   facilityName: string;
 }
 
-// Define the rating types to match assessments
-type Rating = "good" | "limited" | "poor" | "not-applicable" | "not-rated";
+// Updated rating types to match the requirements
+type Rating = "pass" | "good" | "partial" | "limited" | "fail" | "not-applicable" | "not-rated";
 
 // Define the audit criterion structure
 interface AuditCriterion {
@@ -189,13 +189,15 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
 
   const categories = ["Infrastructure & Safety", "Staffing & Training", "Treatment & Care", "Rights & Dignity"];
 
-  // Rating utilities with simplified options matching assessment style
+  // Updated rating utilities to match new rating options
   const getRatingValue = (rating: Rating): number => {
     switch (rating) {
-      case "good": return 1;
-      case "limited": return 0.5;
-      case "poor": return 0;
-      case "not-applicable": return 0;
+      case "pass": return 1.0;   // 100%
+      case "good": return 0.75;  // 75%
+      case "partial": return 0.5; // 50%
+      case "limited": return 0.25; // 25%
+      case "fail": return 0;     // 0%
+      case "not-applicable": return 0; // N/A
       default: return 0;
     }
   };
@@ -334,6 +336,21 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
   const stepCompletion = getStepCompletionRate();
   const overallScore = calculateScore();
 
+  // Get appropriate class for button based on rating
+  const getRatingButtonClass = (currentRating: Rating, buttonRating: Rating) => {
+    if (currentRating !== buttonRating) return "";
+    
+    switch (buttonRating) {
+      case "pass": return "bg-emerald-600 hover:bg-emerald-700";
+      case "good": return "bg-green-600 hover:bg-green-700";
+      case "partial": return "bg-amber-600 hover:bg-amber-700";
+      case "limited": return "bg-orange-600 hover:bg-orange-700";
+      case "fail": return "bg-rose-600 hover:bg-rose-700";
+      case "not-applicable": return "bg-slate-600 hover:bg-slate-700";
+      default: return "";
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Progress indicator */}
@@ -400,32 +417,48 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
               <div className="flex flex-col space-y-4">
                 <div className="flex flex-wrap gap-2">
                   <Button
+                    variant={ratings[criterion.id]?.rating === "pass" ? "default" : "outline"}
+                    className={getRatingButtonClass(ratings[criterion.id]?.rating || "not-rated", "pass")}
+                    onClick={() => handleRatingChange(criterion.id, "pass")}
+                  >
+                    <CheckCircleIcon className="h-4 w-4 mr-2" />
+                    Pass (100%)
+                  </Button>
+                  <Button
                     variant={ratings[criterion.id]?.rating === "good" ? "default" : "outline"}
-                    className={ratings[criterion.id]?.rating === "good" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                    className={getRatingButtonClass(ratings[criterion.id]?.rating || "not-rated", "good")}
                     onClick={() => handleRatingChange(criterion.id, "good")}
                   >
                     <CheckCircleIcon className="h-4 w-4 mr-2" />
-                    Good
+                    Good (75%)
+                  </Button>
+                  <Button
+                    variant={ratings[criterion.id]?.rating === "partial" ? "default" : "outline"}
+                    className={getRatingButtonClass(ratings[criterion.id]?.rating || "not-rated", "partial")}
+                    onClick={() => handleRatingChange(criterion.id, "partial")}
+                  >
+                    <AlertCircleIcon className="h-4 w-4 mr-2" />
+                    Partial (50%)
                   </Button>
                   <Button
                     variant={ratings[criterion.id]?.rating === "limited" ? "default" : "outline"}
-                    className={ratings[criterion.id]?.rating === "limited" ? "bg-amber-600 hover:bg-amber-700" : ""}
+                    className={getRatingButtonClass(ratings[criterion.id]?.rating || "not-rated", "limited")}
                     onClick={() => handleRatingChange(criterion.id, "limited")}
                   >
                     <AlertCircleIcon className="h-4 w-4 mr-2" />
-                    Limited
+                    Limited (25%)
                   </Button>
                   <Button
-                    variant={ratings[criterion.id]?.rating === "poor" ? "default" : "outline"}
-                    className={ratings[criterion.id]?.rating === "poor" ? "bg-rose-600 hover:bg-rose-700" : ""}
-                    onClick={() => handleRatingChange(criterion.id, "poor")}
+                    variant={ratings[criterion.id]?.rating === "fail" ? "default" : "outline"}
+                    className={getRatingButtonClass(ratings[criterion.id]?.rating || "not-rated", "fail")}
+                    onClick={() => handleRatingChange(criterion.id, "fail")}
                   >
                     <XCircleIcon className="h-4 w-4 mr-2" />
-                    Poor
+                    Fail (0%)
                   </Button>
                   <Button
                     variant={ratings[criterion.id]?.rating === "not-applicable" ? "default" : "outline"}
-                    className={ratings[criterion.id]?.rating === "not-applicable" ? "bg-slate-600 hover:bg-slate-700" : ""}
+                    className={getRatingButtonClass(ratings[criterion.id]?.rating || "not-rated", "not-applicable")}
                     onClick={() => handleRatingChange(criterion.id, "not-applicable")}
                   >
                     <XCircleIcon className="h-4 w-4 mr-2" />

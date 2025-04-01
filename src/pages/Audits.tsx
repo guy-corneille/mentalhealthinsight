@@ -44,7 +44,7 @@ const Audits: React.FC = () => {
             onClick={() => setIsNewAuditDialogOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Audit
+            Start Audit
           </Button>
         </div>
         

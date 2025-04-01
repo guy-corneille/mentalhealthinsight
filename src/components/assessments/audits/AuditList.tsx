@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -55,14 +56,15 @@ const AuditList: React.FC = () => {
       setLoading(true);
       try {
         console.log('Fetching audits from API endpoint: /api/audits/');
-        const response = await api.get<ApiResponse>('/api/audits/');
+        // We need to get ALL audits, not just paginated ones
+        const response = await api.get<ApiResponse | AuditData[]>('/api/audits/');
         console.log('Audit data received:', response);
         
-        if (response && response.results) {
+        if (response && 'results' in response && Array.isArray(response.results)) {
           setAudits(response.results);
           console.log('Got paginated audit results:', response.results);
         } else if (Array.isArray(response)) {
-          setAudits(response as AuditData[]);
+          setAudits(response);
           console.log('Got direct audit array:', response);
         } else {
           console.error('Unexpected API response format:', response);

@@ -1,37 +1,32 @@
 
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AuditStatsOverview from './AuditStatsOverview';
-import AuditStatsDetails from './AuditStatsDetails';
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import AuditStatisticsDisplay from './AuditStatisticsDisplay';
+import AuditStatsFilters from './AuditStatsFilters';
 
 const AuditTrends: React.FC = () => {
+  const [filters, setFilters] = useState({
+    facilityId: undefined as number | undefined,
+    startDate: undefined as string | undefined,
+    endDate: undefined as string | undefined,
+  });
+
+  const handleFilterChange = (newFilters: any) => {
+    console.log('Filter changed:', newFilters);
+    setFilters(newFilters);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Audit Analytics</h2>
-          <p className="text-muted-foreground">
-            Comprehensive view of audit statistics and trends
-          </p>
-        </div>
-      </div>
+      <Card className="p-4">
+        <AuditStatsFilters onFilterChange={handleFilterChange} />
+      </Card>
       
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full sm:w-auto grid-cols-2">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="trends">Detailed Trends</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="pt-6">
-          <AuditStatsOverview />
-        </TabsContent>
-        
-        <TabsContent value="trends" className="pt-6">
-          <div className="animate-fade-in">
-            <AuditStatsDetails />
-          </div>
-        </TabsContent>
-      </Tabs>
+      <AuditStatisticsDisplay 
+        facilityId={filters.facilityId}
+        startDate={filters.startDate}
+        endDate={filters.endDate}
+      />
     </div>
   );
 };

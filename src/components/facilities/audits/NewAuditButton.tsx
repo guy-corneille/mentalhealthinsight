@@ -6,10 +6,11 @@ import { useNavigate } from 'react-router-dom';
 
 interface NewAuditButtonProps {
   facilityId: number;
-  facilityName: string;
+  facilityName?: string;
+  className?: string;
 }
 
-const NewAuditButton: React.FC<NewAuditButtonProps> = ({ facilityId, facilityName }) => {
+const NewAuditButton: React.FC<NewAuditButtonProps> = ({ facilityId, facilityName, className }) => {
   const navigate = useNavigate();
   
   const handleClick = () => {
@@ -19,11 +20,11 @@ const NewAuditButton: React.FC<NewAuditButtonProps> = ({ facilityId, facilityNam
   
   return (
     <Button 
-      className="bg-healthiq-600 hover:bg-healthiq-700" 
+      className={`bg-healthiq-600 hover:bg-healthiq-700 ${className || ''}`} 
       onClick={handleClick}
     >
       <ClipboardIcon className="h-4 w-4 mr-2" />
-      New Audit
+      Start Audit
     </Button>
   );
 };
