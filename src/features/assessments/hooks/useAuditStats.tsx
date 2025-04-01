@@ -1,3 +1,4 @@
+
 /**
  * Audit Statistics Hook
  * 
@@ -90,11 +91,15 @@ export function useAuditStats() {
       color: getRandomColor(item.criteriaId)
     })) || [];
     
+    // Include the date range in the result for use in components
+    const dateRange = getDateRange();
+    
     const result = {
       countByPeriodData,
       facilityData,
       typeData,
       scoreByCriteriaData,
+      dateRange,
       summary: {
         totalCount: apiData.totalCount,
         averageScore: apiData.averageScore || 0,
@@ -106,7 +111,7 @@ export function useAuditStats() {
     
     console.log("useAuditStats - Formatted chart data:", result);
     return result;
-  }, []);
+  }, [getDateRange]);
   
   // Helper functions
   const getMostCommonType = (countByType: { initial: number, followup: number, discharge: number }) => {

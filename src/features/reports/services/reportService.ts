@@ -1,4 +1,3 @@
-
 /**
  * Report Service
  * 
@@ -362,7 +361,7 @@ const reportService = {
       return generateMockStatistics(filters);
     }
   },
-
+  
   // Get audit statistics
   getAuditStatistics: async (filters: ReportFilter = {}) => {
     try {

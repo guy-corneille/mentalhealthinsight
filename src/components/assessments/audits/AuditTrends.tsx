@@ -1,38 +1,34 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
+import { useAuditStats } from '@/features/assessments/hooks/useAuditStats';
 import AuditStatisticsDisplay from './AuditStatisticsDisplay';
 import AuditStatsFilters from './AuditStatsFilters';
 
 const AuditTrends: React.FC = () => {
-  const [filters, setFilters] = useState({
-    facilityId: undefined as number | undefined,
-    startDate: undefined as string | undefined,
-    endDate: undefined as string | undefined,
-  });
-
-  const handleFilterChange = (newFilters: {
-    facilityId?: number;
-    startDate?: string;
-    endDate?: string;
-  }) => {
-    console.log('Filter changed:', newFilters);
-    setFilters({
-      ...filters,
-      ...newFilters
-    });
-  };
+  const { 
+    timeRange,
+    setTimeRange,
+    facilityId,
+    setFacilityId,
+    chartData
+  } = useAuditStats();
 
   return (
     <div className="space-y-6">
       <Card className="p-4">
-        <AuditStatsFilters onFilterChange={handleFilterChange} />
+        <AuditStatsFilters 
+          timeRange={timeRange}
+          setTimeRange={setTimeRange}
+          facilityId={facilityId}
+          setFacilityId={setFacilityId}
+        />
       </Card>
       
       <AuditStatisticsDisplay 
-        facilityId={filters.facilityId}
-        startDate={filters.startDate}
-        endDate={filters.endDate}
+        facilityId={facilityId !== 'all' ? parseInt(facilityId, 10) : undefined}
+        startDate={chartData?.dateRange?.startDate}
+        endDate={chartData?.dateRange?.endDate}
       />
     </div>
   );

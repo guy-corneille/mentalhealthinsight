@@ -10,7 +10,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
   ResponsiveContainer, PieChart, Pie, Cell, Legend 
 } from 'recharts';
-import api from '@/services/api';
+import reportService, { type AssessmentStatistics } from '@/features/reports/services/reportService';
 
 interface AuditStatisticsProps {
   facilityId?: number;
@@ -18,35 +18,28 @@ interface AuditStatisticsProps {
   endDate?: string;
 }
 
-interface AuditStatistic {
-  totalCount: number;
-  countByFacility: { facilityId: string; facilityName: string; count: number }[];
-  countByType: { [key: string]: number };
-  countByPeriod: { period: string; count: number }[];
-  averageScore: number;
-  patientCoverage: number;
-  scoreByCriteria: { criteriaId: string; criteriaName: string; averageScore: number }[];
-}
-
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 const AuditStatisticsDisplay: React.FC<AuditStatisticsProps> = ({ facilityId, startDate, endDate }) => {
-  const { data, isLoading, error } = useQuery({
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ['auditStatistics', facilityId, startDate, endDate],
     queryFn: async () => {
-      // Construct query string based on provided filters
-      const params = new URLSearchParams();
-      if (facilityId) params.append('facilityId', facilityId.toString());
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
+      console.log(`Fetching audit statistics with filters: facilityId=${facilityId}, startDate=${startDate}, endDate=${endDate}`);
       
-      const queryString = params.toString() ? `?${params.toString()}` : '';
-      console.log(`Fetching audit statistics with filters: ${queryString}`);
+      const filters = {
+        facilityId: facilityId?.toString(),
+        startDate,
+        endDate
+      };
       
-      const response = await api.get<AuditStatistic>(`/api/reports/audit-statistics/${queryString}`);
-      console.log('Audit statistics response:', response);
-      return response;
-    }
+      try {
+        return await reportService.getAuditStatistics(filters);
+      } catch (error) {
+        console.error('Error fetching audit statistics:', error);
+        throw error;
+      }
+    },
+    refetchOnWindowFocus: false
   });
 
   if (isLoading) {
@@ -73,15 +66,13 @@ const AuditStatisticsDisplay: React.FC<AuditStatisticsProps> = ({ facilityId, st
     );
   }
 
-  if (!data) {
+  if (!stats) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         No audit data available for the selected filters.
       </div>
     );
   }
-
-  const stats = data;
 
   return (
     <div className="space-y-6">
