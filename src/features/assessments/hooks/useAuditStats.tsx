@@ -129,6 +129,11 @@ export function useAuditStats() {
   };
   
   const getRandomColor = (id: string) => {
+    // Make sure id is not undefined or null
+    if (!id) {
+      return '#6366f1'; // Default color
+    }
+    
     const colors = ['#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#ec4899', '#f43f5e'];
     const index = parseInt(id, 10) % colors.length;
     return colors[index >= 0 ? index : 0];
