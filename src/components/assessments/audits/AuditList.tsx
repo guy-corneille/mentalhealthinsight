@@ -18,11 +18,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, FileEdit, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Eye, FileEdit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
-import PaginationControls from '@/components/common/PaginationControls';
 
 interface AuditData {
   id: number;
@@ -49,9 +48,6 @@ const AuditList: React.FC = () => {
   const [audits, setAudits] = useState<AuditData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [totalAudits, setTotalAudits] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -59,22 +55,16 @@ const AuditList: React.FC = () => {
     const fetchAudits = async () => {
       setLoading(true);
       try {
-        console.log(`Fetching audits from API endpoint: /api/audits/?page=${currentPage}&page_size=${pageSize}`);
-        const response = await api.get<ApiResponse | AuditData[]>('/api/audits/', {
-          params: {
-            page: currentPage,
-            page_size: pageSize
-          }
-        });
+        console.log('Fetching audits from API endpoint: /api/audits/');
+        // We need to get ALL audits, not just paginated ones
+        const response = await api.get<ApiResponse | AuditData[]>('/api/audits/');
         console.log('Audit data received:', response);
         
         if (response && 'results' in response && Array.isArray(response.results)) {
           setAudits(response.results);
-          setTotalAudits(response.count || 0);
           console.log('Got paginated audit results:', response.results);
         } else if (Array.isArray(response)) {
           setAudits(response);
-          setTotalAudits(response.length);
           console.log('Got direct audit array:', response);
         } else {
           console.error('Unexpected API response format:', response);
@@ -95,16 +85,7 @@ const AuditList: React.FC = () => {
     };
 
     fetchAudits();
-  }, [toast, currentPage, pageSize]);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size);
-    setCurrentPage(1); // Reset to first page when changing page size
-  };
+  }, [toast]);
 
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this audit?')) {
@@ -244,18 +225,6 @@ const AuditList: React.FC = () => {
           ))}
         </TableBody>
       </Table>
-      
-      {totalAudits > pageSize && (
-        <div className="mt-4 flex justify-center">
-          <PaginationControls 
-            currentPage={currentPage}
-            totalItems={totalAudits}
-            pageSize={pageSize}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-          />
-        </div>
-      )}
     </div>
   );
 };
