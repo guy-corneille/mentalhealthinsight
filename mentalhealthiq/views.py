@@ -1,3 +1,4 @@
+
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -62,7 +63,7 @@ def audit_statistics(request):
             try:
                 facility = Facility.objects.get(id=facility_id)
                 count_by_facility.append({
-                    "facilityId": facility_id,
+                    "facilityId": str(facility_id),  # Convert to string to ensure consistent type
                     "facilityName": facility.name,
                     "count": fc['count']
                 })
@@ -94,7 +95,7 @@ def audit_statistics(request):
             criteria_name = ac['criteria_name']
             if criteria_name is not None:
                 criteria_scores.append({
-                    "criteriaId": criteria_name,
+                    "criteriaId": str(criteria_name),  # Convert to string to match expected type
                     "criteriaName": criteria_name,
                     "averageScore": round(ac['avg_score'], 1) if ac['avg_score'] else 0
                 })
