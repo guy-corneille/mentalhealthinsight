@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,7 +26,7 @@ const Audits: React.FC = () => {
     navigate(`/facilities/audit/${facilityId}`);
     setIsNewAuditDialogOpen(false);
   };
-
+  
   return (
     <Layout>
       <div className="space-y-6">

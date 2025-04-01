@@ -1,9 +1,5 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Spinner } from '@/components/ui/spinner';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import AssessmentStats from './AssessmentStats';
 
 const AssessmentTrends: React.FC = () => {
@@ -18,22 +14,9 @@ const AssessmentTrends: React.FC = () => {
         </div>
       </div>
       
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full sm:w-auto grid-cols-2">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="trends">Detailed Trends</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="pt-6">
-          <AssessmentStats />
-        </TabsContent>
-        
-        <TabsContent value="trends" className="pt-6">
-          <div className="animate-fade-in">
-            <AssessmentStats />
-          </div>
-        </TabsContent>
-      </Tabs>
+      <div className="animate-fade-in">
+        <AssessmentStats />
+      </div>
     </div>
   );
 };
