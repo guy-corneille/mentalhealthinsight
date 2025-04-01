@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -37,6 +36,13 @@ interface AuditData {
   updated_at: string;
 }
 
+interface ApiResponse {
+  results?: AuditData[];
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
+}
+
 const AuditList: React.FC = () => {
   const [audits, setAudits] = useState<AuditData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,14 +55,19 @@ const AuditList: React.FC = () => {
       setLoading(true);
       try {
         console.log('Fetching audits from API endpoint: /api/audits/');
-        const response = await api.get('/api/audits/');
+        const response = await api.get<ApiResponse>('/api/audits/');
         console.log('Audit data received:', response);
         
         if (response && response.results) {
           setAudits(response.results);
-        } else {
-          setAudits(response);
+          console.log('Got paginated audit results:', response.results);
+        } else if (Array.isArray(response)) {
+          setAudits(response as AuditData[]);
           console.log('Got direct audit array:', response);
+        } else {
+          console.error('Unexpected API response format:', response);
+          setError('Received unexpected data format from API');
+          setAudits([]);
         }
       } catch (err) {
         console.error('Error fetching audits:', err);
