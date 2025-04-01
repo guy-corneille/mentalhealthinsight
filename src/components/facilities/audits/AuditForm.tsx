@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   CheckCircleIcon, 
@@ -16,7 +15,6 @@ import {
   Card, 
   CardContent, 
   CardDescription, 
-  CardFooter, 
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
@@ -29,6 +27,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import api from '@/services/api';
+import { Rating, getRatingValue } from '@/utils/ratingUtils';
 
 interface AuditFormProps {
   facilityId: number;
@@ -43,9 +43,6 @@ interface AuditCriterion {
   guidance: string;
   weight: number;
 }
-
-// Define the rating type
-type Rating = "pass" | "fail" | "partial" | "not-rated";
 
 // Map of criteria IDs to their ratings
 type CriteriaRatings = Record<string, {
@@ -193,7 +190,9 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
   const getRatingValue = (rating: Rating): number => {
     switch (rating) {
       case "pass": return 1;
+      case "high-partial": return 0.8;
       case "partial": return 0.5;
+      case "low-partial": return 0.3;
       case "fail": return 0;
       default: return 0;
     }
@@ -219,7 +218,11 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
     let totalWeight = 0;
     
     auditCriteria.flat().forEach(criterion => {
-      if (ratings[criterion.id]?.rating && ratings[criterion.id].rating !== "not-rated") {
+      if (ratings[criterion.id]?.rating) {
+        if (ratings[criterion.id].rating === "not-applicable") {
+          return;
+        }
+        
         totalScore += getRatingValue(ratings[criterion.id].rating) * criterion.weight;
         totalWeight += criterion.weight;
       }
@@ -230,6 +233,7 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
 
   // Handler for rating a criterion
   const handleRatingChange = (criterionId: string, rating: Rating) => {
+    console.log(`Rating changed for criterion ${criterionId} to ${rating}`);
     setRatings(prev => ({
       ...prev,
       [criterionId]: {
@@ -251,28 +255,50 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
   };
 
   // Handler for submitting the audit
-  const handleSubmitAudit = () => {
+  const handleSubmitAudit = async () => {
+    console.log("Submitting audit with ratings:", ratings);
     setLoading(true);
     
-    // In a real app, this would send data to an API
-    setTimeout(() => {
+    try {
       const score = calculateScore();
+      
+      const auditData = {
+        facility: facilityId,
+        score: score,
+        date_performed: new Date().toISOString().split('T')[0],
+        details: JSON.stringify({
+          categories: categories,
+          ratings: ratings,
+          criteria: auditCriteria
+        }),
+        status: "completed"
+      };
+      
+      console.log("Sending audit data to API:", auditData);
+      
+      await api.post('/audits/', auditData);
+      
+      await api.patch(`/facilities/${facilityId}/`, {
+        last_inspection_date: new Date().toISOString().split('T')[0]
+      });
       
       toast({
         title: "Audit Completed",
         description: `Facility audit for ${facilityName} completed with a score of ${score}%.`,
       });
       
+      window.location.href = `/facilities/${facilityId}`;
+      
+    } catch (error) {
+      console.error("Error submitting audit:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem submitting the audit. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setLoading(false);
-      
-      // Close the dialog
-      const closeButton = document.querySelector('[data-dialog-close]');
-      if (closeButton) {
-        (closeButton as HTMLElement).click();
-      }
-      
-      // In a real app, we'd refresh the audit history
-    }, 1500);
+    }
   };
 
   // Navigate to next/previous step
@@ -357,7 +383,7 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col space-y-4">
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant={ratings[criterion.id]?.rating === "pass" ? "default" : "outline"}
                     className={ratings[criterion.id]?.rating === "pass" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
@@ -365,6 +391,14 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
                   >
                     <CheckCircleIcon className="h-4 w-4 mr-2" />
                     Pass
+                  </Button>
+                  <Button
+                    variant={ratings[criterion.id]?.rating === "high-partial" ? "default" : "outline"}
+                    className={ratings[criterion.id]?.rating === "high-partial" ? "bg-lime-600 hover:bg-lime-700" : ""}
+                    onClick={() => handleRatingChange(criterion.id, "high-partial")}
+                  >
+                    <AlertCircleIcon className="h-4 w-4 mr-2" />
+                    High Partial
                   </Button>
                   <Button
                     variant={ratings[criterion.id]?.rating === "partial" ? "default" : "outline"}
@@ -375,12 +409,28 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
                     Partial
                   </Button>
                   <Button
+                    variant={ratings[criterion.id]?.rating === "low-partial" ? "default" : "outline"}
+                    className={ratings[criterion.id]?.rating === "low-partial" ? "bg-orange-600 hover:bg-orange-700" : ""}
+                    onClick={() => handleRatingChange(criterion.id, "low-partial")}
+                  >
+                    <AlertCircleIcon className="h-4 w-4 mr-2" />
+                    Low Partial
+                  </Button>
+                  <Button
                     variant={ratings[criterion.id]?.rating === "fail" ? "default" : "outline"}
                     className={ratings[criterion.id]?.rating === "fail" ? "bg-rose-600 hover:bg-rose-700" : ""}
                     onClick={() => handleRatingChange(criterion.id, "fail")}
                   >
                     <XCircleIcon className="h-4 w-4 mr-2" />
                     Fail
+                  </Button>
+                  <Button
+                    variant={ratings[criterion.id]?.rating === "not-applicable" ? "default" : "outline"}
+                    className={ratings[criterion.id]?.rating === "not-applicable" ? "bg-slate-600 hover:bg-slate-700" : ""}
+                    onClick={() => handleRatingChange(criterion.id, "not-applicable")}
+                  >
+                    <XCircleIcon className="h-4 w-4 mr-2" />
+                    N/A
                   </Button>
                 </div>
                 

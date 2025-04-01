@@ -12,8 +12,32 @@ const FacilityAudit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  // Fetch the facility data instead of using mock data
-  const { data: facility, isLoading } = useFacility(Number(id));
+  console.log("Rendering FacilityAudit page for facility ID:", id);
+  
+  // Fetch the facility data
+  const { data: facility, isLoading, error } = useFacility(Number(id));
+
+  if (error) {
+    console.error("Error fetching facility data:", error);
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center h-full p-6">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">
+            Error loading facility
+          </h2>
+          <p className="text-gray-600 mb-4">
+            There was a problem loading the facility data. Please try again.
+          </p>
+          <Button 
+            variant="outline" 
+            onClick={() => navigate('/facilities')}
+          >
+            Back to Facilities
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -25,6 +49,8 @@ const FacilityAudit: React.FC = () => {
       </Layout>
     );
   }
+
+  console.log("Facility data loaded:", facility);
 
   return (
     <Layout>
