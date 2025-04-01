@@ -158,7 +158,6 @@ const reportService = {
     try {
       console.log("Fetching assessment statistics with filters:", filters);
       
-      // Update the URL path to match the Django URL pattern with explicit url_path
       const response = await api.get<AssessmentStatistics>('/api/reports/assessment-statistics/', { 
         params: filters
       });
@@ -176,7 +175,6 @@ const reportService = {
     try {
       console.log("reportService: Fetching audit statistics with filters:", filters);
       
-      // Use the real API endpoint
       const response = await api.get<AssessmentStatistics>('/api/reports/audit-statistics/', { 
         params: filters
       });
