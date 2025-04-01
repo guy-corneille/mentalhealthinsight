@@ -1,7 +1,7 @@
 
 import React from 'react';
 import StatCard from '@/components/ui/StatCard';
-import { Users, Building2, UserCheck, FileText, ClipboardCheck } from 'lucide-react';
+import { Building2, Users, UserCheck, FileText, ClipboardCheck, TrendingUp } from 'lucide-react';
 import { useFacilities } from '@/services/facilityService';
 import { useStaff } from '@/services/staffService';
 import { usePatients } from '@/services/patientService';
@@ -14,6 +14,7 @@ interface StatsOverviewProps {
   onPatientClick?: () => void;
   onAssessmentClick?: () => void;
   onAuditClick?: () => void;
+  onBenchmarkingClick?: () => void;
 }
 
 const StatsOverview: React.FC<StatsOverviewProps> = ({
@@ -21,7 +22,8 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   onStaffClick,
   onPatientClick,
   onAssessmentClick,
-  onAuditClick
+  onAuditClick,
+  onBenchmarkingClick
 }) => {
   // Fetch real data from our API services
   const { data: facilities, isLoading: facilitiesLoading } = useFacilities();
@@ -42,7 +44,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   const auditCount = auditData?.summary?.totalCount || 0;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
       {/* Facility Card - Real Data */}
       <StatCard
         title="Total Facilities"
@@ -86,6 +88,16 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
         icon={<ClipboardCheck className="h-4 w-4 text-healthiq-600" />}
         description="Total facility audits"
         onClick={onAuditClick}
+      />
+      
+      {/* Benchmarking Card - Coming Soon */}
+      <StatCard
+        title="Benchmarking"
+        value="Coming Soon"
+        icon={<TrendingUp className="h-4 w-4 text-healthiq-600" />}
+        description="Facility performance comparisons"
+        onClick={onBenchmarkingClick}
+        className="bg-gray-50"
       />
     </div>
   );
