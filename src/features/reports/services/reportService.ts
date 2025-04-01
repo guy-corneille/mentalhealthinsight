@@ -4,9 +4,9 @@ import api from '@/services/api';
 export interface ReportFilter {
   startDate?: string;
   endDate?: string;
-  facilityId?: string | number;
-  patientId?: string | number;
-  criteriaId?: string | number;
+  facilityId?: string;
+  patientId?: string;
+  criteriaId?: string;
   status?: string;
 }
 
@@ -92,14 +92,26 @@ const reportService = {
       
       if (filters?.startDate) params.append('start_date', filters.startDate);
       if (filters?.endDate) params.append('end_date', filters.endDate);
-      if (filters?.facilityId) params.append('facility', String(filters.facilityId));
-      if (filters?.patientId) params.append('patient', String(filters.patientId));
+      if (filters?.facilityId) params.append('facility', filters.facilityId);
+      if (filters?.patientId) params.append('patient', filters.patientId);
       if (filters?.status) params.append('status', filters.status);
-      // Don't use criteria as a filter parameter - it doesn't exist in the model
-      // if (filters?.criteriaId) params.append('criteria', String(filters.criteriaId));
       
       const response = await api.get<AssessmentStatistics>('/api/reports/assessment-statistics/', { params });
-      return response as AssessmentStatistics;
+      
+      // Ensure all numeric IDs are converted to strings for type safety
+      const formattedResponse: AssessmentStatistics = {
+        ...response,
+        countByFacility: response.countByFacility.map(facility => ({
+          ...facility,
+          facilityId: String(facility.facilityId)
+        })),
+        scoreByCriteria: response.scoreByCriteria.map(criteria => ({
+          ...criteria,
+          criteriaId: String(criteria.criteriaId)
+        }))
+      };
+      
+      return formattedResponse;
     } catch (error) {
       console.error('reportService: Error fetching assessment statistics from API:', error);
       throw error;
@@ -119,12 +131,24 @@ const reportService = {
       
       if (filters?.startDate) params.append('start_date', filters.startDate);
       if (filters?.endDate) params.append('end_date', filters.endDate);
-      if (filters?.facilityId) params.append('facility', String(filters.facilityId));
-      // Don't use criteria as a filter parameter - it doesn't exist in the model
-      // if (filters?.criteriaId) params.append('criteria', String(filters.criteriaId));
+      if (filters?.facilityId) params.append('facility', filters.facilityId);
       
       const response = await api.get<AssessmentStatistics>('/api/reports/audit-statistics/', { params });
-      return response as AssessmentStatistics;
+      
+      // Ensure all numeric IDs are converted to strings for type safety
+      const formattedResponse: AssessmentStatistics = {
+        ...response,
+        countByFacility: response.countByFacility.map(facility => ({
+          ...facility,
+          facilityId: String(facility.facilityId)
+        })),
+        scoreByCriteria: response.scoreByCriteria.map(criteria => ({
+          ...criteria,
+          criteriaId: String(criteria.criteriaId)
+        }))
+      };
+      
+      return formattedResponse;
     } catch (error) {
       console.error('reportService: Error fetching audit statistics from API:', error);
       throw error;
