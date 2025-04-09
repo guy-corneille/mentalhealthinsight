@@ -19,6 +19,11 @@ interface StatsOverviewProps {
   onBenchmarkingClick?: () => void;
 }
 
+// Add an interface for the audit count response
+interface AuditCountResponse {
+  count: number;
+}
+
 const StatsOverview: React.FC<StatsOverviewProps> = ({
   onFacilityClick,
   onStaffClick,
@@ -52,7 +57,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
         };
         
         // Try to fetch actual data from API
-        const response = await api.get('/api/audits/count/');
+        const response = await api.get<AuditCountResponse>('/api/audits/count/');
         return { count: response.count || 0 };
       } catch (error) {
         console.log('Using fallback audit count');
