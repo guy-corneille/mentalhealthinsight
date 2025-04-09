@@ -7,6 +7,7 @@ import { useStaff } from '@/services/staffService';
 import { usePatients } from '@/services/patientService';
 import { useAssessmentStats } from '@/features/assessments/hooks/useAssessmentStats';
 import { useQuery } from '@tanstack/react-query';
+import api from '@/services/api';
 import reportService from '@/features/reports/services/reportService';
 
 interface StatsOverviewProps {

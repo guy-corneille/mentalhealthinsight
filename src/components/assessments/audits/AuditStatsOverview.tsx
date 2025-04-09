@@ -82,6 +82,19 @@ const AuditStatsOverview: React.FC<AuditStatsOverviewProps> = ({
     document.body.removeChild(link);
   };
 
+  // Handle filter changes
+  const handleFilterChange = (filters: {
+    facilityId?: number;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    if (filters.facilityId !== undefined) {
+      setFacilityId(filters.facilityId.toString());
+    } else {
+      setFacilityId('all');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AuditStatsFilters
@@ -89,6 +102,7 @@ const AuditStatsOverview: React.FC<AuditStatsOverviewProps> = ({
         setTimeRange={setTimeRange}
         facilityId={facilityId}
         setFacilityId={setFacilityId}
+        onFilterChange={handleFilterChange}
       />
 
       <AuditStatsSummaryCards summary={chartData.summary} />

@@ -13,7 +13,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format, subMonths, parseISO, startOfYear } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
-import reportService, { type ReportFilter, type AssessmentStatistics } from '@/features/reports/services/reportService';
+import reportService, { type AssessmentStatistics } from '@/features/reports/services/reportService';
 
 export function useAuditStats() {
   const { toast } = useToast();
@@ -162,7 +162,7 @@ export function useAuditStats() {
           return createPlaceholderData();
         }
         
-        return response;
+        return response as AssessmentStatistics;
       } catch (error) {
         console.error('useAuditStats - Error fetching audit statistics:', error);
         
@@ -184,7 +184,7 @@ export function useAuditStats() {
   });
   
   // Create placeholder data for UI when API fails
-  const createPlaceholderData = () => {
+  const createPlaceholderData = (): AssessmentStatistics => {
     const now = new Date();
     const months = [];
     
