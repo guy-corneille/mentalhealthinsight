@@ -1,68 +1,90 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Spinner } from '@/components/ui/spinner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { useAuditStats } from '@/features/assessments/hooks/useAuditStats';
 import AuditStatsSummaryCards from './AuditStatsSummaryCards';
 import AuditStatsFilters from './AuditStatsFilters';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { format } from 'date-fns';
 
-const AuditStatsOverview: React.FC = () => {
-  const {
-    timeRange,
-    setTimeRange,
-    facilityId,
-    setFacilityId,
-    isLoading,
-    error,
-    chartData
-  } = useAuditStats();
+interface AuditStatsOverviewProps {
+  timeRange: string;
+  setTimeRange: (range: string) => void;
+  facilityId: string;
+  setFacilityId: (id: string) => void;
+  chartData: any | null;
+}
 
-  const handleFilterChange = (filters: {
-    facilityId?: number;
-    startDate?: string;
-    endDate?: string;
-  }) => {
-    // We'll just use the facilityId from the filters in this component
-    if (filters.facilityId !== undefined && setFacilityId) {
-      setFacilityId(filters.facilityId.toString());
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner size="lg" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          Failed to load audit statistics. Please try again later.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
+const AuditStatsOverview: React.FC<AuditStatsOverviewProps> = ({
+  timeRange,
+  setTimeRange,
+  facilityId,
+  setFacilityId,
+  chartData
+}) => {
   if (!chartData) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">No audit data available for the selected filters.</p>
+        <Button 
+          variant="outline" 
+          className="mt-4" 
+          onClick={() => {
+            setTimeRange('12months');
+            setFacilityId('all');
+          }}
+        >
+          Reset Filters
+        </Button>
       </div>
     );
   }
 
+  const exportData = (chartType: string) => {
+    if (!chartData) return;
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    let data: any[] = [];
+    
+    if (chartType === 'period') {
+      csvContent += "Month,Audit Count\n";
+      data = chartData.countByPeriodData;
+      data.forEach((item: any) => {
+        csvContent += `${item.month},${item['Audit Count']}\n`;
+      });
+    } else if (chartType === 'facility') {
+      csvContent += "Facility,Audit Count\n";
+      data = chartData.facilityData;
+      data.forEach((item: any) => {
+        csvContent += `${item.name},${item.value}\n`;
+      });
+    } else if (chartType === 'type') {
+      csvContent += "Audit Type,Count\n";
+      data = chartData.typeData;
+      data.forEach((item: any) => {
+        csvContent += `${item.name},${item.value}\n`;
+      });
+    } else if (chartType === 'criteria') {
+      csvContent += "Criteria,Average Score\n";
+      data = chartData.scoreByCriteriaData || [];
+      data.forEach((item: any) => {
+        csvContent += `${item.name},${item.value}\n`;
+      });
+    }
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `audit-${chartType}-${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <AuditStatsFilters
-        onFilterChange={handleFilterChange}
         timeRange={timeRange}
         setTimeRange={setTimeRange}
         facilityId={facilityId}
@@ -72,10 +94,21 @@ const AuditStatsOverview: React.FC = () => {
       <AuditStatsSummaryCards summary={chartData.summary} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Audits Over Time Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle>Audits Over Time</CardTitle>
-            <CardDescription>Total audits conducted per month</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Audits Over Time</CardTitle>
+              <CardDescription>Total audits conducted per month</CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => exportData('period')}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -91,10 +124,21 @@ const AuditStatsOverview: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Audits by Facility Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle>Audits by Facility</CardTitle>
-            <CardDescription>Distribution across healthcare facilities</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Audits by Facility</CardTitle>
+              <CardDescription>Distribution across healthcare facilities</CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => exportData('facility')}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -110,7 +154,7 @@ const AuditStatsOverview: React.FC = () => {
                   nameKey="name"
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
-                  {chartData.facilityData.map((entry, index) => (
+                  {chartData.facilityData.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -121,10 +165,21 @@ const AuditStatsOverview: React.FC = () => {
           </CardContent>
         </Card>
         
+        {/* Audit Types Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle>Audit Types</CardTitle>
-            <CardDescription>Breakdown by type of audit</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Audit Types</CardTitle>
+              <CardDescription>Breakdown by type of audit</CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => exportData('type')}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -140,7 +195,7 @@ const AuditStatsOverview: React.FC = () => {
                   nameKey="name"
                   label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                 >
-                  {chartData.typeData.map((entry, index) => (
+                  {chartData.typeData.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -151,10 +206,21 @@ const AuditStatsOverview: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Criteria Scores Chart */}
         <Card>
-          <CardHeader>
-            <CardTitle>Criteria Scores</CardTitle>
-            <CardDescription>Average scores by evaluation criteria</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Criteria Scores</CardTitle>
+              <CardDescription>Average scores by evaluation criteria</CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => exportData('criteria')}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">

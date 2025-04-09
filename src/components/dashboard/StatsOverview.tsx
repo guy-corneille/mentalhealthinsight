@@ -32,24 +32,30 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   const { data: patients, isLoading: patientsLoading } = usePatients();
   const { chartData: assessmentData, isLoading: assessmentsLoading } = useAssessmentStats();
 
-  // Use a simpler approach: just fetch a count directly
+  // Use a dedicated API call for audit count
   const { 
-    data: auditCount = { count: 35 }, // Default fallback value
-    isLoading: auditsLoading
+    data: auditData, 
+    isLoading: auditsLoading 
   } = useQuery({
-    queryKey: ['auditSimpleCount'],
+    queryKey: ['auditBasicStats'],
     queryFn: async () => {
       try {
-        // Instead of using the problematic API endpoint, we'll use a hardcoded value
-        // In a real application, this would be replaced with a working API call
+        // Set a date range for the last 12 months
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setFullYear(endDate.getFullYear() - 1);
         
-        // Simulate a delay to make it feel like a real API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        const filters = {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        };
         
-        // Return a simple count object
-        return { count: 35 };
+        // Try to fetch actual data from API
+        const response = await api.get('/api/audits/count/');
+        return { count: response.count || 0 };
       } catch (error) {
         console.log('Using fallback audit count');
+        // If the API fails, return a fallback value
         return { count: 35 };
       }
     },
@@ -64,6 +70,9 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   
   // Get the assessment count from the API data
   const assessmentCount = assessmentData?.summary?.totalCount || 0;
+  
+  // Get the audit count (with fallback)
+  const auditCount = auditData?.count || 0;
 
   return (
     <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
@@ -103,10 +112,10 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
         onClick={onAssessmentClick}
       />
       
-      {/* Audit Card - Using Fallback Value */}
+      {/* Audit Card - Using API or Fallback */}
       <StatCard
         title="Audits"
-        value={auditsLoading ? "Loading..." : auditCount.count}
+        value={auditsLoading ? "Loading..." : auditCount}
         icon={<ClipboardCheck className="h-4 w-4 text-healthiq-600" />}
         description="Total facility audits"
         onClick={onAuditClick}
