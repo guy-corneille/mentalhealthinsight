@@ -19,7 +19,6 @@ export function useAuditStats() {
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState('12months');
   const [facilityId, setFacilityId] = useState<string>('all');
-  const [hasShownError, setHasShownError] = useState(false);
 
   useEffect(() => {
     console.log("useAuditStats - Current timeRange:", timeRange);
@@ -135,98 +134,36 @@ export function useAuditStats() {
     return colors[index >= 0 ? index : 0];
   };
 
-  // Fetch audit statistics directly from API instead of using reportService
+  // Fetch audit statistics directly from API - no more fallback to dummy data
   const { isLoading, error, data: apiData } = useQuery({
     queryKey: ['auditStats', timeRange, facilityId],
     queryFn: async () => {
       const { startDate, endDate } = getDateRange();
       
-      try {
-        setHasShownError(false); // Reset error state before each new attempt
-        
-        // Use a direct API call to fetch audit statistics based on AssessmentCriteria
-        const url = '/api/reports/audit-statistics/';
-        const params = {
-          startDate,
-          endDate,
-          facilityId: facilityId !== 'all' ? facilityId : undefined
-        };
-        
-        console.log("useAuditStats - Requesting audit stats with URL and params:", url, params);
-        
-        const response = await api.get(url, { params });
-        console.log("useAuditStats - Received API response:", response);
-        
-        // If we receive an empty or invalid response, create a placeholder
-        if (!response || typeof response !== 'object') {
-          return createPlaceholderData();
-        }
-        
-        return response as AssessmentStatistics;
-      } catch (error) {
-        console.error('useAuditStats - Error fetching audit statistics:', error);
-        
-        if (!hasShownError) {
-          setHasShownError(true);
-          toast({
-            title: "Error loading audit statistics",
-            description: "Using placeholder data instead. Technical details have been logged.",
-            variant: "destructive"
-          });
-        }
-        
-        // Return placeholder data for UI to render
-        return createPlaceholderData();
+      // Direct API call to fetch audit statistics
+      const url = '/api/reports/audit-statistics/';
+      const params = {
+        startDate,
+        endDate,
+        facilityId: facilityId !== 'all' ? facilityId : undefined
+      };
+      
+      console.log("useAuditStats - Requesting audit stats with URL and params:", url, params);
+      
+      const response = await api.get<AssessmentStatistics>(url, { params });
+      console.log("useAuditStats - Received API response:", response);
+      
+      if (!response || typeof response !== 'object') {
+        throw new Error('Invalid response from API');
       }
+      
+      return response as AssessmentStatistics;
     },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  // Create placeholder data for UI when API fails
-  const createPlaceholderData = (): AssessmentStatistics => {
-    const now = new Date();
-    const months = [];
-    
-    // Generate 12 months of placeholder data
-    for (let i = 11; i >= 0; i--) {
-      const date = subMonths(now, i);
-      months.push({
-        period: format(date, 'yyyy-MM-dd'),
-        count: Math.floor(Math.random() * 10) + 1
-      });
-    }
-    
-    return {
-      totalCount: 35,
-      countByPeriod: months,
-      countByFacility: [
-        { facilityId: '1', facilityName: 'Central Hospital', count: 12 },
-        { facilityId: '2', facilityName: 'Eastside Clinic', count: 8 },
-        { facilityId: '3', facilityName: 'Westview Center', count: 15 }
-      ],
-      countByType: {
-        initial: 15,
-        followup: 10,
-        discharge: 10
-      },
-      scoreByCriteria: [
-        { criteriaId: '1', criteriaName: 'Safety Standards', averageScore: 85 },
-        { criteriaId: '2', criteriaName: 'Staff Qualifications', averageScore: 78 },
-        { criteriaId: '3', criteriaName: 'Facility Condition', averageScore: 92 },
-        { criteriaId: '4', criteriaName: 'Patient Care', averageScore: 88 }
-      ],
-      averageScore: 85,
-      patientCoverage: 72
-    };
-  };
-  
   const chartData = apiData ? formatChartData(apiData) : null;
-
-  // Reset error state when filters change
-  useEffect(() => {
-    setHasShownError(false);
-  }, [timeRange, facilityId]);
 
   return {
     timeRange,

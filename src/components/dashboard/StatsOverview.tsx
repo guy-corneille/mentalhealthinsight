@@ -19,7 +19,7 @@ interface StatsOverviewProps {
   onBenchmarkingClick?: () => void;
 }
 
-// Add an interface for the audit count response
+// Interface for the audit count response
 interface AuditCountResponse {
   count: number;
 }
@@ -38,35 +38,29 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   const { data: patients, isLoading: patientsLoading } = usePatients();
   const { chartData: assessmentData, isLoading: assessmentsLoading } = useAssessmentStats();
 
-  // Use a dedicated API call for audit count
+  // Use a dedicated API call for audit count - now without fallback
   const { 
     data: auditData, 
-    isLoading: auditsLoading 
+    isLoading: auditsLoading,
+    error: auditError
   } = useQuery({
     queryKey: ['auditBasicStats'],
     queryFn: async () => {
-      try {
-        // Set a date range for the last 12 months
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setFullYear(endDate.getFullYear() - 1);
-        
-        const filters = {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: endDate.toISOString().split('T')[0]
-        };
-        
-        // Try to fetch actual data from API
-        const response = await api.get<AuditCountResponse>('/api/audits/count/');
-        return { count: response.count || 0 };
-      } catch (error) {
-        console.log('Using fallback audit count');
-        // If the API fails, return a fallback value
-        return { count: 35 };
-      }
+      // Set a date range for the last 12 months
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setFullYear(endDate.getFullYear() - 1);
+      
+      const filters = {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
+      };
+      
+      // Fetch actual data from API - no try/catch as we want to propagate errors
+      const response = await api.get<AuditCountResponse>('/api/audits/count/');
+      return { count: response.count || 0 };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false, // Don't retry - just use the fallback
   });
 
   // Calculate real counts from our data
@@ -77,7 +71,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   // Get the assessment count from the API data
   const assessmentCount = assessmentData?.summary?.totalCount || 0;
   
-  // Get the audit count (with fallback)
+  // Get the audit count directly from API data
   const auditCount = auditData?.count || 0;
 
   return (
@@ -118,10 +112,10 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
         onClick={onAssessmentClick}
       />
       
-      {/* Audit Card - Using API or Fallback */}
+      {/* Audit Card - Using API Data */}
       <StatCard
         title="Audits"
-        value={auditsLoading ? "Loading..." : auditCount}
+        value={auditsLoading ? "Loading..." : (auditError ? "Error loading" : auditCount)}
         icon={<ClipboardCheck className="h-4 w-4 text-healthiq-600" />}
         description="Total facility audits"
         onClick={onAuditClick}
