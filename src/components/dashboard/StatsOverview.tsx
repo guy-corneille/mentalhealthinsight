@@ -37,7 +37,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   const { data: patients, isLoading: patientsLoading } = usePatients();
   const { chartData: assessmentData, isLoading: assessmentsLoading } = useAssessmentStats();
 
-  // Use a dedicated API call for audit count, but handle the missing endpoint
+  // Use reportService for audit count to maintain consistency with other API calls
   const { 
     data: auditData, 
     isLoading: auditsLoading,
@@ -45,33 +45,24 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   } = useQuery({
     queryKey: ['auditBasicStats'],
     queryFn: async () => {
-      try {
-        // Set a date range for the last 12 months
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setFullYear(endDate.getFullYear() - 1);
-        
-        const filters = {
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: endDate.toISOString().split('T')[0]
-        };
-        
-        // Try to fetch from the dedicated count endpoint first
-        try {
-          const response = await api.get<AuditCountResponse>('/api/reports/audits/count/', { params: filters });
-          return { count: response.count };
-        } catch (error) {
-          // If the count endpoint fails, try to get count from the main audits endpoint
-          console.log("Falling back to alternative audit count method");
-          const auditReports = await api.get<any[]>('/api/reports/audits/', { params: filters });
-          
-          // Calculate count from the returned array length
-          return { count: Array.isArray(auditReports) ? auditReports.length : 0 };
-        }
-      } catch (error) {
-        console.error("Failed to get audit count:", error);
-        return { count: 0 };
-      }
+      // Set a date range for the last 12 months
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setFullYear(endDate.getFullYear() - 1);
+      
+      const filters = {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0]
+      };
+      
+      // The API actually returns the data directly, not nested under a data property
+      const response = await api.get<AuditCountResponse>('/api/reports/audits/count', { params: filters });
+      
+      // Explicitly log the response for debugging
+      console.log("Audit count API response:", response);
+      
+      // Our API service already extracts the data for us, so we can return it directly
+      return response;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -84,7 +75,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   // Get the assessment count from the API data
   const assessmentCount = assessmentData?.summary?.totalCount || 0;
   
-  // Get the audit count directly from API data
+  // Get the audit count directly from API data - fixed to account for the correct response structure
   const auditCount = auditData?.count || 0;
 
   // Handle error states for audit card
