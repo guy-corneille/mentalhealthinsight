@@ -77,7 +77,7 @@ export function useAuditStats() {
       color: getRandomColor(facility.facilityId)
     }));
     
-    // Format audit types for pie chart
+    // Format audit types for pie chart - using the appropriate field names for audits
     const typeData = [
       { name: 'Infrastructure', value: apiData.countByType.initial || 0, color: '#10b981' },
       { name: 'Staffing', value: apiData.countByType.followup || 0, color: '#3b82f6' },
@@ -134,23 +134,22 @@ export function useAuditStats() {
     return colors[index >= 0 ? index : 0];
   };
 
-  // Fetch audit statistics directly from API
+  // Fetch audit statistics from API
   const { isLoading, error, data: apiData } = useQuery({
     queryKey: ['auditStats', timeRange, facilityId],
     queryFn: async () => {
       const { startDate, endDate } = getDateRange();
       
-      // Direct API call to fetch audit statistics
-      const url = '/api/reports/audit-statistics/';
+      // Use the correct endpoint for audit statistics
       const params = {
         startDate,
         endDate,
         facilityId: facilityId !== 'all' ? facilityId : undefined
       };
       
-      console.log("useAuditStats - Requesting audit stats with URL and params:", url, params);
+      console.log("useAuditStats - Requesting audit stats with params:", params);
       
-      // Use the reportService to get audit statistics
+      // Use the reportService with the audit-statistics endpoint
       const response = await reportService.getAuditStatistics(params);
       console.log("useAuditStats - Received API response:", response);
       
