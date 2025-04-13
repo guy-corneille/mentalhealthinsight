@@ -37,7 +37,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   const { data: patients, isLoading: patientsLoading } = usePatients();
   const { chartData: assessmentData, isLoading: assessmentsLoading } = useAssessmentStats();
 
-  // Use a dedicated API call for audit count
+  // Use a dedicated API call for audit count, but handle the missing endpoint
   const { 
     data: auditData, 
     isLoading: auditsLoading,
@@ -45,19 +45,33 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   } = useQuery({
     queryKey: ['auditBasicStats'],
     queryFn: async () => {
-      // Set a date range for the last 12 months
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setFullYear(endDate.getFullYear() - 1);
-      
-      const filters = {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0]
-      };
-      
-      // Fetch actual data from API - use the new audit count endpoint
-      const response = await api.get<AuditCountResponse>('/api/reports/audits/count/', { params: filters });
-      return response; // Return the entire response object without accessing .data
+      try {
+        // Set a date range for the last 12 months
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setFullYear(endDate.getFullYear() - 1);
+        
+        const filters = {
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        };
+        
+        // Try to fetch from the dedicated count endpoint first
+        try {
+          const response = await api.get<AuditCountResponse>('/api/reports/audits/count/', { params: filters });
+          return { count: response.count };
+        } catch (error) {
+          // If the count endpoint fails, try to get count from the main audits endpoint
+          console.log("Falling back to alternative audit count method");
+          const auditReports = await api.get<any[]>('/api/reports/audits/', { params: filters });
+          
+          // Calculate count from the returned array length
+          return { count: Array.isArray(auditReports) ? auditReports.length : 0 };
+        }
+      } catch (error) {
+        console.error("Failed to get audit count:", error);
+        return { count: 0 };
+      }
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
