@@ -27,13 +27,24 @@ const AuditTrends: React.FC = () => {
     );
   }
 
-  if (error && !chartData) {
+  if (error) {
     return (
       <Alert variant="destructive" className="my-4">
         <AlertTriangle className="h-4 w-4 mr-2" />
         <AlertTitle>Error loading statistics</AlertTitle>
         <AlertDescription>
-          There was a problem loading the audit statistics. Please try again later.
+          There was a problem loading the audit statistics. Please check that the API endpoints are correctly configured and try again.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!chartData) {
+    return (
+      <Alert variant="default" className="my-4">
+        <AlertTitle>No audit data available</AlertTitle>
+        <AlertDescription>
+          No audit statistics are available for the selected filters. Try changing your filters or adding audit data.
         </AlertDescription>
       </Alert>
     );

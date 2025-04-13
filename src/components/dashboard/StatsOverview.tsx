@@ -8,7 +8,6 @@ import { usePatients } from '@/services/patientService';
 import { useAssessmentStats } from '@/features/assessments/hooks/useAssessmentStats';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
-import reportService from '@/features/reports/services/reportService';
 
 interface StatsOverviewProps {
   onFacilityClick?: () => void;
@@ -38,7 +37,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   const { data: patients, isLoading: patientsLoading } = usePatients();
   const { chartData: assessmentData, isLoading: assessmentsLoading } = useAssessmentStats();
 
-  // Use a dedicated API call for audit count - now without fallback
+  // Use a dedicated API call for audit count
   const { 
     data: auditData, 
     isLoading: auditsLoading,
@@ -56,7 +55,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
         endDate: endDate.toISOString().split('T')[0]
       };
       
-      // Fetch actual data from API - no try/catch as we want to propagate errors
+      // Fetch actual data from API
       const response = await api.get<AuditCountResponse>('/api/audits/count/');
       return { count: response.count || 0 };
     },
@@ -74,9 +73,14 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   // Get the audit count directly from API data
   const auditCount = auditData?.count || 0;
 
+  // Handle error states for audit card
+  const auditValue = auditsLoading 
+    ? "Loading..." 
+    : (auditError ? "Error loading" : auditCount);
+
   return (
     <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-      {/* Facility Card - Real Data */}
+      {/* Facility Card */}
       <StatCard
         title="Total Facilities"
         value={facilitiesLoading ? "Loading..." : facilityCount}
@@ -85,7 +89,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
         onClick={onFacilityClick}
       />
       
-      {/* Staff Card - Real Data */}
+      {/* Staff Card */}
       <StatCard
         title="Healthcare Staff"
         value={staffLoading ? "Loading..." : staffCount}
@@ -94,7 +98,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
         onClick={onStaffClick}
       />
       
-      {/* Patients Card - Real Data */}
+      {/* Patients Card */}
       <StatCard
         title="Registered Patients"
         value={patientsLoading ? "Loading..." : patientCount}
@@ -103,7 +107,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
         onClick={onPatientClick}
       />
       
-      {/* Assessment Card - Real Data */}
+      {/* Assessment Card */}
       <StatCard
         title="Assessments"
         value={assessmentsLoading ? "Loading..." : assessmentCount}
@@ -115,7 +119,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
       {/* Audit Card - Using API Data */}
       <StatCard
         title="Audits"
-        value={auditsLoading ? "Loading..." : (auditError ? "Error loading" : auditCount)}
+        value={auditValue}
         icon={<ClipboardCheck className="h-4 w-4 text-healthiq-600" />}
         description="Total facility audits"
         onClick={onAuditClick}

@@ -77,14 +77,14 @@ export function useAuditStats() {
       color: getRandomColor(facility.facilityId)
     }));
     
-    // Format audit types for pie chart - assuming audit types are mapped to criteria purposes
+    // Format audit types for pie chart
     const typeData = [
       { name: 'Infrastructure', value: apiData.countByType.initial || 0, color: '#10b981' },
       { name: 'Staffing', value: apiData.countByType.followup || 0, color: '#3b82f6' },
       { name: 'Treatment', value: apiData.countByType.discharge || 0, color: '#6366f1' }
     ];
 
-    // Format average scores by criteria - make sure we handle the format safely
+    // Format average scores by criteria
     const scoreByCriteriaData = apiData.scoreByCriteria?.map(item => ({
       name: item.criteriaName,
       value: item.averageScore,
@@ -134,7 +134,7 @@ export function useAuditStats() {
     return colors[index >= 0 ? index : 0];
   };
 
-  // Fetch audit statistics directly from API - no more fallback to dummy data
+  // Fetch audit statistics directly from API
   const { isLoading, error, data: apiData } = useQuery({
     queryKey: ['auditStats', timeRange, facilityId],
     queryFn: async () => {
@@ -150,7 +150,8 @@ export function useAuditStats() {
       
       console.log("useAuditStats - Requesting audit stats with URL and params:", url, params);
       
-      const response = await api.get<AssessmentStatistics>(url, { params });
+      // Use the reportService to get audit statistics
+      const response = await reportService.getAuditStatistics(params);
       console.log("useAuditStats - Received API response:", response);
       
       if (!response || typeof response !== 'object') {
