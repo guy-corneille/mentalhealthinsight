@@ -57,7 +57,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
       
       // Fetch actual data from API - use the new audit count endpoint
       const response = await api.get<AuditCountResponse>('/api/reports/audits/count/', { params: filters });
-      return response.data;
+      return response; // Return the entire response object without accessing .data
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
