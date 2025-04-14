@@ -13,7 +13,15 @@ import { useQuery } from '@tanstack/react-query';
 import { format, subMonths, parseISO, startOfYear } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
-import reportService, { type AssessmentStatistics } from '@/features/reports/services/reportService';
+import reportService from '@/features/reports/services/reportService';
+
+// Define the actual audit data structure based on API response
+type AuditData = {
+  audit_id: string;
+  criteria_name: string;
+  score: number;
+  notes?: string;
+};
 
 export function useAuditStats() {
   const { toast } = useToast();
@@ -56,56 +64,80 @@ export function useAuditStats() {
   }, [timeRange]);
 
   // Format chart data for display
-  const formatChartData = useCallback((apiData: AssessmentStatistics) => {
-    if (!apiData) {
+  const formatChartData = useCallback((apiData: AuditData[]) => {
+    if (!apiData || !Array.isArray(apiData)) {
       console.log("useAuditStats - No API data provided to format");
       return null;
     }
     
     console.log("useAuditStats - Formatting chart data from:", apiData);
     
-    // Format audit counts by period for line/bar chart - using the correct property name
-    const countByPeriodData = apiData.countByPeriod.map((item) => ({
-      month: format(parseISO(item.period), 'MMM yyyy'),
+    // Group audits by month
+    const countByPeriod = apiData.reduce((acc: any[], audit) => {
+      const month = format(new Date(audit.audit_id.split('-')[0]), 'MMM yyyy');
+      const existingMonth = acc.find(item => item.period === month);
+      if (existingMonth) {
+        existingMonth.count++;
+      } else {
+        acc.push({ period: month, count: 1 });
+      }
+      return acc;
+    }, []);
+    
+    // Format period data
+    const countByPeriodData = countByPeriod.map(item => ({
+      month: item.period,
       'Audit Count': item.count
     }));
     
-    // Format audit counts by facility for pie/bar chart
-    const facilityData = apiData.countByFacility.map(facility => ({
-      name: facility.facilityName,
-      value: facility.count,
-      color: getRandomColor(facility.facilityId)
+    // Group by criteria name for scores
+    const criteriaScores = apiData.reduce((acc: any, audit) => {
+      if (!acc[audit.criteria_name]) {
+        acc[audit.criteria_name] = {
+          scores: [],
+          count: 0
+        };
+      }
+      acc[audit.criteria_name].scores.push(audit.score);
+      acc[audit.criteria_name].count++;
+      return acc;
+    }, {});
+    
+    // Calculate averages and prepare criteria data
+    const scoreByCriteriaData = Object.entries(criteriaScores).map(([name, data]: [string, any]) => ({
+      name,
+      value: Math.round(data.scores.reduce((sum: number, score: number) => sum + score, 0) / data.scores.length),
+      color: getRandomColor(name)
     }));
     
-    // Format audit types for pie chart - using the appropriate names for audit types
-    const typeData = [
-      { name: 'Infrastructure', value: apiData.countByType.initial || 0, color: '#10b981' },
-      { name: 'Staffing', value: apiData.countByType.followup || 0, color: '#3b82f6' },
-      { name: 'Treatment', value: apiData.countByType.discharge || 0, color: '#6366f1' }
-    ];
-
-    // Format average scores by criteria
-    const scoreByCriteriaData = apiData.scoreByCriteria?.map(item => ({
-      name: item.criteriaName,
-      value: item.averageScore,
-      color: getRandomColor(item.criteriaId || '')
-    })) || [];
+    // Calculate type distribution (using criteria names as types)
+    const typeGroups = apiData.reduce((acc: any, audit) => {
+      const type = audit.criteria_name.split(' ')[0]; // Use first word of criteria as type
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
     
-    // Include the date range in the result for use in components
+    const typeData = Object.entries(typeGroups).map(([type, count]) => ({
+      name: type,
+      value: count as number,
+      color: getRandomColor(type)
+    }));
+    
+    // Include the date range in the result
     const dateRange = getDateRange();
     
     const result = {
       countByPeriodData,
-      facilityData,
+      facilityData: [], // This will be populated when facility data is available
       typeData,
       scoreByCriteriaData,
       dateRange,
       summary: {
-        totalCount: apiData.totalCount,
-        averageScore: apiData.averageScore || 0,
-        completionRate: apiData.patientCoverage || 0,
-        mostCommonType: getMostCommonType(apiData.countByType),
-        mostActiveLocation: getMostActiveLocation(apiData.countByFacility)
+        totalCount: apiData.length,
+        averageScore: Math.round(apiData.reduce((sum, audit) => sum + audit.score, 0) / apiData.length),
+        completionRate: 100, // This will need to be calculated differently if we have completion status
+        mostCommonType: typeData.reduce((max, type) => type.value > max.value ? type : max).name,
+        mostActiveLocation: 'All Facilities' // This will need facility data to be meaningful
       }
     };
     
@@ -140,7 +172,6 @@ export function useAuditStats() {
     queryFn: async () => {
       const { startDate, endDate } = getDateRange();
       
-      // Use the correct endpoint for audit statistics
       const params = {
         startDate,
         endDate,
@@ -149,15 +180,14 @@ export function useAuditStats() {
       
       console.log("useAuditStats - Requesting audit stats with params:", params);
       
-      // Use the reportService with the audit-statistics endpoint
-      const response = await reportService.getAuditStatistics(params);
+      const response = await api.get<AuditData[]>('/api/reports/audit-statistics/', { params });
       console.log("useAuditStats - Received API response:", response);
       
-      if (!response || typeof response !== 'object') {
+      if (!response || !Array.isArray(response)) {
         throw new Error('Invalid response from API');
       }
       
-      return response as AssessmentStatistics;
+      return response;
     },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
