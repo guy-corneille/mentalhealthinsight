@@ -13,7 +13,6 @@ import { useQuery } from '@tanstack/react-query';
 import { format, subMonths, parseISO, startOfYear } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
-import reportService from '@/features/reports/services/reportService';
 
 // Define the actual audit data structure based on API response
 type AuditData = {
@@ -63,7 +62,7 @@ export function useAuditStats() {
     return result;
   }, [timeRange]);
 
-  // Format chart data for display
+  // Format chart data for display - adjusted to match correct field names
   const formatChartData = useCallback((apiData: AuditData[]) => {
     if (!apiData || !Array.isArray(apiData)) {
       console.log("useAuditStats - No API data provided to format");
@@ -90,7 +89,7 @@ export function useAuditStats() {
       'Audit Count': item.count
     }));
     
-    // Group by criteria name for scores
+    // Group by criteria_name for scores
     const criteriaScores = apiData.reduce((acc: any, audit) => {
       if (!acc[audit.criteria_name]) {
         acc[audit.criteria_name] = {
@@ -110,7 +109,7 @@ export function useAuditStats() {
       color: getRandomColor(name)
     }));
     
-    // Calculate type distribution (using criteria names as types)
+    // Calculate type distribution (using first word of criteria_name as types)
     const typeGroups = apiData.reduce((acc: any, audit) => {
       const type = audit.criteria_name.split(' ')[0]; // Use first word of criteria as type
       acc[type] = (acc[type] || 0) + 1;
@@ -166,28 +165,38 @@ export function useAuditStats() {
     return colors[index >= 0 ? index : 0];
   };
 
-  // Fetch audit statistics from API
+  // Fetch audit statistics from API - updated to directly use the API, not reportService
   const { isLoading, error, data: apiData } = useQuery({
     queryKey: ['auditStats', timeRange, facilityId],
     queryFn: async () => {
       const { startDate, endDate } = getDateRange();
       
-      const params = {
+      const params: any = {
         startDate,
-        endDate,
-        facilityId: facilityId !== 'all' ? facilityId : undefined
+        endDate
       };
+      
+      // Only add facilityId if it's not 'all'
+      if (facilityId !== 'all') {
+        params.facilityId = facilityId;
+      }
       
       console.log("useAuditStats - Requesting audit stats with params:", params);
       
-      const response = await api.get<AuditData[]>('/api/reports/audit-statistics/', { params });
-      console.log("useAuditStats - Received API response:", response);
-      
-      if (!response || !Array.isArray(response)) {
-        throw new Error('Invalid response from API');
+      try {
+        // Direct API call instead of using reportService to avoid field mapping issues
+        const response = await api.get<AuditData[]>('/api/reports/audit-statistics/', { params });
+        console.log("useAuditStats - Received API response:", response);
+        
+        if (!response || !Array.isArray(response)) {
+          throw new Error('Invalid response from API');
+        }
+        
+        return response;
+      } catch (error) {
+        console.error("useAuditStats - Error fetching audit statistics:", error);
+        throw error;
       }
-      
-      return response;
     },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
