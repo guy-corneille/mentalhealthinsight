@@ -64,7 +64,7 @@ export function useAuditStats() {
     
     console.log("useAuditStats - Formatting chart data from:", apiData);
     
-    // Format audit counts by period for line/bar chart
+    // Format audit counts by period for line/bar chart - using the correct property name
     const countByPeriodData = apiData.countByPeriod.map((item) => ({
       month: format(parseISO(item.period), 'MMM yyyy'),
       'Audit Count': item.count
@@ -77,7 +77,7 @@ export function useAuditStats() {
       color: getRandomColor(facility.facilityId)
     }));
     
-    // Format audit types for pie chart - using the appropriate field names for audits
+    // Format audit types for pie chart - using the appropriate names for audit types
     const typeData = [
       { name: 'Infrastructure', value: apiData.countByType.initial || 0, color: '#10b981' },
       { name: 'Staffing', value: apiData.countByType.followup || 0, color: '#3b82f6' },
