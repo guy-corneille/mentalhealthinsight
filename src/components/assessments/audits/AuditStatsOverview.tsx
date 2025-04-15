@@ -50,36 +50,58 @@ const AuditStatsOverview: React.FC<AuditStatsOverviewProps> = ({
         onFilterChange={handleFilterChange}
       />
 
-      {/* Basic Summary Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Total Audits</CardTitle>
-          <CardDescription>Number of audits conducted</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold">{chartData.summary.totalCount}</div>
-        </CardContent>
-      </Card>
+      {/* Summary Cards */}
+      <AuditStatsSummaryCards summary={chartData.summary} />
 
-      {/* Audits Over Time Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Audits Over Time</CardTitle>
-          <CardDescription>Total audits conducted per month</CardDescription>
-        </CardHeader>
-        <CardContent className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData.countByPeriodData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="Audit Count" stroke="#6366f1" activeDot={{ r: 8 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* Facilities Distribution */}
+      {chartData.facilities && chartData.facilities.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Audit Distribution by Facility</CardTitle>
+            <CardDescription>Number of audits conducted per facility</CardDescription>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData.countByPeriodData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="Audit Count" stroke="#6366f1" activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Criteria Scores */}
+      {chartData.criteria && chartData.criteria.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Average Scores by Criteria</CardTitle>
+            <CardDescription>Performance across different audit criteria</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {chartData.criteria.map((criterion: any, index: number) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">{criterion.name}</span>
+                    <span className="text-sm font-medium">{criterion.averageScore}</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-healthiq-600 rounded-full" 
+                      style={{ width: `${criterion.averageScore}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

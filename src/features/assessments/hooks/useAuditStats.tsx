@@ -5,10 +5,27 @@ import { format, subMonths, startOfYear } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
 
-// Simplified audit data structure
-type AuditData = {
-  audit_id: string;
-};
+// Type definitions for audit stats
+interface AuditSummary {
+  totalCount: number;
+  averageScore?: number;
+}
+
+interface FacilityStat {
+  facilityName: string;
+  count: number;
+}
+
+interface CriteriaStat {
+  name: string;
+  averageScore: number;
+}
+
+interface AuditStatsResponse {
+  summary: AuditSummary;
+  facilities: FacilityStat[];
+  criteria: CriteriaStat[];
+}
 
 export function useAuditStats() {
   const { toast } = useToast();
@@ -42,34 +59,24 @@ export function useAuditStats() {
     };
   }, [timeRange]);
 
-  // Simplified data formatting focused only on count by month
-  const formatChartData = useCallback((apiData: AuditData[]) => {
-    if (!apiData || !Array.isArray(apiData)) {
-      console.log("No data available to format");
+  // Format chart data from API response
+  const formatChartData = useCallback((apiData: AuditStatsResponse) => {
+    if (!apiData) {
+      console.log("No audit stats data available to format");
       return null;
     }
     
-    // Count audits by Month
-    const countByPeriod = apiData.reduce((acc: { month: string; count: number }[], audit) => {
-      const month = format(new Date(audit.audit_id.split('-')[0]), 'MMM yyyy');
-      const existingMonth = acc.find(item => item.month === month);
-      
-      if (existingMonth) {
-        existingMonth.count++;
-      } else {
-        acc.push({ month, count: 1 });
-      }
-      return acc;
-    }, []);
+    // Prepare period data for chart (if available)
+    const countByPeriodData = (apiData.facilities || []).map(facility => ({
+      month: facility.facilityName,
+      'Audit Count': facility.count
+    }));
 
     return {
-      countByPeriodData: countByPeriod.map(item => ({
-        month: item.month,
-        'Audit Count': item.count
-      })),
-      summary: {
-        totalCount: apiData.length
-      }
+      summary: apiData.summary,
+      facilities: apiData.facilities,
+      criteria: apiData.criteria,
+      countByPeriodData
     };
   }, []);
 
@@ -87,7 +94,8 @@ export function useAuditStats() {
       console.log("Requesting audit stats with params:", params);
       
       try {
-        const response = await api.get<AuditData[]>('/api/reports/audit-statistics/', { params });
+        // The endpoint path must match what we have in the backend
+        const response = await api.get<AuditStatsResponse>('/api/reports/audit-statistics/', { params });
         return response;
       } catch (error) {
         console.error("Error fetching audit statistics:", error);
