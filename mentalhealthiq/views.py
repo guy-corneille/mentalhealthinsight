@@ -333,10 +333,13 @@ class ReportViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='audit-statistics')
     def audit_statistics(self, request):
         """
-        Get basic audit statistics
+        Get basic audit statistics using AssessmentCriteria
         Returns count of audits and basic statistics
         """
         try:
+            # Get audit criteria (filtering by purpose='Audit')
+            audit_criteria = AssessmentCriteria.objects.filter(purpose='Audit')
+            
             # Get base queryset for all audits
             audits = Audit.objects.all()
             
@@ -353,15 +356,23 @@ class ReportViewSet(viewsets.ModelViewSet):
             
             # If no real data, return mock data for development
             if total_count == 0:
-                return Response({
-                    "totalCount": 35,
-                    "averageScore": 78.5,
-                    "facilityStats": [
+                mock_data = {
+                    "summary": {
+                        "totalCount": 35,
+                        "averageScore": 78.5
+                    },
+                    "facilities": [
                         {"facilityName": "Main Hospital", "count": 15},
                         {"facilityName": "North Clinic", "count": 12},
                         {"facilityName": "South Center", "count": 8}
+                    ],
+                    "criteria": [
+                        {"name": "Infrastructure & Safety", "averageScore": 82},
+                        {"name": "Staff Training", "averageScore": 75},
+                        {"name": "Patient Care", "averageScore": 81}
                     ]
-                })
+                }
+                return Response(mock_data)
             
             # Format facility statistics
             facility_stats = [
@@ -372,11 +383,27 @@ class ReportViewSet(viewsets.ModelViewSet):
                 for stat in facility_counts
             ]
             
+            # Get criteria statistics
+            criteria_stats = []
+            for criterion in audit_criteria:
+                audits_for_criterion = audits.filter(criteria_scores__criteria_name=criterion.name)
+                avg_score = audits_for_criterion.aggregate(
+                    avg_score=Avg('criteria_scores__score')
+                )['avg_score'] or 0
+                
+                criteria_stats.append({
+                    "name": criterion.name,
+                    "averageScore": round(avg_score, 1)
+                })
+            
             # Create response object
             statistics = {
-                "totalCount": total_count,
-                "averageScore": round(avg_score, 1),
-                "facilityStats": facility_stats
+                "summary": {
+                    "totalCount": total_count,
+                    "averageScore": round(avg_score, 1)
+                },
+                "facilities": facility_stats,
+                "criteria": criteria_stats
             }
             
             return Response(statistics)
