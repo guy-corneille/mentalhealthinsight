@@ -5,13 +5,9 @@ import { format, subMonths, startOfYear } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
 
-// Simplified audit data structure matching the API response
+// Simplified audit data structure
 type AuditData = {
   audit_id: string;
-  criteria_name: string;
-  score: number;
-  notes?: string;
-  id?: number;
 };
 
 export function useAuditStats() {
@@ -46,14 +42,14 @@ export function useAuditStats() {
     };
   }, [timeRange]);
 
-  // Simplified data formatting focused on basic metrics
+  // Simplified data formatting focused only on count by month
   const formatChartData = useCallback((apiData: AuditData[]) => {
     if (!apiData || !Array.isArray(apiData)) {
       console.log("No data available to format");
       return null;
     }
     
-    // Count by Month
+    // Count audits by Month
     const countByPeriod = apiData.reduce((acc: { month: string; count: number }[], audit) => {
       const month = format(new Date(audit.audit_id.split('-')[0]), 'MMM yyyy');
       const existingMonth = acc.find(item => item.month === month);
@@ -66,39 +62,13 @@ export function useAuditStats() {
       return acc;
     }, []);
 
-    // Average Scores by Criteria Type
-    const criteriaScores = apiData.reduce((acc: { [key: string]: { total: number; count: number } }, audit) => {
-      if (!acc[audit.criteria_name]) {
-        acc[audit.criteria_name] = { total: 0, count: 0 };
-      }
-      acc[audit.criteria_name].total += audit.score;
-      acc[audit.criteria_name].count++;
-      return acc;
-    }, {});
-
-    const averageScores = Object.entries(criteriaScores).map(([name, data]) => ({
-      name,
-      value: Math.round(data.total / data.count),
-      color: `#${Math.floor(Math.random()*16777215).toString(16)}`
-    }));
-
-    // Calculate basic summary statistics
-    const totalAudits = apiData.length;
-    const overallAverageScore = Math.round(
-      apiData.reduce((sum, audit) => sum + audit.score, 0) / totalAudits
-    );
-
     return {
       countByPeriodData: countByPeriod.map(item => ({
         month: item.month,
         'Audit Count': item.count
       })),
-      scoreByCriteriaData: averageScores,
       summary: {
-        totalCount: totalAudits,
-        averageScore: overallAverageScore,
-        completionRate: 100,
-        mostCommonType: averageScores[0]?.name || 'None',
+        totalCount: apiData.length
       }
     };
   }, []);
