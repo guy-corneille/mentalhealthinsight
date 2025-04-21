@@ -221,18 +221,38 @@ class IndicatorScore(models.Model):
         return f"{self.indicator.name}: {self.score}"
 
 class Audit(models.Model):
+    STATUS_CHOICES = (
+        ('scheduled', 'Scheduled'),
+        ('completed', 'Completed'),
+        ('incomplete', 'Incomplete'),
+    )
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name='audits')
     auditor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='conducted_audits')
     audit_date = models.DateTimeField()
+    scheduled_date = models.DateField()  # New field for tracking when audit should be completed
     overall_score = models.FloatField()
-    status = models.CharField(max_length=20, default='Completed')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    incomplete_reason = models.TextField(blank=True, null=True)  # New field for tracking why an audit is incomplete
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"Audit {self.id} - {self.facility.name}"
+
+    def mark_incomplete(self, reason=None):
+        """Utility method to mark audit as incomplete with a reason"""
+        self.status = 'incomplete'
+        if reason:
+            self.incomplete_reason = reason
+        self.save()
+
+    def mark_completed(self):
+        """Utility method to mark audit as completed"""
+        self.status = 'completed'
+        self.save()
 
 class AuditCriteria(models.Model):
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name='criteria_scores')

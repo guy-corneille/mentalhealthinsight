@@ -310,15 +310,70 @@ class AuditViewSet(viewsets.ModelViewSet):
     filterset_fields = ['facility', 'auditor', 'status']
     search_fields = ['notes']
     ordering_fields = ['audit_date', 'overall_score']
-    permission_classes = [AllowAny]  # Allow any user to access these endpoints
-    
-    @action(detail=True, methods=['get'])
-    def criteria_scores(self, request, pk=None):
-        """Get all criteria scores for a specific audit"""
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        """Override create to set initial status as scheduled"""
+        serializer.save(status='scheduled')
+
+    @action(detail=True, methods=['post'])
+    def complete_audit(self, request, pk=None):
+        """Endpoint to mark an audit as completed"""
         audit = self.get_object()
-        scores = AuditCriteria.objects.filter(audit=audit)
-        serializer = AuditCriteriaSerializer(scores, many=True)
-        return Response(serializer.data)
+        try:
+            # Check if all required criteria are assessed
+            criteria_scores = AuditCriteria.objects.filter(audit=audit).count()
+            if criteria_scores == 0:
+                return Response(
+                    {"error": "Cannot complete audit without criteria scores"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            audit.mark_completed()
+            return Response({"message": "Audit marked as completed"})
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'])
+    def mark_incomplete(self, request, pk=None):
+        """Endpoint to mark an audit as incomplete"""
+        audit = self.get_object()
+        reason = request.data.get('reason', 'No reason provided')
+        try:
+            audit.mark_incomplete(reason)
+            return Response({"message": "Audit marked as incomplete"})
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['get'])
+    def check_overdue(self, request):
+        """Check and mark overdue audits as incomplete"""
+        try:
+            today = timezone.now().date()
+            overdue_audits = Audit.objects.filter(
+                status='scheduled',
+                scheduled_date__lt=today
+            )
+            
+            marked_count = 0
+            for audit in overdue_audits:
+                audit.mark_incomplete("Audit not completed by scheduled date")
+                marked_count += 1
+
+            return Response({
+                "message": f"Marked {marked_count} overdue audits as incomplete"
+            })
+        except Exception as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class ReportViewSet(viewsets.ModelViewSet):
     """API endpoints for managing reports"""

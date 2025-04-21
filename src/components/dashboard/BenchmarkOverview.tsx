@@ -23,7 +23,7 @@ const BenchmarkOverview = () => {
       <BenchmarkCard
         title="Audit Completion"
         metric={benchmarks.auditCompletion}
-        description="Rate of completed vs scheduled audits"
+        description="Completed vs scheduled audits"
       />
       <BenchmarkCard
         title="Documentation Quality"
