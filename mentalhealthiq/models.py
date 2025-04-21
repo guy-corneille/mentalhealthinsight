@@ -231,7 +231,7 @@ class Audit(models.Model):
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name='audits')
     auditor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='conducted_audits')
     audit_date = models.DateTimeField()
-    scheduled_date = models.DateField(default=timezone.now().date)
+    scheduled_date = models.DateField(default=timezone.now)
     overall_score = models.FloatField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
     incomplete_reason = models.TextField(blank=True, null=True)
