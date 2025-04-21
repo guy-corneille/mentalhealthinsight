@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -115,6 +114,8 @@ const AuditList: React.FC = () => {
         return <Badge className="bg-amber-500">In Progress</Badge>;
       case 'scheduled':
         return <Badge className="bg-blue-500">Scheduled</Badge>;
+      case 'incomplete':
+        return <Badge className="bg-red-500">Incomplete</Badge>;
       case 'cancelled':
         return <Badge className="bg-gray-500">Cancelled</Badge>;
       default:
