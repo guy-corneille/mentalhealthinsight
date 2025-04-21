@@ -72,11 +72,11 @@ class Facility(models.Model):
     name = models.CharField(max_length=255)
     facility_type = models.CharField(max_length=100)
     address = models.TextField()
-    city = models.CharField(max_length=100, blank=True, null=True)  # Add this field
+    city = models.CharField(max_length=100, blank=True, null=True)
     district = models.CharField(max_length=100)
     province = models.CharField(max_length=100)
-    postal_code = models.CharField(max_length=20, blank=True, null=True)  # Add this field
-    country = models.CharField(max_length=100, default="Country")  # Add this field
+    postal_code = models.CharField(max_length=20, blank=True, null=True)
+    country = models.CharField(max_length=100, default="Country")
     coordinates = models.CharField(max_length=100, blank=True, null=True)
     capacity = models.IntegerField(default=0)
     status = models.CharField(max_length=20, default='Active')
@@ -85,10 +85,10 @@ class Facility(models.Model):
     contact_name = models.CharField(max_length=255, blank=True, null=True)
     contact_email = models.EmailField(blank=True, null=True)
     contact_phone = models.CharField(max_length=20, blank=True, null=True)
-    website = models.URLField(blank=True, null=True)  # Add this field
-    established_date = models.DateField(blank=True, null=True)  # Add this field
-    last_inspection_date = models.DateField(blank=True, null=True)  # Add this field
-    description = models.TextField(blank=True, null=True)  # Add this field
+    website = models.URLField(blank=True, null=True)
+    established_date = models.DateField(blank=True, null=True)
+    last_inspection_date = models.DateField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -103,7 +103,7 @@ class StaffMember(models.Model):
         ('Former', 'Former'),
     )
     
-    id = models.CharField(primary_key=True, max_length=20)  # Custom ID format like S-1001
+    id = models.CharField(primary_key=True, max_length=20)
     name = models.CharField(max_length=255)
     position = models.CharField(max_length=100)
     department = models.CharField(max_length=100)
@@ -143,7 +143,7 @@ class AssessmentCriteria(models.Model):
     name = models.CharField(max_length=255)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     description = models.TextField(blank=True, null=True)
-    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)  # New field
+    purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -156,7 +156,7 @@ class AssessmentCriteria(models.Model):
 class Indicator(models.Model):
     criteria = models.ForeignKey(AssessmentCriteria, on_delete=models.CASCADE, related_name='indicators')
     name = models.CharField(max_length=255)
-    weight = models.FloatField()  # 0-100 value
+    weight = models.FloatField()
     
     def __str__(self):
         return f"{self.name} - {self.criteria.name}"
@@ -175,7 +175,7 @@ class Patient(models.Model):
         ('Inactive', 'Inactive'),
     )
     
-    id = models.CharField(primary_key=True, max_length=20)  # Custom ID format
+    id = models.CharField(primary_key=True, max_length=20)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField()
@@ -203,7 +203,7 @@ class Assessment(models.Model):
     evaluator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='conducted_assessments')
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
     assessment_date = models.DateTimeField()
-    score = models.FloatField()  # Overall assessment score
+    score = models.FloatField()
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -214,7 +214,7 @@ class Assessment(models.Model):
 class IndicatorScore(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name='indicator_scores')
     indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE)
-    score = models.FloatField()  # 0-100 value
+    score = models.FloatField()
     notes = models.TextField(blank=True, null=True)
     
     def __str__(self):
@@ -231,10 +231,10 @@ class Audit(models.Model):
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name='audits')
     auditor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='conducted_audits')
     audit_date = models.DateTimeField()
-    scheduled_date = models.DateField()  # New field for tracking when audit should be completed
+    scheduled_date = models.DateField(default=timezone.now().date)
     overall_score = models.FloatField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
-    incomplete_reason = models.TextField(blank=True, null=True)  # New field for tracking why an audit is incomplete
+    incomplete_reason = models.TextField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -257,7 +257,7 @@ class Audit(models.Model):
 class AuditCriteria(models.Model):
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name='criteria_scores')
     criteria_name = models.CharField(max_length=255)
-    score = models.FloatField()  # 0-100 value
+    score = models.FloatField()
     notes = models.TextField(blank=True, null=True)
     
     def __str__(self):
@@ -278,8 +278,8 @@ class Report(models.Model):
     description = models.TextField(blank=True, null=True)
     generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     generated_at = models.DateTimeField(default=timezone.now)
-    file_path = models.CharField(max_length=255, blank=True, null=True)  # Path to stored report file
-    parameters = models.JSONField(blank=True, null=True)  # Stores the parameters used to generate the report
+    file_path = models.CharField(max_length=255, blank=True, null=True)
+    parameters = models.JSONField(blank=True, null=True)
     
     def __str__(self):
         return f"{self.title} - {self.report_type}"
