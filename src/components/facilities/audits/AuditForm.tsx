@@ -57,7 +57,7 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
         step={currentStep} 
         categories={categories}
         totalSteps={categories.length}
-        setStep={(step) => setCurrentStep(step)}
+        setStep={(step) => nextStep()} // We'll just use nextStep for now
       />
       
       <AuditStepContent

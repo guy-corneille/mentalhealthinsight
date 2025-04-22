@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -44,7 +45,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
   const facilityId = id ? parseInt(id) : 0;
   const { data: facilityData, isLoading: isFetchingFacility } = useFacility(facilityId);
   const createFacilityMutation = useCreateFacility();
-  const updateFacilityMutation = useUpdateFacility(facilityId);
+  const updateFacilityMutation = useUpdateFacility();
   
   const isLoading = isFetchingFacility || createFacilityMutation.isPending || updateFacilityMutation.isPending;
 
@@ -114,7 +115,7 @@ const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
     console.log('Submitting facility data:', facilityPayload);
 
     if (isEdit && id) {
-      updateFacilityMutation.mutate(facilityPayload, {
+      updateFacilityMutation.mutate({ id: facilityId, data: facilityPayload }, {
         onSuccess: (data) => {
           console.log('Facility updated successfully:', data);
           toast({

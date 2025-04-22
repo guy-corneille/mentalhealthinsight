@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Dialog, 
@@ -29,24 +28,20 @@ interface NewAuditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onFacilitySelect: (facilityId: number) => void;
-  facilities?: Facility[]; // Added this prop to fix the TypeScript error
+  facilities?: Facility[];
 }
 
 const NewAuditDialog: React.FC<NewAuditDialogProps> = ({ 
   open, 
   onOpenChange,
   onFacilitySelect,
-  facilities: propFacilities // Renamed to avoid conflict with the hook result
+  facilities: propFacilities
 }) => {
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   
-  // Fetch facilities using API if not provided via props
-  const { data: apiFacilities, isLoading } = useFacilities({
-    enabled: !propFacilities // Only fetch from API if facilities weren't provided via props
-  });
+  const { data: apiFacilities, isLoading } = useFacilities();
 
-  // Use facilities from props if provided, otherwise use from API
   const facilities = propFacilities || apiFacilities;
 
   const handleStartAudit = () => {
@@ -62,7 +57,6 @@ const NewAuditDialog: React.FC<NewAuditDialogProps> = ({
     onOpenChange(false);
   };
 
-  // Filter facilities based on search query
   const filteredFacilities = facilities?.filter(facility => {
     if (!searchQuery.trim()) return true;
     

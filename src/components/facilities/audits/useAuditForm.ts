@@ -90,12 +90,13 @@ export const useAuditForm = (facilityId: number, facilityName: string) => {
       };
       
       // Create the audit
-      const audit = await api.post('/api/audits/', auditData);
+      const auditResponse = await api.post('/api/audits/', auditData);
+      const auditId = auditResponse.id;
       
       // Add criteria scores
       for (const criterion of formData.criteria) {
         await api.post('/api/audit-criteria/', {
-          audit: audit.id,
+          audit: auditId,
           criteria_name: criterion.name,
           score: criterion.score,
           notes: criterion.notes,
