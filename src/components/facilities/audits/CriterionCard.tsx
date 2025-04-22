@@ -21,7 +21,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@radix-ui/react-tooltip";
+} from "@/components/ui/tooltip";
 import { CriterionCardProps, Rating } from './types';
 
 const CriterionCard: React.FC<CriterionCardProps> = ({
@@ -54,16 +54,18 @@ const CriterionCard: React.FC<CriterionCardProps> = ({
             <CardDescription>{criterion.category} (Weight: {criterion.weight})</CardDescription>
           </div>
           
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <HelpCircleIcon className="h-5 w-5 text-muted-foreground" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-sm">
-              <p>{criterion.guidance}</p>
-            </TooltipContent>
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <HelpCircleIcon className="h-5 w-5 text-muted-foreground" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-sm">
+                <p>{criterion.guidance}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardHeader>
       <CardContent>
