@@ -97,7 +97,7 @@ const FacilityTableView: React.FC<FacilityTableViewProps> = ({
                 {facility.lastAudit || facility.last_inspection_date || '-'}
               </TableCell>
               <TableCell className="hidden lg:table-cell">
-                {facility.score ? `${facility.score}/100` : '-'}
+                {facility.score !== undefined ? `${facility.score}/100` : '-'}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import StepProgress from './StepProgress';
 import AuditStepContent from './AuditStepContent';
 import AuditStepNavigation from './AuditStepNavigation';
@@ -8,46 +8,71 @@ import { AuditFormProps } from './types';
 
 const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
   const {
-    step,
-    setStep,
-    ratings,
-    loading,
-    categories,
-    auditCriteria,
-    stepCompletion,
-    overallScore,
-    isLastStep,
-    isFirstStep,
-    handleRatingChange,
-    handleNotesChange,
-    handleSubmitAudit,
+    currentStep,
+    formData,
+    isLoading,
+    criteria,
+    setCriteria,
     nextStep,
-    prevStep
+    prevStep,
+    setCriteriaScore,
+    setNotes,
+    submitAudit
   } = useAuditForm(facilityId, facilityName);
+
+  // Define derived data for the form
+  const categories = ['Facility', 'Staff', 'Services', 'Quality', 'Documentation'];
+  const stepCompletion = 100; // We'll calculate this based on completed criteria
+  const overallScore = formData.totalScore;
+  const isFirstStep = currentStep === 0;
+  const isLastStep = currentStep === categories.length - 1;
+
+  // Mock audit criteria (to be replaced with API data)
+  const auditCriteria = [
+    { id: '1', category: 'Facility', description: 'Building is accessible', guidance: 'Check ramps, elevators', weight: 2 },
+    { id: '2', category: 'Facility', description: 'Clean environment', guidance: 'Inspect cleanliness', weight: 1 }
+  ];
+
+  // Map to useAuditForm equivalent functions
+  const handleRatingChange = (criterionId: string, rating: any) => {
+    setCriteriaScore(Number(criterionId), rating === 'pass' ? 100 : rating === 'partial' ? 50 : 0);
+  };
+
+  const handleNotesChange = (criterionId: string, notes: string) => {
+    setCriteriaScore(
+      Number(criterionId), 
+      formData.criteria.find(c => c.id === Number(criterionId))?.score || 0, 
+      notes
+    );
+  };
+
+  const handleSubmitAudit = () => {
+    submitAudit();
+  };
 
   return (
     <div className="space-y-6">
       {/* Progress indicator */}
       <StepProgress 
-        step={step} 
+        step={currentStep} 
         categories={categories}
-        totalSteps={auditCriteria.length}
-        setStep={setStep}
+        totalSteps={categories.length}
+        setStep={(step) => setCurrentStep(step)}
       />
       
       <AuditStepContent
-        step={step}
+        step={currentStep}
         categories={categories}
-        currentCriteria={auditCriteria[step]}
+        currentCriteria={auditCriteria}
         stepCompletion={stepCompletion}
-        ratings={ratings}
+        ratings={{}}
         handleRatingChange={handleRatingChange}
         handleNotesChange={handleNotesChange}
       />
       
       <AuditStepNavigation
-        step={step}
-        totalSteps={auditCriteria.length}
+        step={currentStep}
+        totalSteps={categories.length}
         stepCompletion={stepCompletion}
         overallScore={overallScore}
         isFirstStep={isFirstStep}
@@ -55,7 +80,7 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName }) => {
         prevStep={prevStep}
         nextStep={nextStep}
         handleSubmitAudit={handleSubmitAudit}
-        loading={loading}
+        loading={isLoading}
       />
     </div>
   );

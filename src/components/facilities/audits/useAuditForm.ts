@@ -50,7 +50,7 @@ export const useAuditForm = (facilityId: number, facilityName: string) => {
       if (criteriaItem) {
         updatedCriteria.push({
           id: criteriaId,
-          name: criteriaItem.name,
+          name: criteriaItem.name || 'Unnamed Criteria',
           score,
           notes
         });
@@ -59,7 +59,8 @@ export const useAuditForm = (facilityId: number, facilityName: string) => {
     
     // Calculate new total score
     const totalScore = Math.round(
-      updatedCriteria.reduce((sum, item) => sum + item.score, 0) / updatedCriteria.length
+      updatedCriteria.reduce((sum, item) => sum + item.score, 0) / 
+      (updatedCriteria.length || 1) // Prevent division by zero
     );
     
     setFormData({

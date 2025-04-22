@@ -1,4 +1,10 @@
 
+/**
+ * Facility Table View Component
+ * 
+ * This component displays facilities in a table format with sortable columns.
+ * It's used on the Facilities page when the table view mode is selected.
+ */
 import React from 'react';
 import { 
   Table, 
@@ -91,7 +97,7 @@ const FacilityTableView: React.FC<FacilityTableViewProps> = ({
                 {facility.lastAudit || facility.last_inspection_date || '-'}
               </TableCell>
               <TableCell className="hidden lg:table-cell">
-                {facility.score ? `${facility.score}/100` : '-'}
+                {facility.score !== undefined ? `${facility.score}/100` : '-'}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

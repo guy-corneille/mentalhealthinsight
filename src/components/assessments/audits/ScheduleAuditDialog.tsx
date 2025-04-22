@@ -38,6 +38,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Spinner } from '@/components/ui/spinner';
 import api from '@/services/api';
+import { getFacilities } from '@/services/facilityService';
 
 interface Facility {
   id: number;
@@ -77,12 +78,8 @@ const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({
   useEffect(() => {
     const fetchFacilities = async () => {
       try {
-        const response = await api.get('/api/facilities/');
-        if (Array.isArray(response)) {
-          setFacilities(response);
-        } else if (response && 'results' in response && Array.isArray(response.results)) {
-          setFacilities(response.results);
-        }
+        const response = await getFacilities();
+        setFacilities(response);
       } catch (error) {
         console.error('Error fetching facilities:', error);
         toast({

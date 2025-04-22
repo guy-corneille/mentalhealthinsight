@@ -1,3 +1,4 @@
+import { getFacilities } from '@/services/facilityService';
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -258,6 +259,29 @@ export const useDeletePatient = () => {
   });
 };
 
-export { useFacilities } from '@/services/facilityService';
+export const useFacilities = () => {
+  // We're creating a wrapper function to work with the existing code
+  const [data, setData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const facilities = await getFacilities();
+        setData(facilities);
+      } catch (err) {
+        setError(err as Error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
+  
+  return { data, isLoading, error };
+};
 
 export default patientService;

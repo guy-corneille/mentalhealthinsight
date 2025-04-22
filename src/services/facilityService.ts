@@ -1,4 +1,6 @@
 
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/services/api';
 
 // Define the facility interface
@@ -27,6 +29,7 @@ export interface Facility {
   updated_at: string;
   location?: string;
   lastAudit?: string;
+  score?: number; // Add score property for TypeScript
 }
 
 interface ApiResponse {
@@ -97,13 +100,20 @@ export const deleteFacility = async (id: number): Promise<void> => {
   }
 };
 
-// Custom hook for facility data
-export const useFacility = (id: number) => {
-  const [data, setData] = React.useState<Facility | null>(null);
-  const [isLoading, setIsLoading] = React.useState<boolean>(true);
-  const [error, setError] = React.useState<Error | null>(null);
+// React Query hooks for facilities
+export const useFacilities = () => {
+  return useQuery({
+    queryKey: ['facilities'],
+    queryFn: getFacilities
+  });
+};
 
-  React.useEffect(() => {
+export const useFacility = (id: number) => {
+  const [data, setData] = useState<Facility | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
     const fetchFacility = async () => {
       setIsLoading(true);
       try {
@@ -122,4 +132,24 @@ export const useFacility = (id: number) => {
   }, [id]);
 
   return { data, isLoading, error };
+};
+
+// Add mutations for CRUD operations
+export const useCreateFacility = () => {
+  return useMutation({
+    mutationFn: (data: Partial<Facility>) => createFacility(data),
+  });
+};
+
+export const useUpdateFacility = () => {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<Facility> }) => 
+      updateFacility(id, data),
+  });
+};
+
+export const useDeleteFacility = () => {
+  return useMutation({
+    mutationFn: (id: number) => deleteFacility(id),
+  });
 };
