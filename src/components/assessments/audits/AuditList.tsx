@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -16,6 +17,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Eye, FileEdit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -51,40 +53,34 @@ const AuditList: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchAudits = async () => {
-      setLoading(true);
-      try {
-        console.log('Fetching audits from API endpoint: /api/audits/');
-        // We need to get ALL audits, not just paginated ones
-        const response = await api.get<ApiResponse | AuditData[]>('/api/audits/');
-        console.log('Audit data received:', response);
-        
-        if (response && 'results' in response && Array.isArray(response.results)) {
-          setAudits(response.results);
-          console.log('Got paginated audit results:', response.results);
-        } else if (Array.isArray(response)) {
-          setAudits(response);
-          console.log('Got direct audit array:', response);
-        } else {
-          console.error('Unexpected API response format:', response);
-          setError('Received unexpected data format from API');
-          setAudits([]);
-        }
-      } catch (err) {
-        console.error('Error fetching audits:', err);
-        setError('Failed to load audits. Please try again.');
-        toast({
-          title: 'Error',
-          description: 'Failed to load audits',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAudits();
-  }, [toast]);
+  }, []);
+
+  const fetchAudits = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get<ApiResponse | AuditData[]>('/api/audits/');
+      
+      if (response && 'results' in response && Array.isArray(response.results)) {
+        setAudits(response.results);
+      } else if (Array.isArray(response)) {
+        setAudits(response);
+      } else {
+        setError('Received unexpected data format from API');
+        setAudits([]);
+      }
+    } catch (err) {
+      console.error('Error fetching audits:', err);
+      setError('Failed to load audits');
+      toast({
+        title: 'Error',
+        description: 'Failed to load audits',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDelete = async (id: number) => {
     if (confirm('Are you sure you want to delete this audit?')) {
@@ -106,6 +102,33 @@ const AuditList: React.FC = () => {
     }
   };
 
+  const handleStatusChange = async (auditId: number, newStatus: string) => {
+    try {
+      await api.patch(`/api/audits/${auditId}/`, {
+        status: newStatus
+      });
+      
+      // Update local state
+      setAudits(prevAudits => 
+        prevAudits.map(audit => 
+          audit.id === auditId ? { ...audit, status: newStatus } : audit
+        )
+      );
+      
+      toast({
+        title: 'Status Updated',
+        description: `Audit status changed to ${newStatus}`,
+      });
+    } catch (err) {
+      console.error('Error updating audit status:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to update audit status',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case 'completed':
@@ -121,6 +144,11 @@ const AuditList: React.FC = () => {
       default:
         return <Badge>{status}</Badge>;
     }
+  };
+
+  const getStatusOptions = (currentStatus: string) => {
+    const allStatuses = ['scheduled', 'completed', 'incomplete'];
+    return allStatuses.filter(status => status !== currentStatus.toLowerCase());
   };
 
   if (loading) {
@@ -190,7 +218,27 @@ const AuditList: React.FC = () => {
                   {audit.overall_score}%
                 </Badge>
               </TableCell>
-              <TableCell>{getStatusBadge(audit.status)}</TableCell>
+              <TableCell>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    {getStatusBadge(audit.status)}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-[200px]">
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      Change status to:
+                    </div>
+                    <DropdownMenuSeparator />
+                    {getStatusOptions(audit.status).map((status) => (
+                      <DropdownMenuItem
+                        key={status}
+                        onClick={() => handleStatusChange(audit.id, status)}
+                      >
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
