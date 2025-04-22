@@ -91,7 +91,14 @@ export const useAuditForm = (facilityId: number, facilityName: string) => {
       
       // Create the audit
       const auditResponse = await api.post('/api/audits/', auditData);
-      const auditId = auditResponse.id;
+      // Safely access the id property with proper type checking
+      const auditId = auditResponse && typeof auditResponse === 'object' && 'id' in auditResponse 
+        ? auditResponse.id 
+        : null;
+      
+      if (!auditId) {
+        throw new Error('Failed to get audit ID from response');
+      }
       
       // Add criteria scores
       for (const criterion of formData.criteria) {
