@@ -16,9 +16,8 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, FileEdit, Calendar } from 'lucide-react';
+import { MoreHorizontal, Eye, FileEdit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +36,13 @@ interface AuditData {
   updated_at: string;
 }
 
+interface ApiResponse {
+  results?: AuditData[];
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
+}
+
 const AuditList: React.FC = () => {
   const [audits, setAudits] = useState<AuditData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,15 +54,25 @@ const AuditList: React.FC = () => {
     const fetchAudits = async () => {
       setLoading(true);
       try {
-        const response = await api.get<AuditData[]>('/api/audits/');
-        const updatedAudits = response.map(audit => ({
-          ...audit,
-          status: audit.status || 'completed'
-        }));
-        setAudits(updatedAudits);
+        console.log('Fetching audits from API endpoint: /api/audits/');
+        // We need to get ALL audits, not just paginated ones
+        const response = await api.get<ApiResponse | AuditData[]>('/api/audits/');
+        console.log('Audit data received:', response);
+        
+        if (response && 'results' in response && Array.isArray(response.results)) {
+          setAudits(response.results);
+          console.log('Got paginated audit results:', response.results);
+        } else if (Array.isArray(response)) {
+          setAudits(response);
+          console.log('Got direct audit array:', response);
+        } else {
+          console.error('Unexpected API response format:', response);
+          setError('Received unexpected data format from API');
+          setAudits([]);
+        }
       } catch (err) {
         console.error('Error fetching audits:', err);
-        setError('Failed to load audits');
+        setError('Failed to load audits. Please try again.');
         toast({
           title: 'Error',
           description: 'Failed to load audits',
@@ -70,25 +86,23 @@ const AuditList: React.FC = () => {
     fetchAudits();
   }, [toast]);
 
-  const handleStatusChange = async (auditId: number, newStatus: string) => {
-    try {
-      await api.patch(`/api/audits/${auditId}/`, { status: newStatus });
-      setAudits(prevAudits =>
-        prevAudits.map(audit =>
-          audit.id === auditId ? { ...audit, status: newStatus } : audit
-        )
-      );
-      toast({
-        title: 'Status Updated',
-        description: `Audit status changed to ${newStatus}`,
-      });
-    } catch (err) {
-      console.error('Error updating audit status:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to update audit status',
-        variant: 'destructive',
-      });
+  const handleDelete = async (id: number) => {
+    if (confirm('Are you sure you want to delete this audit?')) {
+      try {
+        await api.delete(`/api/audits/${id}/`);
+        setAudits(audits.filter(audit => audit.id !== id));
+        toast({
+          title: 'Success',
+          description: 'Audit deleted successfully',
+        });
+      } catch (err) {
+        console.error('Error deleting audit:', err);
+        toast({
+          title: 'Error',
+          description: 'Failed to delete audit',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -96,10 +110,14 @@ const AuditList: React.FC = () => {
     switch (status.toLowerCase()) {
       case 'completed':
         return <Badge className="bg-emerald-500">Completed</Badge>;
+      case 'in_progress':
+        return <Badge className="bg-amber-500">In Progress</Badge>;
       case 'scheduled':
         return <Badge className="bg-blue-500">Scheduled</Badge>;
       case 'incomplete':
         return <Badge className="bg-red-500">Incomplete</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-gray-500">Cancelled</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -182,26 +200,24 @@ const AuditList: React.FC = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => navigate(`/facilities/${audit.facility}`)}>
+                    <DropdownMenuItem 
+                      onClick={() => navigate(`/facilities/${audit.facility}`)}
+                    >
                       <Eye className="h-4 w-4 mr-2" />
                       View Facility
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate(`/facilities/audit/${audit.facility}`)}>
+                    <DropdownMenuItem 
+                      onClick={() => navigate(`/facilities/audit/${audit.facility}`)}
+                    >
                       <FileEdit className="h-4 w-4 mr-2" />
                       New Audit
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => handleStatusChange(audit.id, 'scheduled')}>
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Mark as Scheduled
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleStatusChange(audit.id, 'completed')}>
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Mark as Completed
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleStatusChange(audit.id, 'incomplete')}>
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Mark as Incomplete
+                    <DropdownMenuItem 
+                      onClick={() => handleDelete(audit.id)}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
