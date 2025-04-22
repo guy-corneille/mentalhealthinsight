@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { CheckCircleIcon } from 'lucide-react';
 import CriterionCard from './CriterionCard';
-import { AuditStepContentProps } from './types';
+import { AuditStepContentProps, Rating } from './types';
 
 const AuditStepContent: React.FC<AuditStepContentProps> = ({
   step,
@@ -30,11 +30,17 @@ const AuditStepContent: React.FC<AuditStepContentProps> = ({
         <CriterionCard
           key={criterion.id}
           criterion={criterion}
-          rating={ratings[criterion.id] || { rating: "not-rated", notes: "" }}
+          rating={ratings[criterion.id]?.rating || "not-rated"}
           onRatingChange={handleRatingChange}
           onNotesChange={handleNotesChange}
         />
       ))}
+      
+      {currentCriteria.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          No criteria defined for this category.
+        </div>
+      )}
     </div>
   );
 };

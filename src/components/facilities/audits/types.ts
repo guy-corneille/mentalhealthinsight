@@ -1,12 +1,5 @@
 
-export type Rating = "pass" | "good" | "partial" | "limited" | "fail" | "not-applicable" | "not-rated";
-
-export interface CriteriaRating {
-  rating: Rating;
-  notes: string;
-}
-
-export interface AuditCriterion {
+export interface Criterion {
   id: string;
   category: string;
   description: string;
@@ -14,31 +7,23 @@ export interface AuditCriterion {
   weight: number;
 }
 
-export type CriteriaRatings = Record<string, CriteriaRating>;
+export type Rating = "pass" | "good" | "partial" | "limited" | "fail" | "not-applicable" | "not-rated";
 
-export interface AuditFormProps {
-  facilityId: number;
-  facilityName: string;
+export interface CriterionRating {
+  rating: Rating;
+  notes: string;
 }
 
 export interface CriterionCardProps {
-  criterion: AuditCriterion;
-  rating: CriteriaRating;
+  criterion: Criterion;
+  rating: Rating | CriterionRating;
   onRatingChange: (criterionId: string, rating: Rating) => void;
   onNotesChange: (criterionId: string, notes: string) => void;
 }
 
-export interface AuditStepNavigationProps {
-  step: number;
-  totalSteps: number;
-  stepCompletion: number;
-  overallScore: number;
-  isFirstStep: boolean;
-  isLastStep: boolean;
-  prevStep: () => void;
-  nextStep: () => void;
-  handleSubmitAudit: () => void;
-  loading: boolean;
+export interface AuditFormProps {
+  facilityId: number;
+  facilityName: string;
 }
 
 export interface StepProgressProps {
@@ -51,9 +36,22 @@ export interface StepProgressProps {
 export interface AuditStepContentProps {
   step: number;
   categories: string[];
-  currentCriteria: AuditCriterion[];
+  currentCriteria: Criterion[];
   stepCompletion: number;
-  ratings: CriteriaRatings;
+  ratings: Record<string, CriterionRating>;
   handleRatingChange: (criterionId: string, rating: Rating) => void;
   handleNotesChange: (criterionId: string, notes: string) => void;
+}
+
+export interface AuditStepNavigationProps {
+  step?: number;
+  totalSteps?: number;
+  stepCompletion?: number;
+  overallScore: number;
+  isFirstStep: boolean;
+  isLastStep: boolean;
+  prevStep: () => void;
+  nextStep: () => void;
+  handleSubmitAudit: () => void;
+  loading: boolean;
 }
