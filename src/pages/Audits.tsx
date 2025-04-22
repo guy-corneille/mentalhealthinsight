@@ -6,8 +6,9 @@ import AuditList from '@/components/assessments/audits/AuditList';
 import AuditTrends from '@/components/assessments/audits/AuditTrends';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Plus } from 'lucide-react';
+import { Plus, Calendar } from 'lucide-react';
 import NewAuditDialog from '@/components/assessments/audits/NewAuditDialog';
+import ScheduleAuditDialog from '@/components/assessments/audits/ScheduleAuditDialog';
 
 const Audits: React.FC = () => {
   const location = useLocation();
@@ -15,6 +16,7 @@ const Audits: React.FC = () => {
   const defaultTab = location.hash === '#trends' ? 'trends' : 'list';
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [isNewAuditDialogOpen, setIsNewAuditDialogOpen] = useState(false);
+  const [isScheduleAuditDialogOpen, setIsScheduleAuditDialogOpen] = useState(false);
 
   const handleTabChange = (value: string) => {
     console.log("Tab changed to:", value);
@@ -39,13 +41,22 @@ const Audits: React.FC = () => {
             </p>
           </div>
           
-          <Button 
-            className="bg-healthiq-600 hover:bg-healthiq-700"
-            onClick={() => setIsNewAuditDialogOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Start Audit
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => setIsScheduleAuditDialogOpen(true)}
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Schedule Audit
+            </Button>
+            <Button 
+              className="bg-healthiq-600 hover:bg-healthiq-700"
+              onClick={() => setIsNewAuditDialogOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Start Audit
+            </Button>
+          </div>
         </div>
         
         <Tabs defaultValue={defaultTab} value={activeTab} className="w-full" onValueChange={handleTabChange}>
@@ -68,6 +79,11 @@ const Audits: React.FC = () => {
         open={isNewAuditDialogOpen}
         onOpenChange={setIsNewAuditDialogOpen}
         onFacilitySelect={handleFacilitySelect}
+      />
+      
+      <ScheduleAuditDialog
+        open={isScheduleAuditDialogOpen}
+        onOpenChange={setIsScheduleAuditDialogOpen}
       />
     </Layout>
   );

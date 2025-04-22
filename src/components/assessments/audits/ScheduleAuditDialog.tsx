@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -19,6 +20,7 @@ import {
   FormMessage 
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Select, 
   SelectContent, 
@@ -35,6 +37,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Spinner } from '@/components/ui/spinner';
+import api from '@/services/api';
 
 interface Facility {
   id: number;
@@ -44,12 +47,10 @@ interface Facility {
 interface ScheduleAuditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  facilities: Facility[];
 }
 
 const formSchema = z.object({
   facilityId: z.string().min(1, "Facility is required"),
-  auditorName: z.string().min(3, "Auditor name is required"),
   auditDate: z.date({ required_error: "Audit date is required" }),
   notes: z.string().optional(),
 });
@@ -58,33 +59,66 @@ type FormValues = z.infer<typeof formSchema>;
 
 const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({ 
   open, 
-  onOpenChange,
-  facilities 
+  onOpenChange
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       facilityId: "",
-      auditorName: "",
       notes: "",
     },
   });
 
-  const onSubmit = (data: FormValues) => {
+  useEffect(() => {
+    const fetchFacilities = async () => {
+      try {
+        const response = await api.get('/api/facilities/');
+        if (Array.isArray(response)) {
+          setFacilities(response);
+        } else if (response && 'results' in response && Array.isArray(response.results)) {
+          setFacilities(response.results);
+        }
+      } catch (error) {
+        console.error('Error fetching facilities:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load facilities',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    if (open) {
+      fetchFacilities();
+    }
+  }, [open, toast]);
+
+  const onSubmit = async (data: FormValues) => {
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const selectedDate = new Date(data.auditDate);
       
-      // Show success toast
+      // Create an audit with status "scheduled"
+      const auditData = {
+        facility: parseInt(data.facilityId),
+        audit_date: selectedDate.toISOString(),
+        scheduled_date: selectedDate.toISOString().split('T')[0],
+        overall_score: 0, // Initial score of 0
+        status: 'scheduled',
+        notes: data.notes || '',
+      };
+      
+      const response = await api.post('/api/audits/', auditData);
+      
       toast({
-        title: "Audit Scheduled",
-        description: `Audit scheduled for ${format(data.auditDate, 'MMMM d, yyyy')}`,
+        title: 'Audit Scheduled',
+        description: `Audit scheduled for ${format(selectedDate, 'MMMM d, yyyy')}`,
       });
       
       // Close dialog
@@ -93,9 +127,18 @@ const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({
       // Reset form
       form.reset();
       
-      // In a real app, you'd likely redirect to the newly created audit
-      // or refresh the audit list
-    }, 1000);
+      // Redirect to audits page
+      navigate('/audits');
+    } catch (err) {
+      console.error('Error scheduling audit:', err);
+      toast({
+        title: 'Error',
+        description: 'Failed to schedule audit',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -140,20 +183,6 @@ const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({
             
             <FormField
               control={form.control}
-              name="auditorName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Auditor Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter auditor name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
               name="auditDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
@@ -184,6 +213,7 @@ const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({
                         onSelect={field.onChange}
                         disabled={(date) => date < new Date()}
                         initialFocus
+                        className={cn("p-3 pointer-events-auto")}
                       />
                     </PopoverContent>
                   </Popover>
@@ -199,7 +229,11 @@ const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({
                 <FormItem>
                   <FormLabel>Notes (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Add any additional notes" {...field} />
+                    <Textarea 
+                      placeholder="Add any additional notes or instructions for this audit"
+                      className="resize-none"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, FileEdit, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Eye, FileEdit, Trash2, Calendar, ClipboardCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
@@ -254,6 +254,14 @@ const AuditList: React.FC = () => {
                       <Eye className="h-4 w-4 mr-2" />
                       View Facility
                     </DropdownMenuItem>
+                    {audit.status === 'completed' && (
+                      <DropdownMenuItem 
+                        onClick={() => navigate(`/audits/review/${audit.id}`)}
+                      >
+                        <ClipboardCheck className="h-4 w-4 mr-2" />
+                        Review Audit
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem 
                       onClick={() => navigate(`/facilities/audit/${audit.facility}`)}
                     >

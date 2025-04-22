@@ -1,19 +1,20 @@
-import api from './api';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-// Define types for the facility data
+import api from '@/services/api';
+
+// Define the facility interface
 export interface Facility {
   id: number;
   name: string;
-  facility_type: string; // From backend field naming
-  type?: string; // For frontend compatibility
+  facility_type?: string;
+  type?: string;
   address: string;
   city?: string;
   district: string;
   province: string;
   country: string;
+  postal_code?: string;
   coordinates?: string;
-  capacity: number;
+  capacity?: number;
   status: string;
   contact_name?: string;
   contact_email?: string;
@@ -22,246 +23,103 @@ export interface Facility {
   established_date?: string;
   last_inspection_date?: string;
   description?: string;
-  created_at?: string;
-  updated_at?: string;
-  // Frontend only properties
+  created_at: string;
+  updated_at: string;
   location?: string;
   lastAudit?: string;
-  score?: number;
 }
 
-// Define API response for paginated data
-interface PaginatedResponse<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
+interface ApiResponse {
+  results?: Facility[];
+  count?: number;
+  next?: string | null;
+  previous?: string | null;
 }
 
-// Helper function to transform backend facility data to frontend format
-export const transformFacility = (facility: Facility): Facility => {
-  return {
-    ...facility,
-    // Map facility_type to type for frontend compatibility
-    type: facility.facility_type,
-    // Create a location string from address components
-    location: `${facility.city || facility.district}, ${facility.province}, ${facility.country}`,
-    // Use last_inspection_date as lastAudit if available
-    lastAudit: facility.last_inspection_date || new Date().toISOString().split('T')[0],
-    // Default score value (in a real app this would come from audit data)
-    score: Math.floor(Math.random() * 30) + 70, // Random score between 70-100 for demo
-  };
-};
-
-/**
- * Ensures a URL has proper format with protocol (http/https)
- * @param url Website URL to format
- * @returns Formatted URL with http:// or https:// prefix
- */
-const formatWebsiteUrl = (url?: string): string | undefined => {
-  if (!url || url.trim() === '') {
-    return undefined;
+// Function to fetch all facilities
+export const getFacilities = async (): Promise<Facility[]> => {
+  try {
+    const response = await api.get<ApiResponse>('/api/facilities/');
+    if ('results' in response && Array.isArray(response.results)) {
+      return response.results;
+    } 
+    if (Array.isArray(response)) {
+      return response;
+    }
+    console.error('Unexpected response format from facilities API', response);
+    return [];
+  } catch (error) {
+    console.error('Error fetching facilities:', error);
+    throw error;
   }
-  
-  // If URL already has protocol, return it
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
+};
+
+// Function to fetch a single facility by ID
+export const getFacility = async (id: number): Promise<Facility> => {
+  try {
+    const response = await api.get<Facility>(`/api/facilities/${id}/`);
+    return response;
+  } catch (error) {
+    console.error(`Error fetching facility with ID ${id}:`, error);
+    throw error;
   }
-  
-  // Add https:// protocol by default
-  return `https://${url}`;
 };
 
-/**
- * Facility Service
- * Handles all API operations related to facilities
- */
-const facilityService = {
-  /**
-   * Get all facilities
-   * @returns Promise with facility data
-   */
-  getAllFacilities: async (): Promise<Facility[]> => {
-    console.log('Fetching all facilities from API');
-    try {
-      // API endpoint for getting all facilities
-      const response = await api.get<PaginatedResponse<Facility>>('/facilities/');
-      
-      console.log('API response for facilities:', response);
-      
-      // Transform the data for frontend use
-      if (response && Array.isArray(response.results)) {
-        return response.results.map(transformFacility);
-      } else if (Array.isArray(response)) {
-        // Handle case where response is a direct array
-        return response.map(transformFacility);
-      }
-      
-      // Return empty array if no valid data
-      console.warn('Invalid API response for facilities:', response);
-      return [];
-    } catch (error) {
-      console.error('Error fetching facilities:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Get a single facility by ID
-   * @param id Facility ID
-   * @returns Promise with facility data
-   */
-  getFacilityById: async (id: number): Promise<Facility> => {
-    console.log(`Fetching facility with ID ${id} from API`);
-    try {
-      // API endpoint for getting a specific facility
-      const response = await api.get<Facility>(`/facilities/${id}/`);
-      
-      console.log(`API response for facility ${id}:`, response);
-      
-      // Transform the data for frontend use
-      return transformFacility(response);
-    } catch (error) {
-      console.error(`Error fetching facility ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Create a new facility
-   * @param facilityData Facility data to create
-   * @returns Promise with created facility
-   */
-  createFacility: async (facilityData: Partial<Facility>): Promise<Facility> => {
-    console.log('Creating new facility via API', facilityData);
-    try {
-      // Format website URL if present
-      const preparedData = {
-        ...facilityData,
-        website: formatWebsiteUrl(facilityData.website),
-      };
-      
-      console.log('Sending facility data with formatted website:', preparedData);
-      // API endpoint for creating a facility
-      const response = await api.post<Facility>('/facilities/', preparedData);
-      
-      console.log('API response for create facility:', response);
-      
-      return transformFacility(response);
-    } catch (error) {
-      console.error('Error creating facility:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Update an existing facility
-   * @param id Facility ID
-   * @param facilityData Updated facility data
-   * @returns Promise with updated facility
-   */
-  updateFacility: async (id: number, facilityData: Partial<Facility>): Promise<Facility> => {
-    console.log(`Updating facility with ID ${id} via API`, facilityData);
-    try {
-      // Format website URL if present
-      const preparedData = {
-        ...facilityData,
-        website: formatWebsiteUrl(facilityData.website),
-      };
-      
-      console.log(`Sending updated facility data with formatted website:`, preparedData);
-      // API endpoint for updating a facility
-      const response = await api.put<Facility>(`/facilities/${id}/`, preparedData);
-      
-      console.log(`API response for update facility ${id}:`, response);
-      
-      return transformFacility(response);
-    } catch (error) {
-      console.error(`Error updating facility ${id}:`, error);
-      throw error;
-    }
-  },
-
-  /**
-   * Delete a facility
-   * @param id Facility ID to delete
-   * @returns Promise with deleted facility data
-   */
-  deleteFacility: async (id: number): Promise<void> => {
-    console.log(`Deleting facility with ID ${id} via API`);
-    try {
-      // API endpoint for deleting a facility
-      await api.delete(`/facilities/${id}/`);
-      console.log(`Successfully deleted facility ${id}`);
-    } catch (error) {
-      console.error(`Error deleting facility ${id}:`, error);
-      throw error;
-    }
-  },
+// Function to create a new facility
+export const createFacility = async (facilityData: Partial<Facility>): Promise<Facility> => {
+  try {
+    const response = await api.post<Facility>('/api/facilities/', facilityData);
+    return response;
+  } catch (error) {
+    console.error('Error creating facility:', error);
+    throw error;
+  }
 };
 
-/**
- * React Query hooks for facility operations
- */
-
-// Hook for fetching all facilities
-export const useFacilities = (options?: { enabled?: boolean }) => {
-  return useQuery({
-    queryKey: ['facilities'],
-    queryFn: facilityService.getAllFacilities,
-    ...options
-  });
+// Function to update an existing facility
+export const updateFacility = async (id: number, facilityData: Partial<Facility>): Promise<Facility> => {
+  try {
+    const response = await api.put<Facility>(`/api/facilities/${id}/`, facilityData);
+    return response;
+  } catch (error) {
+    console.error(`Error updating facility with ID ${id}:`, error);
+    throw error;
+  }
 };
 
-// Hook for fetching a single facility
+// Function to delete a facility
+export const deleteFacility = async (id: number): Promise<void> => {
+  try {
+    await api.delete(`/api/facilities/${id}/`);
+  } catch (error) {
+    console.error(`Error deleting facility with ID ${id}:`, error);
+    throw error;
+  }
+};
+
+// Custom hook for facility data
 export const useFacility = (id: number) => {
-  return useQuery({
-    queryKey: ['facility', id],
-    queryFn: () => facilityService.getFacilityById(id),
-    enabled: !!id, // Only run query if id is provided
-  });
-};
+  const [data, setData] = React.useState<Facility | null>(null);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
+  const [error, setError] = React.useState<Error | null>(null);
 
-// Hook for creating a facility
-export const useCreateFacility = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (facilityData: Partial<Facility>) => 
-      facilityService.createFacility(facilityData),
-    onSuccess: () => {
-      // Invalidate facilities query to refetch the list
-      queryClient.invalidateQueries({ queryKey: ['facilities'] });
-    },
-  });
-};
+  React.useEffect(() => {
+    const fetchFacility = async () => {
+      setIsLoading(true);
+      try {
+        const facilityData = await getFacility(id);
+        setData(facilityData);
+      } catch (err) {
+        setError(err as Error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-// Hook for updating a facility
-export const useUpdateFacility = (id: number) => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (facilityData: Partial<Facility>) => 
-      facilityService.updateFacility(id, facilityData),
-    onSuccess: () => {
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['facilities'] });
-      queryClient.invalidateQueries({ queryKey: ['facility', id] });
-    },
-  });
-};
+    if (id) {
+      fetchFacility();
+    }
+  }, [id]);
 
-// Hook for deleting a facility
-export const useDeleteFacility = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: (id: number) => facilityService.deleteFacility(id),
-    onSuccess: () => {
-      // Invalidate facilities query to refetch the list
-      queryClient.invalidateQueries({ queryKey: ['facilities'] });
-    },
-  });
+  return { data, isLoading, error };
 };
-
-export default facilityService;
