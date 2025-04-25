@@ -3,7 +3,7 @@ import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { CheckCircleIcon } from 'lucide-react';
 import CriterionCard from './CriterionCard';
-import { AuditStepContentProps, Rating } from './types';
+import { AuditStepContentProps, CriterionRating, Rating } from './types';
 
 const AuditStepContent: React.FC<AuditStepContentProps> = ({
   step,
@@ -26,15 +26,20 @@ const AuditStepContent: React.FC<AuditStepContentProps> = ({
         </Badge>
       </div>
       
-      {currentCriteria.map(criterion => (
-        <CriterionCard
-          key={criterion.id}
-          criterion={criterion}
-          rating={ratings[criterion.id]?.rating || "not-rated"}
-          onRatingChange={handleRatingChange}
-          onNotesChange={handleNotesChange}
-        />
-      ))}
+      {currentCriteria.map(criterion => {
+        // Make sure each criterion has a rating object, even if it's a default one
+        const criterionRating = ratings[criterion.id] || { rating: "not-rated", notes: "" };
+        
+        return (
+          <CriterionCard
+            key={criterion.id}
+            criterion={criterion}
+            rating={criterionRating}
+            onRatingChange={handleRatingChange}
+            onNotesChange={handleNotesChange}
+          />
+        );
+      })}
       
       {currentCriteria.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">

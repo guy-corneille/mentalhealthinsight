@@ -16,7 +16,7 @@ export interface CriterionRating {
 
 export interface CriterionCardProps {
   criterion: Criterion;
-  rating: Rating | CriterionRating;
+  rating: CriterionRating;
   onRatingChange: (criterionId: string, rating: Rating) => void;
   onNotesChange: (criterionId: string, notes: string) => void;
 }
