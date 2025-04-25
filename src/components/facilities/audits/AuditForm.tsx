@@ -1,63 +1,73 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { AuditFormProps } from './types';
 import StepProgress from './StepProgress';
 import AuditStepContent from './AuditStepContent';
 import AuditStepNavigation from './AuditStepNavigation';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/hooks/use-toast';
+import { useAuditForm } from './useAuditForm';
+import { 
+  useAssessmentCriteria, 
+  AssessmentCriteria 
+} from '@/services/criteriaService';
 import api from '@/services/api';
-import { CriterionRating, Rating, Criterion } from './types';
 
-const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName, auditId }) => {
+const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: string | null }> = ({ 
+  facilityId, 
+  facilityName, 
+  auditId 
+}) => {
   const location = useLocation();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
-  const [auditCriteria, setAuditCriteria] = useState<Criterion[]>([]);
+  const [auditCriteria, setAuditCriteria] = useState<AssessmentCriteria[]>([]);
   const [ratings, setRatings] = useState<Record<string, CriterionRating>>({});
-  
-  // Get auditId from query parameter if not provided as prop
-  const queryParams = new URLSearchParams(location.search);
-  const queryAuditId = queryParams.get('auditId');
-  const effectiveAuditId = auditId || queryAuditId;
+
+  // Use the criteriaService hook to fetch audit criteria
+  const { data: criteriaData, isLoading: isFetchingCriteria } = useAssessmentCriteria('audit');
 
   useEffect(() => {
     const fetchData = async () => {
       setInitialLoading(true);
       try {
-        // Fetch criteria
-        const criteriaResponse = await api.get('/api/criteria/');
-        
-        // Process criteria data
-        const criteria = Array.isArray(criteriaResponse) 
-          ? criteriaResponse 
-          : (criteriaResponse.results || []);
-        
-        setAuditCriteria(criteria);
-        
-        // Extract unique categories
-        const uniqueCategories = [...new Set(criteria.map(c => c.category))];
-        setCategories(uniqueCategories);
+        // Process criteria data from the hook
+        if (criteriaData) {
+          setAuditCriteria(criteriaData);
+          
+          // Extract unique categories
+          const uniqueCategories = [...new Set(criteriaData.map(c => c.category))];
+          setCategories(uniqueCategories);
+        }
         
         // If we have an auditId, fetch the existing audit data
-        if (effectiveAuditId) {
-          console.log(`Loading existing audit data for ID: ${effectiveAuditId}`);
-          const auditResponse = await api.get(`/api/audits/${effectiveAuditId}/`);
+        if (auditId) {
+          console.log(`Loading existing audit data for ID: ${auditId}`);
+          const auditResponse = await api.get(`/api/audits/${auditId}/`);
+          
+          // Type assertion for the audit response
+          interface AuditScore {
+            criteria_name: string;
+            score: number;
+            notes: string;
+          }
+          
+          interface AuditResponse {
+            criteria_scores: AuditScore[];
+          }
+          
+          const typedResponse = auditResponse as AuditResponse;
           
           // If we have criteria scores, set up initial ratings
-          if (auditResponse && auditResponse.criteria_scores) {
+          if (typedResponse.criteria_scores) {
             const initialRatings: Record<string, CriterionRating> = {};
             
-            // Match criteria scores with criteria by name
-            auditResponse.criteria_scores.forEach((score: any) => {
+            typedResponse.criteria_scores.forEach((score) => {
               // Find matching criterion
-              const criterion = criteria.find(c => 
-                c.description.toLowerCase() === score.criteria_name.toLowerCase() ||
-                c.category.toLowerCase() === score.criteria_name.toLowerCase()
+              const criterion = criteriaData?.find(c => 
+                c.name.toLowerCase() === score.criteria_name.toLowerCase()
               );
               
               if (criterion) {
@@ -89,7 +99,7 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName, auditId
         console.error("Error fetching audit data:", error);
         toast({
           title: "Error",
-          description: "Failed to load audit criteria",
+          description: "Failed to load audit data",
           variant: "destructive"
         });
       } finally {
@@ -98,8 +108,8 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName, auditId
     };
     
     fetchData();
-  }, [facilityId, effectiveAuditId, facilityName, toast]);
-  
+  }, [auditId, facilityName, toast, criteriaData]);
+
   // Calculate current criteria based on step
   const getCurrentCriteria = () => {
     if (categories.length === 0) return [];
@@ -140,6 +150,7 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName, auditId
           case 'partial': score = 50; break;
           case 'limited': score = 25; break;
           case 'fail': score = 0; break;
+          case 'not-applicable': score = 0; break;
           default: score = 0;
         }
         
@@ -257,7 +268,7 @@ const AuditForm: React.FC<AuditFormProps> = ({ facilityId, facilityName, auditId
     }
   };
   
-  if (initialLoading) {
+  if (initialLoading || isFetchingCriteria) {
     return (
       <div className="flex justify-center items-center py-10">
         <Spinner size="lg" />
