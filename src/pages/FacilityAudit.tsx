@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from 'lucide-react';
@@ -11,8 +11,11 @@ import { Spinner } from "@/components/ui/spinner";
 const FacilityAudit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const auditId = queryParams.get('auditId');
   
-  console.log("Rendering FacilityAudit page for facility ID:", id);
+  console.log("Rendering FacilityAudit page for facility ID:", id, "with audit ID:", auditId);
   
   // Fetch the facility data
   const { data: facility, isLoading, error } = useFacility(Number(id));
@@ -63,11 +66,18 @@ const FacilityAudit: React.FC = () => {
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold tracking-tight">Facility Audit: {facility?.name}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {auditId ? "Continue Audit: " : "Facility Audit: "} 
+            {facility?.name}
+          </h1>
         </div>
         
         <div className="p-6 border rounded-lg bg-card">
-          <AuditForm facilityId={Number(id)} facilityName={facility?.name || ""} />
+          <AuditForm 
+            facilityId={Number(id)} 
+            facilityName={facility?.name || ""} 
+            auditId={auditId}
+          />
         </div>
       </div>
     </Layout>

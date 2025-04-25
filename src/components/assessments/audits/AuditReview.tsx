@@ -42,7 +42,9 @@ const AuditReview: React.FC = () => {
     const fetchAuditDetails = async () => {
       try {
         setLoading(true);
+        console.log(`Fetching audit details for ID: ${id}`);
         const response = await api.get<AuditData>(`/api/audits/${id}/`);
+        console.log("Audit data received:", response);
         setAudit(response);
         setError(null);
       } catch (err) {
@@ -62,6 +64,18 @@ const AuditReview: React.FC = () => {
       fetchAuditDetails();
     }
   }, [id, toast]);
+
+  const handleConductNewAudit = () => {
+    if (audit && audit.facility) {
+      navigate(`/facilities/audit/${audit.facility}`);
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Could not determine facility ID',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const getScoreBadgeClass = (score: number) => {
     if (score >= 80) return "bg-emerald-100 text-emerald-800";
@@ -224,7 +238,7 @@ const AuditReview: React.FC = () => {
           View Facility
         </Button>
         <Button 
-          onClick={() => navigate(`/facilities/audit/${audit.facility}`)}
+          onClick={handleConductNewAudit}
         >
           Conduct New Audit
         </Button>

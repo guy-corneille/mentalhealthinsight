@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import { 
@@ -21,42 +21,90 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import FacilityStaffList from "@/components/facilities/FacilityStaffList";
+import { Spinner } from "@/components/ui/spinner";
+import api from '@/services/api';
 
 const FacilityDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
+  const [facility, setFacility] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
-  const facility = {
-    id: parseInt(id || '1'),
-    name: 'Central Hospital',
-    location: 'Kigali, Rwanda',
-    type: 'Hospital',
-    capacity: 250,
-    lastAudit: '2023-04-15',
-    score: 92,
-    description: 'A leading mental health facility providing comprehensive services to the community.',
-    contact: {
-      email: 'info@centralhospital.rw',
-      phone: '+250 782 123 456',
-      website: 'www.centralhospital.rw'
-    },
-    leadDoctor: 'Dr. Jean Mutabazi',
-    staffCount: 120,
-    certifications: ['ISO 9001', 'Mental Health Excellence', 'Quality Care'],
-    services: ['Inpatient Care', 'Outpatient Services', 'Emergency Services', 'Counseling', 'Group Therapy']
-  };
+  useEffect(() => {
+    const fetchFacility = async () => {
+      setLoading(true);
+      try {
+        const data = await api.get(`/api/facilities/${id}/`);
+        setFacility(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching facility details:', err);
+        setError('Failed to load facility details');
+        toast({
+          title: 'Error',
+          description: 'Failed to load facility details',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleDelete = () => {
+    if (id) {
+      fetchFacility();
+    }
+  }, [id, toast]);
+
+  const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this facility?')) {
-      toast({
-        title: "Facility Deleted",
-        description: `${facility.name} has been removed successfully.`,
-      });
-      navigate('/facilities');
+      try {
+        await api.delete(`/api/facilities/${id}/`);
+        toast({
+          title: "Facility Deleted",
+          description: `${facility?.name} has been removed successfully.`,
+        });
+        navigate('/facilities');
+      } catch (err) {
+        console.error('Error deleting facility:', err);
+        toast({
+          title: 'Error',
+          description: 'Failed to delete facility',
+          variant: 'destructive',
+        });
+      }
     }
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-40">
+          <Spinner size="lg" />
+          <span className="ml-2">Loading facility details...</span>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error || !facility) {
+    return (
+      <Layout>
+        <div className="bg-red-50 p-4 rounded-md border border-red-200">
+          <p className="text-red-600">{error || 'Facility not found'}</p>
+          <Button 
+            onClick={() => navigate('/facilities')}
+            variant="outline" 
+            className="mt-2"
+          >
+            Back to Facilities
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -71,13 +119,15 @@ const FacilityDetails: React.FC = () => {
               <ArrowLeftIcon className="h-5 w-5" />
             </Button>
             <h1 className="text-3xl font-bold tracking-tight">{facility.name}</h1>
-            <Badge className={
-              facility.score >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
-              facility.score >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
-              'bg-rose-50 text-rose-600 hover:bg-rose-100'
-            }>
-              {facility.score}%
-            </Badge>
+            {facility.score && (
+              <Badge className={
+                facility.score >= 80 ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 
+                facility.score >= 60 ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 
+                'bg-rose-50 text-rose-600 hover:bg-rose-100'
+              }>
+                {facility.score}%
+              </Badge>
+            )}
           </div>
           
           <div className="flex items-center gap-2">
@@ -100,13 +150,17 @@ const FacilityDetails: React.FC = () => {
         
         <div className="flex items-center text-muted-foreground">
           <MapPinIcon className="h-4 w-4 mr-1" />
-          <span>{facility.location}</span>
+          <span>{facility.address || 'No address provided'}</span>
           <Separator orientation="vertical" className="mx-2 h-4" />
           <BuildingIcon className="h-4 w-4 mr-1" />
-          <span>{facility.type}</span>
-          <Separator orientation="vertical" className="mx-2 h-4" />
-          <CalendarIcon className="h-4 w-4 mr-1" />
-          <span>Last audit: {new Date(facility.lastAudit).toLocaleDateString()}</span>
+          <span>{facility.facility_type || 'Unknown type'}</span>
+          {facility.last_inspection_date && (
+            <>
+              <Separator orientation="vertical" className="mx-2 h-4" />
+              <CalendarIcon className="h-4 w-4 mr-1" />
+              <span>Last inspection: {new Date(facility.last_inspection_date).toLocaleDateString()}</span>
+            </>
+          )}
         </div>
         
         <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
@@ -124,18 +178,18 @@ const FacilityDetails: React.FC = () => {
                   <CardTitle className="text-sm font-medium">Capacity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{facility.capacity}</div>
+                  <div className="text-2xl font-bold">{facility.capacity || 'N/A'}</div>
                   <p className="text-xs text-muted-foreground">Patient beds</p>
                 </CardContent>
               </Card>
               
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Staff</CardTitle>
+                  <CardTitle className="text-sm font-medium">Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{facility.staffCount}</div>
-                  <p className="text-xs text-muted-foreground">Healthcare professionals</p>
+                  <div className="text-2xl font-bold">{facility.status || 'Unknown'}</div>
+                  <p className="text-xs text-muted-foreground">Current status</p>
                 </CardContent>
               </Card>
               
@@ -144,7 +198,7 @@ const FacilityDetails: React.FC = () => {
                   <CardTitle className="text-sm font-medium">Audit Score</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{facility.score}%</div>
+                  <div className="text-2xl font-bold">{facility.score ? `${facility.score}%` : 'Not audited'}</div>
                   <p className="text-xs text-muted-foreground">Based on last evaluation</p>
                 </CardContent>
               </Card>
@@ -155,30 +209,31 @@ const FacilityDetails: React.FC = () => {
                 <CardTitle>About</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>{facility.description}</p>
+                <p>{facility.description || 'No description available for this facility.'}</p>
                 
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                   <div>
                     <h4 className="text-sm font-semibold mb-2">Contact Information</h4>
                     <div className="space-y-2">
-                      <p className="text-sm">Email: {facility.contact.email}</p>
-                      <p className="text-sm">Phone: {facility.contact.phone}</p>
-                      <p className="text-sm">Website: {facility.contact.website}</p>
+                      <p className="text-sm">Email: {facility.contact_email || 'Not provided'}</p>
+                      <p className="text-sm">Phone: {facility.contact_phone || 'Not provided'}</p>
+                      <p className="text-sm">Website: {facility.website || 'Not provided'}</p>
                     </div>
                   </div>
                   
                   <div>
                     <h4 className="text-sm font-semibold mb-2">Leadership</h4>
-                    <p className="text-sm">Lead Doctor: {facility.leadDoctor}</p>
+                    <p className="text-sm">Contact: {facility.contact_name || 'Not specified'}</p>
                   </div>
                   
                   <div>
-                    <h4 className="text-sm font-semibold mb-2">Certifications</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {facility.certifications.map((cert, i) => (
-                        <Badge key={i} variant="outline">{cert}</Badge>
-                      ))}
-                    </div>
+                    <h4 className="text-sm font-semibold mb-2">Location</h4>
+                    <p className="text-sm">
+                      {facility.address && <span>{facility.address}<br /></span>}
+                      {facility.city && <span>{facility.city}, </span>}
+                      {facility.province && <span>{facility.province}<br /></span>}
+                      {facility.country}
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -191,7 +246,7 @@ const FacilityDetails: React.FC = () => {
                 <CardTitle>Staff Directory</CardTitle>
               </CardHeader>
               <CardContent>
-                <FacilityStaffList facilityId={facility.id} />
+                <FacilityStaffList facilityId={Number(id)} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -202,13 +257,8 @@ const FacilityDetails: React.FC = () => {
                 <CardTitle>Available Services</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {facility.services.map((service, i) => (
-                    <div key={i} className="flex items-center gap-2 p-3 border rounded-md">
-                      <ClipboardCheckIcon className="h-5 w-5 text-healthiq-600" />
-                      <span>{service}</span>
-                    </div>
-                  ))}
+                <div className="text-center py-6">
+                  <p className="text-muted-foreground">Service information is not available via API.</p>
                 </div>
               </CardContent>
             </Card>

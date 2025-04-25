@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, FileEdit, Trash2, Calendar, ClipboardCheck } from 'lucide-react';
+import { MoreHorizontal, Eye, FileEdit, Trash2, Calendar, ClipboardCheck, PlayIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import api from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
@@ -127,6 +127,11 @@ const AuditList: React.FC = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleTakeAudit = (auditId: number, facilityId: number) => {
+    // Navigate to the audit form with the existing audit ID
+    navigate(`/facilities/audit/${facilityId}?auditId=${auditId}`);
   };
 
   const getStatusBadge = (status: string) => {
@@ -260,6 +265,14 @@ const AuditList: React.FC = () => {
                       >
                         <ClipboardCheck className="h-4 w-4 mr-2" />
                         Review Audit
+                      </DropdownMenuItem>
+                    )}
+                    {audit.status === 'scheduled' && (
+                      <DropdownMenuItem 
+                        onClick={() => handleTakeAudit(audit.id, audit.facility)}
+                      >
+                        <PlayIcon className="h-4 w-4 mr-2" />
+                        Take Audit
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem 

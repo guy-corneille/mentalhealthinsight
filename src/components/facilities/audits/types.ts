@@ -24,6 +24,7 @@ export interface CriterionCardProps {
 export interface AuditFormProps {
   facilityId: number;
   facilityName: string;
+  auditId?: string | null;
 }
 
 export interface StepProgressProps {
