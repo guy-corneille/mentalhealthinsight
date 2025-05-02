@@ -11,7 +11,6 @@ import {
   AssessmentCriteria 
 } from '@/services/criteriaService';
 import api from '@/services/api';
-import { CriterionRating, Rating, Criterion } from './types';
 
 const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: string | null }> = ({ 
   facilityId, 
@@ -24,7 +23,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
-  const [auditCriteria, setAuditCriteria] = useState<Criterion[]>([]);
+  const [auditCriteria, setAuditCriteria] = useState<AssessmentCriteria[]>([]);
   const [ratings, setRatings] = useState<Record<string, CriterionRating>>({});
 
   // Use the criteriaService hook to fetch audit criteria
@@ -36,16 +35,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
       try {
         // Process criteria data from the hook
         if (criteriaData) {
-          // Convert AssessmentCriteria to Criterion for the component
-          const convertedCriteria: Criterion[] = criteriaData.map(c => ({
-            id: c.id.toString(),
-            category: c.category,
-            description: c.description,
-            guidance: c.purpose || "", // Using purpose as guidance since it's a string
-            weight: c.indicators?.reduce((sum, ind) => sum + ind.weight, 0) || 1
-          }));
-          
-          setAuditCriteria(convertedCriteria);
+          setAuditCriteria(criteriaData);
           
           // Extract unique categories
           const uniqueCategories = [...new Set(criteriaData.map(c => c.category))];
@@ -89,7 +79,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
                 else if (score.score >= 25) rating = "limited";
                 else if (score.score >= 0) rating = "fail";
                 
-                initialRatings[criterion.id.toString()] = {
+                initialRatings[criterion.id] = {
                   rating: rating,
                   notes: score.notes || ""
                 };
@@ -152,7 +142,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
     
     auditCriteria.forEach(criterion => {
       const rating = ratings[criterion.id];
-      if (rating && rating.rating !== 'not-rated') {
+      if (rating && rating.rating !== 'not-rated' && rating.rating !== 'not-applicable') {
         let score = 0;
         switch (rating.rating) {
           case 'pass': score = 100; break;
@@ -160,6 +150,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
           case 'partial': score = 50; break;
           case 'limited': score = 25; break;
           case 'fail': score = 0; break;
+          case 'not-applicable': score = 0; break;
           default: score = 0;
         }
         
@@ -227,6 +218,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
             case 'partial': score = 50; break;
             case 'limited': score = 25; break;
             case 'fail': score = 0; break;
+            case 'not-applicable': score = 0; break;
             default: score = 0;
           }
           
@@ -250,8 +242,8 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
       
       // Submit or update the audit
       let response;
-      if (auditId) {
-        response = await api.put(`/api/audits/${auditId}/`, auditData);
+      if (effectiveAuditId) {
+        response = await api.put(`/api/audits/${effectiveAuditId}/`, auditData);
       } else {
         response = await api.post('/api/audits/', auditData);
       }
