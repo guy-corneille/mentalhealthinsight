@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import StepProgress from './StepProgress';
@@ -153,7 +152,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
     
     auditCriteria.forEach(criterion => {
       const rating = ratings[criterion.id];
-      if (rating && rating.rating !== 'not-rated' && rating.rating !== 'not-applicable') {
+      if (rating && rating.rating !== 'not-rated') {
         let score = 0;
         switch (rating.rating) {
           case 'pass': score = 100; break;
@@ -161,7 +160,6 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
           case 'partial': score = 50; break;
           case 'limited': score = 25; break;
           case 'fail': score = 0; break;
-          case 'not-applicable': score = 0; break;
           default: score = 0;
         }
         
@@ -229,7 +227,6 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
             case 'partial': score = 50; break;
             case 'limited': score = 25; break;
             case 'fail': score = 0; break;
-            case 'not-applicable': score = 0; break;
             default: score = 0;
           }
           
