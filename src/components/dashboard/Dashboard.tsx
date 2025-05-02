@@ -15,10 +15,10 @@ const Dashboard = () => {
       
       <StatsOverview />
       
-      <div>
+      {/* <div>
         <h3 className="text-xl font-semibold mb-4">Performance Benchmarks</h3>
         <BenchmarkOverview />
-      </div>
+      </div> */}
     </div>
   );
 };

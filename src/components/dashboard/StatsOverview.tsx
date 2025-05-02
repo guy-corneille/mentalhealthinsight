@@ -38,8 +38,8 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   const { chartData: assessmentData, isLoading: assessmentsLoading } = useAssessmentStats();
 
   // Use reportService for audit count to maintain consistency with other API calls
-  const { 
-    data: auditData, 
+  const {
+    data: auditData,
     isLoading: auditsLoading,
     error: auditError
   } = useQuery({
@@ -49,18 +49,18 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
       const endDate = new Date();
       const startDate = new Date();
       startDate.setFullYear(endDate.getFullYear() - 1);
-      
+
       const filters = {
         startDate: startDate.toISOString().split('T')[0],
         endDate: endDate.toISOString().split('T')[0]
       };
-      
+
       // The API actually returns the data directly, not nested under a data property
       const response = await api.get<AuditCountResponse>('/api/reports/audits/count', { params: filters });
-      
+
       // Explicitly log the response for debugging
       console.log("Audit count API response:", response);
-      
+
       // Our API service already extracts the data for us, so we can return it directly
       return response;
     },
@@ -71,73 +71,78 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({
   const facilityCount = facilities?.length || 0;
   const staffCount = staff?.length || 0;
   const patientCount = patients?.length || 0;
-  
+
   // Get the assessment count from the API data
   const assessmentCount = assessmentData?.summary?.totalCount || 0;
-  
+
   // Get the audit count directly from API data - fixed to account for the correct response structure
   const auditCount = auditData?.count || 0;
 
   // Handle error states for audit card
-  const auditValue = auditsLoading 
-    ? "Loading..." 
+  const auditValue = auditsLoading
+    ? "Loading..."
     : (auditError ? "Error loading" : auditCount);
 
   return (
-    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+    <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
       {/* Facility Card */}
       <StatCard
         title="Total Facilities"
         value={facilitiesLoading ? "Loading..." : facilityCount}
-        icon={<Building2 className="h-4 w-4 text-healthiq-600" />}
+        icon={<Building2 className="h-6 w-6 text-healthiq-600" />}
         description="Mental health facilities in system"
         onClick={onFacilityClick}
+        className="bg-white p-4 rounded shadow-md"
       />
-      
+
       {/* Staff Card */}
       <StatCard
         title="Healthcare Staff"
         value={staffLoading ? "Loading..." : staffCount}
-        icon={<Users className="h-4 w-4 text-healthiq-600" />}
+        icon={<Users className="h-6 w-6 text-healthiq-600" />}
         description="Professionals across all facilities"
         onClick={onStaffClick}
+        className="bg-white p-4 rounded shadow-md"
       />
-      
+
       {/* Patients Card */}
       <StatCard
         title="Registered Patients"
         value={patientsLoading ? "Loading..." : patientCount}
-        icon={<UserCheck className="h-4 w-4 text-healthiq-600" />}
+        icon={<UserCheck className="h-6 w-6 text-healthiq-600" />}
         description="Patients under care"
         onClick={onPatientClick}
+        className="bg-white p-4 rounded shadow-md"
       />
-      
+
       {/* Assessment Card */}
       <StatCard
         title="Assessments"
         value={assessmentsLoading ? "Loading..." : assessmentCount}
-        icon={<FileText className="h-4 w-4 text-healthiq-600" />}
+        icon={<FileText className="h-6 w-6 text-healthiq-600" />}
         description="Total completed assessments"
         onClick={onAssessmentClick}
+        className="bg-white p-4 rounded shadow-md"
       />
-      
+
       {/* Audit Card - Using API Data */}
       <StatCard
         title="Audits"
         value={auditValue}
-        icon={<ClipboardCheck className="h-4 w-4 text-healthiq-600" />}
+        icon={<ClipboardCheck className="h-6 w-6 text-healthiq-600" />}
         description="Total facility audits"
         onClick={onAuditClick}
+        className="bg-white p-4 rounded shadow-md"
       />
-      
+
       {/* Benchmarking Card - Coming Soon */}
       <StatCard
         title="Benchmarking"
         value="Coming Soon"
-        icon={<TrendingUp className="h-4 w-4 text-healthiq-600" />}
+        icon={<TrendingUp className="h-6 w-6 text-healthiq-600" />}
         description="Facility performance comparisons"
         onClick={onBenchmarkingClick}
-        className="bg-gray-50"
+        className="bg-gray-50 p-4 rounded shadow-md"
       />
     </div>
   );

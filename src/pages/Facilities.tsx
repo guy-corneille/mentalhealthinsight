@@ -25,13 +25,7 @@ const Facilities: React.FC = () => {
           </div>
           
           {/* Add new facility button */}
-          <Button 
-            onClick={() => navigate('/facilities/add')}
-            className="bg-healthiq-600 hover:bg-healthiq-700"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add Facility
-          </Button>
+
         </div>
         
         {/* Facility list component with API data */}

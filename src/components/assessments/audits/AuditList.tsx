@@ -275,12 +275,12 @@ const AuditList: React.FC = () => {
                         Take Audit
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem 
+                    {/* <DropdownMenuItem 
                       onClick={() => navigate(`/facilities/audit/${audit.facility}`)}
                     >
                       <FileEdit className="h-4 w-4 mr-2" />
                       New Audit
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                     <DropdownMenuItem 
                       onClick={() => handleDelete(audit.id)}
                       className="text-red-600"
