@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import StepProgress from './StepProgress';
@@ -12,6 +13,15 @@ import {
 } from '@/services/criteriaService';
 import api from '@/services/api';
 
+// Define type for the rating
+type Rating = 'pass' | 'good' | 'partial' | 'limited' | 'fail' | 'not-rated' | 'not-applicable';
+
+// Define type for criterion rating
+interface CriterionRating {
+  rating: Rating;
+  notes: string;
+}
+
 const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: string | null }> = ({ 
   facilityId, 
   facilityName, 
@@ -25,6 +35,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
   const [categories, setCategories] = useState<string[]>([]);
   const [auditCriteria, setAuditCriteria] = useState<AssessmentCriteria[]>([]);
   const [ratings, setRatings] = useState<Record<string, CriterionRating>>({});
+  const [effectiveAuditId, setEffectiveAuditId] = useState<string | null>(null);
 
   // Use the criteriaService hook to fetch audit criteria
   const { data: criteriaData, isLoading: isFetchingCriteria } = useAssessmentCriteria('audit');
@@ -45,56 +56,66 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
         // If we have an auditId, fetch the existing audit data
         if (auditId) {
           console.log(`Loading existing audit data for ID: ${auditId}`);
-          const auditResponse = await api.get(`/api/audits/${auditId}/`);
+          setEffectiveAuditId(auditId);
           
-          // Type assertion for the audit response
-          interface AuditScore {
-            criteria_name: string;
-            score: number;
-            notes: string;
-          }
-          
-          interface AuditResponse {
-            criteria_scores: AuditScore[];
-          }
-          
-          const typedResponse = auditResponse as AuditResponse;
-          
-          // If we have criteria scores, set up initial ratings
-          if (typedResponse.criteria_scores) {
-            const initialRatings: Record<string, CriterionRating> = {};
+          try {
+            const auditResponse = await api.get(`/api/audits/${auditId}/`);
             
-            typedResponse.criteria_scores.forEach((score) => {
-              // Find matching criterion
-              const criterion = criteriaData?.find(c => 
-                c.name.toLowerCase() === score.criteria_name.toLowerCase()
-              );
+            // Type assertion for the audit response
+            interface AuditScore {
+              criteria_name: string;
+              score: number;
+              notes: string;
+            }
+            
+            interface AuditResponse {
+              criteria_scores: AuditScore[];
+            }
+            
+            const typedResponse = auditResponse as AuditResponse;
+            
+            // If we have criteria scores, set up initial ratings
+            if (typedResponse.criteria_scores) {
+              const initialRatings: Record<string, CriterionRating> = {};
               
-              if (criterion) {
-                // Convert numeric score to rating
-                let rating: Rating = "not-rated";
-                if (score.score >= 90) rating = "pass";
-                else if (score.score >= 75) rating = "good";
-                else if (score.score >= 50) rating = "partial";
-                else if (score.score >= 25) rating = "limited";
-                else if (score.score >= 0) rating = "fail";
+              typedResponse.criteria_scores.forEach((score) => {
+                // Find matching criterion
+                const criterion = criteriaData?.find(c => 
+                  c.name.toLowerCase() === score.criteria_name.toLowerCase()
+                );
                 
-                initialRatings[criterion.id] = {
-                  rating: rating,
-                  notes: score.notes || ""
-                };
-              }
-            });
+                if (criterion) {
+                  // Convert numeric score to rating
+                  let rating: Rating = "not-rated";
+                  if (score.score >= 90) rating = "pass";
+                  else if (score.score >= 75) rating = "good";
+                  else if (score.score >= 50) rating = "partial";
+                  else if (score.score >= 25) rating = "limited";
+                  else if (score.score >= 0) rating = "fail";
+                  
+                  initialRatings[criterion.id] = {
+                    rating: rating,
+                    notes: score.notes || ""
+                  };
+                }
+              });
+              
+              setRatings(initialRatings);
+            }
             
-            setRatings(initialRatings);
+            toast({
+              title: "Audit Loaded",
+              description: `Loaded existing audit data for ${facilityName}`,
+            });
+          } catch (error) {
+            console.error("Error loading audit by ID:", error);
+            toast({
+              title: "Error",
+              description: "Could not load the audit data",
+              variant: "destructive"
+            });
           }
-          
-          toast({
-            title: "Audit Loaded",
-            description: `Loaded existing audit data for ${facilityName}`,
-          });
         }
-        
       } catch (error) {
         console.error("Error fetching audit data:", error);
         toast({
@@ -154,8 +175,8 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
           default: score = 0;
         }
         
-        totalScore += score * criterion.weight;
-        totalWeight += criterion.weight;
+        totalScore += score * (criterion.weight || 1);
+        totalWeight += (criterion.weight || 1);
         ratedCriteriaCount++;
       }
     });
@@ -223,7 +244,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
           }
           
           criteriaScores.push({
-            criteria_name: criterion.description,
+            criteria_name: criterion.description || criterion.name,
             score: score,
             notes: ratings[criterion.id].notes || ''
           });
@@ -243,8 +264,10 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
       // Submit or update the audit
       let response;
       if (effectiveAuditId) {
+        console.log(`Updating existing audit with ID: ${effectiveAuditId}`, auditData);
         response = await api.put(`/api/audits/${effectiveAuditId}/`, auditData);
       } else {
+        console.log(`Creating new audit for facility ID: ${facilityId}`, auditData);
         response = await api.post('/api/audits/', auditData);
       }
       
@@ -254,7 +277,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
       });
       
       // Redirect to the audit review page
-      window.location.href = `/audits/review/${response.id}`;
+      window.location.href = `/audits/review/${response.id || effectiveAuditId}`;
       
     } catch (error) {
       console.error("Error submitting audit:", error);

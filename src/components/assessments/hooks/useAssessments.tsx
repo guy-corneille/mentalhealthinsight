@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
@@ -11,17 +11,20 @@ export function useAssessments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Data fetching with pagination
+  // Data fetching with pagination and sorting
   const fetchAssessments = useCallback(async () => {
-    console.log(`Fetching assessments, page: ${currentPage}, size: ${pageSize}, search: ${searchQuery || 'none'}`);
+    console.log(`Fetching assessments, page: ${currentPage}, size: ${pageSize}, search: ${searchQuery || 'none'}, sort: ${sortBy || 'none'}, direction: ${sortDirection}`);
     
     try {
       const response = await api.get<PaginatedResponse<Assessment>>('/assessments/', {
         params: {
           search: searchQuery || undefined,
           page: currentPage,
-          page_size: pageSize
+          page_size: pageSize,
+          ordering: sortBy ? (sortDirection === 'desc' ? `-${sortBy}` : sortBy) : '-assessment_date'
         }
       });
       
@@ -31,7 +34,7 @@ export function useAssessments() {
       console.error('Error fetching assessments:', error);
       throw error;
     }
-  }, [searchQuery, currentPage, pageSize]);
+  }, [searchQuery, currentPage, pageSize, sortBy, sortDirection]);
 
   // Query for assessment data
   const { 
@@ -41,10 +44,9 @@ export function useAssessments() {
     isFetching,
     refetch
   } = useQuery({
-    queryKey: ['assessments', searchQuery, currentPage, pageSize],
+    queryKey: ['assessments', searchQuery, currentPage, pageSize, sortBy, sortDirection],
     queryFn: fetchAssessments,
     refetchOnWindowFocus: false,
-    staleTime: 0, // Always refetch when needed
   });
 
   // Ensure we have the correct total count
@@ -104,6 +106,16 @@ export function useAssessments() {
     setCurrentPage(1); // Reset to first page when changing page size
   };
 
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDirection('asc');
+    }
+    setCurrentPage(1); // Reset to first page when sorting
+  };
+
   return {
     assessments,
     totalCount,
@@ -117,5 +129,8 @@ export function useAssessments() {
     handleDeleteAssessment,
     handlePageChange,
     handlePageSizeChange,
+    sortBy,
+    sortDirection,
+    handleSort
   };
 }

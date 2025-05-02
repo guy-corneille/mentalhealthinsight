@@ -10,11 +10,38 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowUpDownIcon } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon } from 'lucide-react';
 import { Spinner } from "@/components/ui/spinner";
 import AssessmentActions from './AssessmentActions';
 import { Assessment } from '../types';
 import { useAuth } from '@/contexts/AuthContext';
+
+interface SortableHeaderProps {
+  column: string;
+  label: string;
+  sortBy: string | null;
+  sortDirection: 'asc' | 'desc';
+  onSort: (column: string) => void;
+}
+
+const SortableHeader: React.FC<SortableHeaderProps> = ({ column, label, sortBy, sortDirection, onSort }) => {
+  return (
+    <Button 
+      variant="ghost" 
+      className="p-0 h-auto font-semibold flex items-center text-xs"
+      onClick={() => onSort(column)}
+    >
+      {label}
+      {sortBy === column ? (
+        sortDirection === 'asc' ? 
+          <ArrowUpIcon className="h-3 w-3 ml-1" /> : 
+          <ArrowDownIcon className="h-3 w-3 ml-1" />
+      ) : (
+        <ArrowUpDownIcon className="h-3 w-3 ml-1" />
+      )}
+    </Button>
+  );
+};
 
 interface AssessmentTableProps {
   assessments: Assessment[] | undefined;
@@ -25,6 +52,9 @@ interface AssessmentTableProps {
   onEditAssessment: (assessment: Assessment) => void;
   onPrintReport: (assessment: Assessment) => void;
   onDeleteAssessment: (id: number | string) => void;
+  sortBy: string | null;
+  sortDirection: 'asc' | 'desc';
+  onSort: (column: string) => void;
 }
 
 const AssessmentTable: React.FC<AssessmentTableProps> = ({
@@ -35,7 +65,10 @@ const AssessmentTable: React.FC<AssessmentTableProps> = ({
   onViewDetails,
   onEditAssessment,
   onPrintReport,
-  onDeleteAssessment
+  onDeleteAssessment,
+  sortBy,
+  sortDirection,
+  onSort
 }) => {
   const { user } = useAuth();
 
@@ -62,17 +95,60 @@ const AssessmentTable: React.FC<AssessmentTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Patient ID</TableHead>
-            <TableHead>Patient</TableHead>
             <TableHead>
-              <Button variant="ghost" className="p-0 h-auto font-semibold flex items-center text-xs">
-                Date
-                <ArrowUpDownIcon className="h-3 w-3 ml-1" />
-              </Button>
+              <SortableHeader
+                column="patient"
+                label="Patient ID"
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={onSort}
+              />
             </TableHead>
-            <TableHead>Score</TableHead>
-            <TableHead>Facility</TableHead>
-            <TableHead>Evaluator</TableHead>
+            <TableHead>
+              <SortableHeader
+                column="patient_name"
+                label="Patient"
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={onSort}
+              />
+            </TableHead>
+            <TableHead>
+              <SortableHeader
+                column="assessment_date"
+                label="Date"
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={onSort}
+              />
+            </TableHead>
+            <TableHead>
+              <SortableHeader
+                column="score"
+                label="Score"
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={onSort}
+              />
+            </TableHead>
+            <TableHead>
+              <SortableHeader
+                column="facility_name"
+                label="Facility"
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={onSort}
+              />
+            </TableHead>
+            <TableHead>
+              <SortableHeader
+                column="evaluator_name"
+                label="Evaluator"
+                sortBy={sortBy}
+                sortDirection={sortDirection}
+                onSort={onSort}
+              />
+            </TableHead>
             <TableHead>Notes</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>

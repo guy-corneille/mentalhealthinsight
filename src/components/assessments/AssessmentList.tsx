@@ -41,7 +41,10 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     handleSearchChange, 
     handleDeleteAssessment,
     handlePageChange,
-    handlePageSizeChange
+    handlePageSizeChange,
+    sortBy,
+    sortDirection,
+    handleSort
   } = useAssessments();
   
   const { handlePrintReport } = useReportActions();
@@ -63,6 +66,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   };
 
   const handleEditAssessment = (assessment: Assessment) => {
+    // For now we just show a toast, but this could be implemented later
     toast({
       title: "Edit Assessment",
       description: `Editing assessment ${assessment.id} is not implemented yet.`,
@@ -84,7 +88,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       />
       
       {/* Loading indicator for fetching */}
-      {isFetching && (
+      {isFetching && !isLoading && (
         <div className="text-sm text-muted-foreground text-center py-2 bg-muted/30 rounded">
           Loading assessment data...
         </div>
@@ -101,6 +105,9 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
           onEditAssessment={handleEditAssessment}
           onPrintReport={handlePrintReport}
           onDeleteAssessment={handleDeleteAssessment}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSort={handleSort}
         />
       </div>
 
