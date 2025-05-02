@@ -83,10 +83,11 @@ export function useAssessments() {
     }
   });
 
-  const handleSearchChange = (value: string) => {
+  const handleSearchChange = useCallback((value: string) => {
+    console.log("Search query changed to:", value);
     setSearchQuery(value);
     setCurrentPage(1); // Reset to first page on new search
-  };
+  }, []);
 
   const handleDeleteAssessment = (id: number | string) => {
     if (confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
@@ -107,6 +108,7 @@ export function useAssessments() {
   };
 
   const handleSort = (column: string) => {
+    console.log(`Sorting by column: ${column}`);
     if (sortBy === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {

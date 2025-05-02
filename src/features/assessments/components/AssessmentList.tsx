@@ -1,20 +1,16 @@
 
-/**
- * Assessment List Component
- * 
- * This component displays a list of assessments with filtering, pagination,
- * and action capabilities. It provides the main interface for managing assessments.
- */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 // Import components
 import NewAssessmentDialog from '@/components/assessments/NewAssessmentDialog';
 import AssessmentTable from '@/components/assessments/components/AssessmentTable';
 import AssessmentDetailsDialog from '@/components/assessments/components/AssessmentDetailsDialog';
-import AssessmentFilters from '@/components/assessments/components/AssessmentFilters';
 import PaginationControls from '@/components/common/PaginationControls';
+import { Button } from '@/components/ui/button';
 import { Assessment } from '@/features/assessments/types';
 
 // Import custom hooks
@@ -85,15 +81,28 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Search and Filter Controls */}
-      <AssessmentFilters
-        searchQuery={searchQuery}
-        onSearchChange={handleSearchChange}
-        onNewAssessmentClick={() => setIsDialogOpen(true)}
-      />
+      {/* Search and Controls */}
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input 
+            type="search"
+            placeholder="Search assessments..."
+            className="pl-8 w-full"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+          />
+        </div>
+        <Button
+          onClick={() => setIsDialogOpen(true)}
+          className="bg-healthiq-600 hover:bg-healthiq-700"
+        >
+          New Assessment
+        </Button>
+      </div>
       
       {/* Loading indicator for fetching */}
-      {isFetching && (
+      {isFetching && !isLoading && (
         <div className="text-sm text-muted-foreground text-center py-2 bg-muted/30 rounded">
           Loading assessment data...
         </div>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import api from '@/services/api';
@@ -75,6 +75,125 @@ const AuditReview: React.FC = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const handlePrintReport = () => {
+    if (!audit) return;
+    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({
+        title: "Error",
+        description: "Unable to open print window. Please check your browser settings.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Audit Report - ${audit.facility_name}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 30px; }
+            h1 { color: #334155; }
+            .header { border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
+            .section { margin-bottom: 20px; }
+            .label { font-weight: bold; color: #64748b; }
+            .score { font-size: 24px; font-weight: bold; }
+            .score-high { color: #10b981; }
+            .score-medium { color: #f59e0b; }
+            .score-low { color: #ef4444; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+            .criteria-item { padding: 10px 0; border-bottom: 1px solid #eee; }
+            .footer { margin-top: 40px; font-size: 12px; color: #94a3b8; border-top: 1px solid #ddd; padding-top: 10px; }
+            @media print {
+              body { margin: 0; padding: 15px; }
+              button { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Facility Audit Report</h1>
+            <p>Generated on: ${format(new Date(), 'PPP p')}</p>
+          </div>
+          
+          <div class="section grid">
+            <div>
+              <p class="label">Facility:</p>
+              <p>${audit.facility_name}</p>
+            </div>
+            <div>
+              <p class="label">Audit Date:</p>
+              <p>${format(new Date(audit.audit_date), 'PPP')}</p>
+            </div>
+            <div>
+              <p class="label">Auditor:</p>
+              <p>${audit.auditor_name || 'Unknown'}</p>
+            </div>
+            <div>
+              <p class="label">Status:</p>
+              <p>${audit.status.charAt(0).toUpperCase() + audit.status.slice(1)}</p>
+            </div>
+          </div>
+          
+          <div class="section">
+            <p class="label">Overall Score:</p>
+            <p class="score ${
+              audit.overall_score >= 80 ? 'score-high' : 
+              audit.overall_score >= 60 ? 'score-medium' : 
+              'score-low'
+            }">${audit.overall_score}%</p>
+          </div>
+          
+          ${audit.notes ? `
+            <div class="section">
+              <p class="label">Notes:</p>
+              <p>${audit.notes}</p>
+            </div>
+          ` : ''}
+          
+          <div class="section">
+            <h2>Criteria Scores</h2>
+            ${audit.criteria_scores && audit.criteria_scores.length > 0 ? 
+              audit.criteria_scores.map(criterion => `
+                <div class="criteria-item">
+                  <div>
+                    <span class="label">${criterion.criteria_name}:</span>
+                    <span class="score ${
+                      criterion.score >= 80 ? 'score-high' : 
+                      criterion.score >= 60 ? 'score-medium' : 
+                      'score-low'
+                    }">${criterion.score}%</span>
+                  </div>
+                  ${criterion.notes ? `<p>${criterion.notes}</p>` : ''}
+                </div>
+              `).join('') 
+              : '<p>No detailed criteria scores available.</p>'
+            }
+          </div>
+          
+          <div class="footer">
+            <p>This report is confidential and intended only for authorized personnel.</p>
+            <p>HealthIQ Audit System</p>
+          </div>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+
+    toast({
+      title: "Report generated",
+      description: "The audit report has been prepared for printing.",
+    });
   };
 
   const getScoreBadgeClass = (score: number) => {
@@ -227,6 +346,13 @@ const AuditReview: React.FC = () => {
       <div className="flex justify-end gap-2">
         <Button 
           variant="outline" 
+          onClick={handlePrintReport}
+        >
+          <Printer className="h-4 w-4 mr-2" />
+          Print Report
+        </Button>
+        <Button 
+          variant="outline" 
           onClick={() => navigate('/audits')}
         >
           Back to Audits
@@ -240,7 +366,7 @@ const AuditReview: React.FC = () => {
         <Button 
           onClick={handleConductNewAudit}
         >
-          Conduct New Audit
+          Take Audit
         </Button>
       </div>
     </div>

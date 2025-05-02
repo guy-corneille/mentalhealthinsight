@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Plus } from 'lucide-react';
-import SearchInput from '@/components/common/SearchInput';
+import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface AssessmentFiltersProps {
   searchQuery: string;
@@ -13,28 +13,26 @@ interface AssessmentFiltersProps {
 const AssessmentFilters: React.FC<AssessmentFiltersProps> = ({
   searchQuery,
   onSearchChange,
-  onNewAssessmentClick,
+  onNewAssessmentClick
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row gap-4 justify-between">
-      <div className="flex-1 max-w-md">
-        <SearchInput
-          placeholder="Search patients, evaluators, facilities..."
+    <div className="flex flex-col sm:flex-row justify-between gap-4">
+      <div className="relative w-full sm:w-64">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input 
+          type="search"
+          placeholder="Search assessments..."
+          className="pl-8 w-full"
           value={searchQuery}
-          onChange={onSearchChange}
-          className="w-full"
+          onChange={(e) => onSearchChange(e.target.value)}
         />
       </div>
-      
-      <div className="flex gap-2 self-end">
-        <Button
-          onClick={onNewAssessmentClick}
-          className="bg-healthiq-600 hover:bg-healthiq-700"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Assessment
-        </Button>
-      </div>
+      <Button
+        onClick={onNewAssessmentClick}
+        className="bg-healthiq-600 hover:bg-healthiq-700"
+      >
+        New Assessment
+      </Button>
     </div>
   );
 };
