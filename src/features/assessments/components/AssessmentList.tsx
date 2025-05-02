@@ -47,7 +47,10 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     handleSearchChange, 
     handleDeleteAssessment,
     handlePageChange,
-    handlePageSizeChange
+    handlePageSizeChange,
+    sortBy,
+    sortDirection,
+    handleSort
   } = useAssessments();
   
   const { handlePrintReport } = useReportActions();
@@ -107,6 +110,9 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
           onEditAssessment={handleEditAssessment}
           onPrintReport={handlePrintReport}
           onDeleteAssessment={handleDeleteAssessment}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSort={handleSort}
         />
       </div>
 

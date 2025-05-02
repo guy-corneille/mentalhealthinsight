@@ -15,6 +15,8 @@ export interface AssessmentCriteria {
   category: string;
   description: string;
   purpose: 'Assessment' | 'Audit';
+  guidance?: string;
+  weight?: number;
   indicators?: Indicator[];
   created_at?: string;
   updated_at?: string;

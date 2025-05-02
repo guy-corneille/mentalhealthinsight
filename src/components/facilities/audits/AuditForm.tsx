@@ -12,15 +12,7 @@ import {
   AssessmentCriteria 
 } from '@/services/criteriaService';
 import api from '@/services/api';
-
-// Define type for the rating
-type Rating = 'pass' | 'good' | 'partial' | 'limited' | 'fail' | 'not-rated' | 'not-applicable';
-
-// Define type for criterion rating
-interface CriterionRating {
-  rating: Rating;
-  notes: string;
-}
+import { Rating, Criterion, CriterionRating } from './types';
 
 const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: string | null }> = ({ 
   facilityId, 
@@ -33,12 +25,23 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
-  const [auditCriteria, setAuditCriteria] = useState<AssessmentCriteria[]>([]);
+  const [auditCriteria, setAuditCriteria] = useState<Criterion[]>([]);
   const [ratings, setRatings] = useState<Record<string, CriterionRating>>({});
   const [effectiveAuditId, setEffectiveAuditId] = useState<string | null>(null);
 
   // Use the criteriaService hook to fetch audit criteria
   const { data: criteriaData, isLoading: isFetchingCriteria } = useAssessmentCriteria('audit');
+
+  // Helper function to convert AssessmentCriteria to Criterion
+  const mapToCriterion = (assessmentCriteria: AssessmentCriteria): Criterion => {
+    return {
+      id: String(assessmentCriteria.id),
+      category: assessmentCriteria.category,
+      description: assessmentCriteria.description,
+      guidance: assessmentCriteria.guidance || '',
+      weight: assessmentCriteria.weight || 1
+    };
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,10 +49,12 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
       try {
         // Process criteria data from the hook
         if (criteriaData) {
-          setAuditCriteria(criteriaData);
+          // Convert AssessmentCriteria to Criterion
+          const mappedCriteria = criteriaData.map(mapToCriterion);
+          setAuditCriteria(mappedCriteria);
           
           // Extract unique categories
-          const uniqueCategories = [...new Set(criteriaData.map(c => c.category))];
+          const uniqueCategories = [...new Set(mappedCriteria.map(c => c.category))];
           setCategories(uniqueCategories);
         }
         
@@ -93,7 +98,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
                   else if (score.score >= 25) rating = "limited";
                   else if (score.score >= 0) rating = "fail";
                   
-                  initialRatings[criterion.id] = {
+                  initialRatings[String(criterion.id)] = {
                     rating: rating,
                     notes: score.notes || ""
                   };
@@ -163,7 +168,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
     
     auditCriteria.forEach(criterion => {
       const rating = ratings[criterion.id];
-      if (rating && rating.rating !== 'not-rated' && rating.rating !== 'not-applicable') {
+      if (rating && rating.rating !== 'not-rated') {
         let score = 0;
         switch (rating.rating) {
           case 'pass': score = 100; break;
@@ -171,12 +176,12 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
           case 'partial': score = 50; break;
           case 'limited': score = 25; break;
           case 'fail': score = 0; break;
-          case 'not-applicable': score = 0; break;
+          case 'not-applicable': score = 0; break; // This is now included in the Rating type
           default: score = 0;
         }
         
-        totalScore += score * (criterion.weight || 1);
-        totalWeight += (criterion.weight || 1);
+        totalScore += score * criterion.weight;
+        totalWeight += criterion.weight;
         ratedCriteriaCount++;
       }
     });
@@ -244,7 +249,7 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
           }
           
           criteriaScores.push({
-            criteria_name: criterion.description || criterion.name,
+            criteria_name: criterion.description || criterion.id,
             score: score,
             notes: ratings[criterion.id].notes || ''
           });

@@ -11,7 +11,7 @@ export function useAssessments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<string | null>('assessment_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   // Data fetching with pagination and sorting
