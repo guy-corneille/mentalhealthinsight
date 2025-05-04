@@ -1,9 +1,7 @@
 
-import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import api from '@/services/api';
-import { useToast } from "@/hooks/use-toast";
-import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon, Search } from 'lucide-react';
+import React from 'react';
+import { useAuditList } from '@/features/assessments/hooks/useAuditList';
+import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -11,27 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from '@/components/ui/badge';
 import PaginationControls from '@/components/common/PaginationControls';
 import SearchInput from '@/components/common/SearchInput';
-import { Input } from '@/components/ui/input';
-
-interface AuditApiResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Audit[];
-}
-
-interface Audit {
-  id: string;
-  facility: number;
-  facility_name: string;
-  audit_date: string;
-  overall_score: number;
-  status: 'scheduled' | 'completed' | 'incomplete';
-  notes: string;
-  auditor_name?: string;
-  auditor?: string;
-  scheduled_date?: string;
-}
+import { Audit } from '@/features/assessments/hooks/useAuditList';
 
 interface SortableHeaderProps {
   column: string;
@@ -61,82 +39,25 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({ column, label, sortBy, 
 };
 
 const AuditList: React.FC = () => {
-  const { toast } = useToast();
-  
-  // State for search, pagination and sorting
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [sortBy, setSortBy] = useState<string | null>('audit_date');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-
-  // Fetch audits with pagination and sorting
-  const fetchAudits = async () => {
-    try {
-      const response = await api.get<AuditApiResponse>('/api/audits/', {
-        params: {
-          search: searchQuery || undefined,
-          page: currentPage,
-          page_size: pageSize,
-          ordering: sortBy ? (sortDirection === 'desc' ? `-${sortBy}` : sortBy) : '-audit_date'
-        }
-      });
-      return response;
-    } catch (error) {
-      console.error('Error fetching audits:', error);
-      throw error;
-    }
-  };
-
-  // Query for audits data
   const {
-    data: auditData,
+    audits,
+    totalCount,
+    currentPage,
+    pageSize,
     isLoading,
     isFetching,
-    error
-  } = useQuery({
-    queryKey: ['audits', searchQuery, currentPage, pageSize, sortBy, sortDirection],
-    queryFn: fetchAudits,
-    refetchOnWindowFocus: false,
-  });
-
-  const audits = auditData?.results || [];
-  const totalCount = auditData?.count || 0;
-
-  // Calculate total pages
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-
-  // Handle page change
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  // Handle search
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    setCurrentPage(1);
-  };
-
-  // Handle sort
-  const handleSort = (column: string) => {
-    if (sortBy === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(column);
-      setSortDirection('asc');
-    }
-    setCurrentPage(1);
-  };
-
-  // View audit details
-  const handleViewAudit = (id: string) => {
-    window.location.href = `/audits/review/${id}`;
-  };
-
-  // Continue audit
-  const handleContinueAudit = (audit: Audit) => {
-    window.location.href = `/facilities/audit/${audit.facility}?auditId=${audit.id}`;
-  };
+    error,
+    searchQuery,
+    sortBy,
+    sortDirection,
+    totalPages,
+    handleSearchChange,
+    handlePageChange,
+    handlePageSizeChange,
+    handleSort,
+    handleViewAudit,
+    handleContinueAudit
+  } = useAuditList();
 
   // Get status badge
   const getStatusBadge = (status: string) => {
@@ -330,7 +251,7 @@ const AuditList: React.FC = () => {
             <span className="text-sm text-muted-foreground">Items per page:</span>
             <select 
               value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
               className="text-sm bg-muted/50 border rounded px-2 py-1"
             >
               <option value={10}>10</option>

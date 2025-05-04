@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, subMonths, startOfYear } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
@@ -21,16 +21,24 @@ interface CriteriaStat {
   averageScore: number;
 }
 
-interface AuditStatsResponse {
+export interface AuditStatsResponse {
   summary: AuditSummary;
   facilities: FacilityStat[];
   criteria: CriteriaStat[];
 }
 
+export interface ChartData {
+  summary: AuditSummary;
+  facilities: FacilityStat[];
+  criteria: CriteriaStat[];
+  countByPeriodData: any[];
+}
+
 export function useAuditStats() {
   const { toast } = useToast();
-  const [timeRange, setTimeRange] = useState('12months');
+  const [timeRange, setTimeRange] = useState<string>('12months');
   const [facilityId, setFacilityId] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [specificAuditId, setSpecificAuditId] = useState<string | null>(null);
 
   // Calculate date range based on selected time range
@@ -61,7 +69,7 @@ export function useAuditStats() {
   }, [timeRange]);
 
   // Format chart data from API response
-  const formatChartData = useCallback((apiData: AuditStatsResponse) => {
+  const formatChartData = useCallback((apiData: AuditStatsResponse): ChartData | null => {
     if (!apiData) {
       console.log("No audit stats data available to format");
       return null;
@@ -83,19 +91,26 @@ export function useAuditStats() {
 
   // Function to fetch audit stats for a specific audit ID
   const fetchAuditStats = useCallback((auditId: string) => {
+    console.log(`Setting specific audit ID to: ${auditId}`);
     setSpecificAuditId(auditId);
     // The query will automatically refetch when specificAuditId changes
-    console.log(`Setting specific audit ID to: ${auditId}`);
   }, []);
 
-  const { isLoading, error, data: apiData } = useQuery({
-    queryKey: ['auditStats', timeRange, facilityId, specificAuditId],
+  // Search function
+  const handleSearchChange = useCallback((query: string) => {
+    console.log(`Search query changed to: ${query}`);
+    setSearchQuery(query);
+  }, []);
+
+  const { isLoading, error, data: apiData, refetch } = useQuery({
+    queryKey: ['auditStats', timeRange, facilityId, specificAuditId, searchQuery],
     queryFn: async () => {
       const { startDate, endDate } = getDateRange();
       
       const params = {
         startDate,
         endDate,
+        search: searchQuery || undefined,
         ...(facilityId !== 'all' && { facilityId }),
         ...(specificAuditId && { auditId: specificAuditId })
       };
@@ -116,6 +131,7 @@ export function useAuditStats() {
         throw error;
       }
     },
+    enabled: true, // Always fetch when parameters change
   });
   
   const chartData = apiData ? formatChartData(apiData) : null;
@@ -125,9 +141,12 @@ export function useAuditStats() {
     setTimeRange,
     facilityId,
     setFacilityId,
+    searchQuery,
+    handleSearchChange,
     isLoading,
     error,
     chartData,
-    fetchAuditStats  // Expose the fetchAuditStats function
+    fetchAuditStats,
+    refetch
   };
 }

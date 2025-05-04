@@ -2,12 +2,26 @@
 import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Spinner } from '@/components/ui/spinner';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer, 
+  LineChart, 
+  Line, 
+  PieChart, 
+  Pie, 
+  Cell 
+} from 'recharts';
 import { useAuditStats } from '@/features/assessments/hooks/useAuditStats';
-import AuditStatsFilters from './AuditStatsFilters';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { useParams } from 'react-router-dom';
+import SearchInput from '@/components/common/SearchInput';
 
 const AuditStatsDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,10 +30,13 @@ const AuditStatsDetails: React.FC = () => {
     setTimeRange,
     facilityId,
     setFacilityId,
+    searchQuery,
+    handleSearchChange,
     isLoading,
     error,
     chartData,
-    fetchAuditStats
+    fetchAuditStats,
+    refetch
   } = useAuditStats();
 
   // Fetch data when component mounts or when audit ID changes
@@ -29,17 +46,6 @@ const AuditStatsDetails: React.FC = () => {
       fetchAuditStats(id);
     }
   }, [id, fetchAuditStats]);
-
-  const handleFilterChange = (filters: {
-    facilityId?: number;
-    startDate?: string;
-    endDate?: string;
-  }) => {
-    // We'll just use the facilityId from the filters in this component
-    if (filters.facilityId !== undefined && setFacilityId) {
-      setFacilityId(filters.facilityId.toString());
-    }
-  };
 
   if (isLoading) {
     return (
@@ -94,13 +100,41 @@ const AuditStatsDetails: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <AuditStatsFilters
-        onFilterChange={handleFilterChange}
-        timeRange={timeRange}
-        setTimeRange={setTimeRange}
-        facilityId={facilityId}
-        setFacilityId={setFacilityId}
-      />
+      {/* Search and filters */}
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1">
+          <SearchInput
+            placeholder="Search audits..."
+            value={searchQuery || ''}
+            onChange={handleSearchChange}
+            className="w-full"
+          />
+        </div>
+        <div className="flex gap-2">
+          <select
+            className="px-3 py-2 border rounded-md text-sm"
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value)}
+          >
+            <option value="3months">Last 3 months</option>
+            <option value="6months">Last 6 months</option>
+            <option value="12months">Last 12 months</option>
+            <option value="ytd">Year to date</option>
+          </select>
+          <select
+            className="px-3 py-2 border rounded-md text-sm"
+            value={facilityId}
+            onChange={(e) => setFacilityId(e.target.value)}
+          >
+            <option value="all">All Facilities</option>
+            {chartData.facilities.map((facility, index) => (
+              <option key={index} value={facility.facilityName.toLowerCase().replace(/\s+/g, '-')}>
+                {facility.facilityName}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-6">
         <Card>
