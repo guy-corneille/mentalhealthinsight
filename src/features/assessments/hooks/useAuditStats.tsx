@@ -31,6 +31,7 @@ export function useAuditStats() {
   const { toast } = useToast();
   const [timeRange, setTimeRange] = useState('12months');
   const [facilityId, setFacilityId] = useState<string>('all');
+  const [specificAuditId, setSpecificAuditId] = useState<string | null>(null);
 
   // Calculate date range based on selected time range
   const getDateRange = useCallback(() => {
@@ -80,15 +81,23 @@ export function useAuditStats() {
     };
   }, []);
 
+  // Function to fetch audit stats for a specific audit ID
+  const fetchAuditStats = useCallback((auditId: string) => {
+    setSpecificAuditId(auditId);
+    // The query will automatically refetch when specificAuditId changes
+    console.log(`Setting specific audit ID to: ${auditId}`);
+  }, []);
+
   const { isLoading, error, data: apiData } = useQuery({
-    queryKey: ['auditStats', timeRange, facilityId],
+    queryKey: ['auditStats', timeRange, facilityId, specificAuditId],
     queryFn: async () => {
       const { startDate, endDate } = getDateRange();
       
       const params = {
         startDate,
         endDate,
-        ...(facilityId !== 'all' && { facilityId })
+        ...(facilityId !== 'all' && { facilityId }),
+        ...(specificAuditId && { auditId: specificAuditId })
       };
       
       console.log("Requesting audit stats with params:", params);
@@ -118,6 +127,7 @@ export function useAuditStats() {
     setFacilityId,
     isLoading,
     error,
-    chartData
+    chartData,
+    fetchAuditStats  // Expose the fetchAuditStats function
   };
 }

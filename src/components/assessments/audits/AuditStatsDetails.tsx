@@ -26,10 +26,7 @@ const AuditStatsDetails: React.FC = () => {
   useEffect(() => {
     if (id) {
       console.log(`Fetching audit stats for audit ID: ${id}`);
-      // If the hook supports it, pass the audit ID
-      if (typeof fetchAuditStats === 'function') {
-        fetchAuditStats(id);
-      }
+      fetchAuditStats(id);
     }
   }, [id, fetchAuditStats]);
 
