@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { useReportActions } from '../utils/reportUtils';
 import { useToast } from "@/hooks/use-toast";
 import AuditStatsDetails from './AuditStatsDetails';
 import api from '@/services/api';
+import { Assessment } from '../types'; // Import the Assessment type
 
 interface AuditReview {
   id: number;
@@ -26,7 +28,7 @@ const AuditReviewComponent: React.FC = () => {
   const [audit, setAudit] = useState<AuditReview | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { handlePrintAuditReport } = useReportActions();
+  const { handlePrintReport } = useReportActions(); // Changed from handlePrintAuditReport
 
   useEffect(() => {
     const fetchAudit = async () => {
@@ -76,10 +78,23 @@ const AuditReviewComponent: React.FC = () => {
     fetchAudit();
   }, [id, toast]);
 
-  const handlePrintReport = () => {
+  const handlePrintAuditReport = () => {
     if (!audit) return;
     
-    handlePrintAuditReport(audit);
+    // Convert audit to Assessment type format for the report function
+    const auditAsAssessment: Assessment = {
+      id: audit.id,
+      patient: '', // Not applicable for audits
+      facility: audit.facility,
+      facility_name: audit.facility_name,
+      assessment_date: audit.date,
+      score: audit.score,
+      notes: audit.notes,
+      evaluator: audit.evaluator,
+      evaluator_name: audit.evaluator_name
+    };
+    
+    handlePrintReport(auditAsAssessment);
     toast({
       title: "Print Report",
       description: "Preparing audit report for printing..."
@@ -107,7 +122,7 @@ const AuditReviewComponent: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold">Audit Review</h2>
-        <Button onClick={handlePrintReport} className="gap-2">
+        <Button onClick={handlePrintAuditReport} className="gap-2">
           <Printer className="h-4 w-4" />
           Print Report
         </Button>
@@ -145,8 +160,8 @@ const AuditReviewComponent: React.FC = () => {
             <p className="p-3 bg-muted rounded-md">{audit.notes || 'No notes provided.'}</p>
           </div>
           
-          {/* This would display the detailed audit statistics */}
-          <AuditStatsDetails auditId={audit.id} />
+          {/* Pass audit.id as a parameter to AuditStatsDetails */}
+          <AuditStatsDetails />
         </CardContent>
       </Card>
     </div>

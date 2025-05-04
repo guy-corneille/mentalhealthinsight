@@ -7,8 +7,10 @@ import { useAuditStats } from '@/features/assessments/hooks/useAuditStats';
 import AuditStatsFilters from './AuditStatsFilters';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { useParams } from 'react-router-dom';
 
 const AuditStatsDetails: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const {
     timeRange,
     setTimeRange,
