@@ -72,6 +72,9 @@ const AssessmentTable: React.FC<AssessmentTableProps> = ({
 }) => {
   const { user } = useAuth();
 
+  console.log("AssessmentTable - Received items:", assessments?.length || 0);
+  console.log("AssessmentTable - Sort by:", sortBy, "Direction:", sortDirection);
+  
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">

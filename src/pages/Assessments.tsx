@@ -6,7 +6,6 @@ import AssessmentList from '@/components/assessments/AssessmentList';
 import AssessmentTrends from '@/components/assessments/AssessmentTrends';
 import AssessmentEvaluation from '@/components/assessments/AssessmentEvaluation';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useFacilities } from '@/services/patientService';
 
 const Assessments: React.FC = () => {
   const location = useLocation();
@@ -16,7 +15,6 @@ const Assessments: React.FC = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
-  const { data: facilities } = useFacilities();
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);

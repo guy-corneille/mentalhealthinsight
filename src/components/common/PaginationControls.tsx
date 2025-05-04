@@ -79,6 +79,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
           <PaginationPrevious
             onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
             className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            aria-disabled={currentPage === 1}
           />
         </PaginationItem>
         
@@ -104,6 +105,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
           <PaginationNext
             onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
             className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+            aria-disabled={currentPage === totalPages}
           />
         </PaginationItem>
       </PaginationContent>

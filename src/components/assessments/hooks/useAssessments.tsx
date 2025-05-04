@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
@@ -28,7 +28,7 @@ export function useAssessments() {
         }
       });
       
-      console.log(`API Success - Results count: ${response.results?.length}, Total: ${response.count}`);
+      console.log(`API Success - Count: ${response.count}, Results: ${response.results?.length}`);
       return response;
     } catch (error) {
       console.error('Error fetching assessments:', error);
@@ -71,7 +71,6 @@ export function useAssessments() {
       
       // Invalidate and refetch to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
-      refetch();
     },
     onError: (error) => {
       console.error('Error deleting assessment:', error);
@@ -89,25 +88,25 @@ export function useAssessments() {
     setCurrentPage(1); // Reset to first page on new search
   }, []);
 
-  const handleDeleteAssessment = (id: number | string) => {
-    if (confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
+  const handleDeleteAssessment = useCallback((id: number | string) => {
+    if (window.confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
       console.log(`Confirming deletion of assessment ID: ${id} (type: ${typeof id})`);
       deleteMutation.mutate(id);
     }
-  };
+  }, [deleteMutation]);
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     console.log(`Changing to page ${page}`);
     setCurrentPage(page);
-  };
+  }, []);
 
-  const handlePageSizeChange = (size: number) => {
+  const handlePageSizeChange = useCallback((size: number) => {
     console.log(`Changing page size to ${size}`);
     setPageSize(size);
     setCurrentPage(1); // Reset to first page when changing page size
-  };
+  }, []);
 
-  const handleSort = (column: string) => {
+  const handleSort = useCallback((column: string) => {
     console.log(`Sorting by column: ${column}`);
     if (sortBy === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -116,7 +115,7 @@ export function useAssessments() {
       setSortDirection('asc');
     }
     setCurrentPage(1); // Reset to first page when sorting
-  };
+  }, [sortBy, sortDirection]);
 
   return {
     assessments,
