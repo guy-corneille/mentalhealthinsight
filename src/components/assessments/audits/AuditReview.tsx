@@ -8,7 +8,7 @@ import { useReportActions } from '../utils/reportUtils';
 import { useToast } from "@/hooks/use-toast";
 import AuditStatsDetails from './AuditStatsDetails';
 import api from '@/services/api';
-import { Assessment } from '../types'; // Import the Assessment type
+import { Assessment } from '../types';
 
 interface AuditReview {
   id: number;
@@ -28,7 +28,7 @@ const AuditReviewComponent: React.FC = () => {
   const [audit, setAudit] = useState<AuditReview | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { handlePrintReport } = useReportActions(); // Changed from handlePrintAuditReport
+  const { handlePrintReport } = useReportActions();
 
   useEffect(() => {
     const fetchAudit = async () => {
@@ -160,7 +160,6 @@ const AuditReviewComponent: React.FC = () => {
             <p className="p-3 bg-muted rounded-md">{audit.notes || 'No notes provided.'}</p>
           </div>
           
-          {/* Pass audit.id as a parameter to AuditStatsDetails */}
           <AuditStatsDetails />
         </CardContent>
       </Card>

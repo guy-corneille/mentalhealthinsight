@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Spinner } from '@/components/ui/spinner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
@@ -18,8 +18,20 @@ const AuditStatsDetails: React.FC = () => {
     setFacilityId,
     isLoading,
     error,
-    chartData
+    chartData,
+    fetchAuditStats
   } = useAuditStats();
+
+  // Fetch data when component mounts or when audit ID changes
+  useEffect(() => {
+    if (id) {
+      console.log(`Fetching audit stats for audit ID: ${id}`);
+      // If the hook supports it, pass the audit ID
+      if (typeof fetchAuditStats === 'function') {
+        fetchAuditStats(id);
+      }
+    }
+  }, [id, fetchAuditStats]);
 
   const handleFilterChange = (filters: {
     facilityId?: number;
