@@ -42,7 +42,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     handlePageSizeChange,
     sortBy,
     sortDirection,
-    handleSort
+    handleSort,
+    refetch
   } = useAssessments();
   
   const { handlePrintReport } = useReportActions();

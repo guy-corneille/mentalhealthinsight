@@ -19,7 +19,8 @@ export function useAssessments() {
     console.log(`Fetching assessments, page: ${currentPage}, size: ${pageSize}, search: ${searchQuery || 'none'}, sort: ${sortBy || 'none'}, direction: ${sortDirection}`);
     
     try {
-      const response = await api.get<PaginatedResponse<Assessment>>('/assessments/', {
+      // Make sure we're using the correct endpoint structure that matches the backend
+      const response = await api.get<PaginatedResponse<Assessment>>('/api/assessments/', {
         params: {
           search: searchQuery || undefined,
           page: currentPage,
@@ -49,7 +50,7 @@ export function useAssessments() {
     refetchOnWindowFocus: false,
   });
 
-  // Ensure we have the correct total count
+  // Ensure we have the correct total count and results extraction
   const totalCount = paginatedData?.count || 0;
   const assessments = paginatedData?.results || [];
 
@@ -61,7 +62,7 @@ export function useAssessments() {
   const deleteMutation = useMutation({
     mutationFn: (id: number | string) => {
       console.log(`Deleting assessment with ID: ${id} (type: ${typeof id})`);
-      return api.delete(`/assessments/${id}/`);
+      return api.delete(`/api/assessments/${id}/`);
     },
     onSuccess: () => {
       toast({
@@ -132,6 +133,7 @@ export function useAssessments() {
     handlePageSizeChange,
     sortBy,
     sortDirection,
-    handleSort
+    handleSort,
+    refetch
   };
 }
