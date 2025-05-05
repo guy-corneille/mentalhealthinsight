@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AssessmentList from '@/components/assessments/AssessmentList';
@@ -16,9 +16,16 @@ const Assessments: React.FC = () => {
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
 
+  // Update active tab when location hash changes
+  useEffect(() => {
+    const newTab = location.hash === '#trends' ? 'trends' : 'list';
+    setActiveTab(newTab);
+  }, [location.hash]);
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    navigate(`/assessments${value === 'trends' ? '#trends' : ''}`);
+    // Use navigate with replace to avoid adding to the history stack
+    navigate(`/assessments${value === 'trends' ? '#trends' : ''}`, { replace: true });
   };
 
   const handleStartEvaluation = (patientId: string, facilityId: string) => {

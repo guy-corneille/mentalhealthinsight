@@ -29,7 +29,11 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({ column, label, sortBy, 
     <Button 
       variant="ghost" 
       className="p-0 h-auto font-semibold flex items-center text-xs"
-      onClick={() => onSort(column)}
+      onClick={(e) => {
+        e.preventDefault(); // Prevent default behavior
+        e.stopPropagation(); // Stop event propagation
+        onSort(column);
+      }}
     >
       {label}
       {sortBy === column ? (
