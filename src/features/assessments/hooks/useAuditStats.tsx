@@ -93,7 +93,6 @@ export function useAuditStats() {
   const fetchAuditStats = useCallback((auditId: string) => {
     console.log(`Setting specific audit ID to: ${auditId}`);
     setSpecificAuditId(auditId);
-    // The query will automatically refetch when specificAuditId changes
   }, []);
 
   // Search function

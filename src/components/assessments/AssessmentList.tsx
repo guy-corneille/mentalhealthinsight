@@ -11,7 +11,7 @@ import AssessmentFilters from './components/AssessmentFilters';
 import { Assessment } from './types';
 
 // Import custom hooks
-import { useAssessments } from './hooks/useAssessments';
+import { useAssessments } from '@/features/assessments/hooks/useAssessments';
 import { useReportActions } from './utils/reportUtils';
 
 interface AssessmentListProps {
@@ -73,8 +73,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
 
   // Calculate total pages
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-  
-  console.log(`AssessmentList - Total count: ${totalCount}, Page size: ${pageSize}, Total pages: ${totalPages}`);
 
   return (
     <div className="space-y-6 animate-fade-in">

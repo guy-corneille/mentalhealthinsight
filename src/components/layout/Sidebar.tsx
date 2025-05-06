@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -83,7 +84,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       path: '#', 
       children: [
         { icon: ClipboardIcon, label: 'Assessments', path: '/assessments' },
-        { icon: ClipboardListIcon, label: 'Audits', path: '/audits' }
+        { icon: BarChartIcon, label: 'Assessment Trends', path: '/assessments#trends' },
+        { icon: ClipboardListIcon, label: 'Audits', path: '/audits' },
+        { icon: BarChart2Icon, label: 'Audit Trends', path: '/audits#trends' }
       ]
     },
     { icon: FileTextIcon, label: 'Reports', path: '/reports' }

@@ -9,7 +9,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from '@/components/ui/badge';
 import PaginationControls from '@/components/common/PaginationControls';
 import SearchInput from '@/components/common/SearchInput';
-import { Audit } from '@/features/assessments/hooks/useAuditList';
 
 interface SortableHeaderProps {
   column: string;
@@ -170,7 +169,7 @@ const AuditList: React.FC = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              audits.map((audit: Audit) => {
+              audits.map((audit) => {
                 const scoreColor =
                   audit.overall_score >= 80 ? 'bg-emerald-500' :
                   audit.overall_score >= 60 ? 'bg-amber-500' :
