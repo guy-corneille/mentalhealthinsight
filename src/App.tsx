@@ -21,6 +21,7 @@ import AuditReview from './pages/AuditReview';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
+import Criteria from './pages/Criteria';
 
 // Components
 import { Toaster } from "@/components/ui/toaster";
@@ -52,6 +53,11 @@ function App() {
           <Route path="/audits" element={<ProtectedRoute><Audits /></ProtectedRoute>} />
           <Route path="/audit-trends" element={<ProtectedRoute><AuditTrends /></ProtectedRoute>} />
           <Route path="/audits/review/:id" element={<ProtectedRoute><AuditReview /></ProtectedRoute>} />
+          
+          {/* Add the Criteria routes */}
+          <Route path="/criteria" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
+          <Route path="/criteria/add" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
+          <Route path="/criteria/edit/:id" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
