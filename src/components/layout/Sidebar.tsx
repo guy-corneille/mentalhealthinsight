@@ -18,7 +18,8 @@ import {
   ChevronRightIcon,
   ClipboardListIcon,
   BarChart2Icon,
-  SlidersIcon
+  SlidersIcon,
+  LineChart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,7 +39,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({
     'dataSetup': false,
     'evaluationSetup': false,
-    'evaluationFramework': false
+    'evaluationFramework': false,
+    'analytics': false
   });
   
   const isActive = (path: string) => {
@@ -84,9 +86,16 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       path: '#', 
       children: [
         { icon: ClipboardIcon, label: 'Assessments', path: '/assessments' },
-        { icon: BarChartIcon, label: 'Assessment Trends', path: '/assessments#trends' },
-        { icon: ClipboardListIcon, label: 'Audits', path: '/audits' },
-        { icon: BarChart2Icon, label: 'Audit Trends', path: '/audits#trends' }
+        { icon: ClipboardListIcon, label: 'Audits', path: '/audits' }
+      ]
+    },
+    { 
+      icon: LineChart, 
+      label: 'Analytics', 
+      path: '#', 
+      children: [
+        { icon: BarChartIcon, label: 'Assessment Trends', path: '/assessment-trends' },
+        { icon: BarChart2Icon, label: 'Audit Trends', path: '/audit-trends' }
       ]
     },
     { icon: FileTextIcon, label: 'Reports', path: '/reports' }

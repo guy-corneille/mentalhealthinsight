@@ -13,8 +13,10 @@ import FacilityAudit from './pages/FacilityAudit';
 import Staff from './pages/Staff';
 import Patients from './pages/Patients';
 import Assessments from './pages/Assessments';
+import AssessmentTrends from './pages/AssessmentTrends';
 import Reports from './pages/Reports';
 import Audits from './pages/Audits';
+import AuditTrends from './pages/AuditTrends';
 import AuditReview from './pages/AuditReview';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -45,8 +47,10 @@ function App() {
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
           <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
           <Route path="/assessments" element={<ProtectedRoute><Assessments /></ProtectedRoute>} />
+          <Route path="/assessment-trends" element={<ProtectedRoute><AssessmentTrends /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/audits" element={<ProtectedRoute><Audits /></ProtectedRoute>} />
+          <Route path="/audit-trends" element={<ProtectedRoute><AuditTrends /></ProtectedRoute>} />
           <Route path="/audits/review/:id" element={<ProtectedRoute><AuditReview /></ProtectedRoute>} />
           
           <Route path="*" element={<NotFound />} />

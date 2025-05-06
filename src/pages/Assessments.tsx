@@ -1,32 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AssessmentList from '@/components/assessments/AssessmentList';
-import AssessmentTrends from '@/components/assessments/AssessmentTrends';
 import AssessmentEvaluation from '@/components/assessments/AssessmentEvaluation';
-import { useNavigate, useLocation } from 'react-router-dom';
 
 const Assessments: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const defaultTab = location.hash === '#trends' ? 'trends' : 'list';
-  const [activeTab, setActiveTab] = useState(defaultTab);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
-
-  // Update active tab when location hash changes
-  useEffect(() => {
-    const newTab = location.hash === '#trends' ? 'trends' : 'list';
-    setActiveTab(newTab);
-  }, [location.hash]);
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    // Use navigate with replace to avoid adding to the history stack
-    navigate(`/assessments${value === 'trends' ? '#trends' : ''}`, { replace: true });
-  };
 
   const handleStartEvaluation = (patientId: string, facilityId: string) => {
     setSelectedPatientId(patientId);
@@ -36,7 +17,6 @@ const Assessments: React.FC = () => {
 
   const handleCompleteEvaluation = () => {
     setIsEvaluating(false);
-    setActiveTab('list');
   };
 
   const handleCancelEvaluation = () => {
@@ -61,20 +41,9 @@ const Assessments: React.FC = () => {
             onCancel={handleCancelEvaluation}
           />
         ) : (
-          <Tabs defaultValue={defaultTab} value={activeTab} className="w-full" onValueChange={handleTabChange}>
-            <TabsList className="grid w-full md:w-auto grid-cols-2">
-              <TabsTrigger value="list">Assessment List</TabsTrigger>
-              <TabsTrigger value="trends">Assessment Trends</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="list" className="space-y-6 mt-6">
-              <AssessmentList onStartAssessment={handleStartEvaluation} />
-            </TabsContent>
-            
-            <TabsContent value="trends" className="space-y-6 mt-6">
-              <AssessmentTrends />
-            </TabsContent>
-          </Tabs>
+          <div className="space-y-6">
+            <AssessmentList onStartAssessment={handleStartEvaluation} />
+          </div>
         )}
       </div>
     </Layout>

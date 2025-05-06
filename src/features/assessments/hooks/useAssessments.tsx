@@ -19,7 +19,7 @@ export function useAssessments() {
     console.log(`Fetching assessments, page: ${currentPage}, size: ${pageSize}, search: ${searchQuery || 'none'}, sort: ${sortBy || 'none'}, direction: ${sortDirection}`);
     
     try {
-      // Make sure we're using the correct endpoint structure that matches the backend
+      // Ensure we're using the correct endpoint structure
       const response = await api.get<PaginatedResponse<Assessment>>('/api/assessments/', {
         params: {
           search: searchQuery || undefined,

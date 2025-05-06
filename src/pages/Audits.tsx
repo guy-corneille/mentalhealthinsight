@@ -1,28 +1,17 @@
 
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AuditList from '@/components/assessments/audits/AuditList';
-import AuditTrends from '@/components/assessments/audits/AuditTrends';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar } from 'lucide-react';
 import NewAuditDialog from '@/components/assessments/audits/NewAuditDialog';
 import ScheduleAuditDialog from '@/components/assessments/audits/ScheduleAuditDialog';
 
 const Audits: React.FC = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const defaultTab = location.hash === '#trends' ? 'trends' : 'list';
-  const [activeTab, setActiveTab] = useState(defaultTab);
   const [isNewAuditDialogOpen, setIsNewAuditDialogOpen] = useState(false);
   const [isScheduleAuditDialogOpen, setIsScheduleAuditDialogOpen] = useState(false);
-
-  const handleTabChange = (value: string) => {
-    console.log("Tab changed to:", value);
-    setActiveTab(value);
-    navigate(`/audits${value === 'trends' ? '#trends' : ''}`);
-  };
 
   const handleFacilitySelect = (facilityId: number) => {
     console.log("Selected facility for audit:", facilityId);
@@ -59,20 +48,9 @@ const Audits: React.FC = () => {
           </div>
         </div>
         
-        <Tabs defaultValue={defaultTab} value={activeTab} className="w-full" onValueChange={handleTabChange}>
-          <TabsList className="grid w-full md:w-auto grid-cols-2">
-            <TabsTrigger value="list">Audit List</TabsTrigger>
-            <TabsTrigger value="trends">Trends</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="list" className="space-y-6 mt-6">
-            <AuditList />
-          </TabsContent>
-          
-          <TabsContent value="trends" className="space-y-6 mt-6">
-            <AuditTrends />
-          </TabsContent>
-        </Tabs>
+        <div className="space-y-6">
+          <AuditList />
+        </div>
       </div>
       
       <NewAuditDialog 
