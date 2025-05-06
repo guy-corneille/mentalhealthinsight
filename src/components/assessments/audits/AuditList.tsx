@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useAuditList, Audit } from '@/hooks/useAuditList';
+import { useAuditList } from '@/features/assessments/hooks/useAuditList';
 import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Badge } from '@/components/ui/badge';
 import PaginationControls from '@/components/common/PaginationControls';
 import SearchInput from '@/components/common/SearchInput';
+import { Audit } from '@/features/assessments/hooks/useAuditList';
 
 interface SortableHeaderProps {
   column: string;

@@ -8,9 +8,10 @@ import AssessmentTable from './components/AssessmentTable';
 import AssessmentDetailsDialog from './components/AssessmentDetailsDialog';
 import PaginationControls from '@/components/common/PaginationControls';
 import AssessmentFilters from './components/AssessmentFilters';
+import { Assessment } from './types';
 
 // Import custom hooks
-import { useAssessmentList, Assessment } from '@/hooks/useAssessmentList';
+import { useAssessments } from './hooks/useAssessments';
 import { useReportActions } from './utils/reportUtils';
 
 interface AssessmentListProps {
@@ -29,7 +30,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const { 
     assessments, 
     totalCount,
-    totalPages,
     currentPage,
     pageSize,
     isLoading, 
@@ -44,7 +44,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     sortDirection,
     handleSort,
     refetch
-  } = useAssessmentList();
+  } = useAssessments();
   
   const { handlePrintReport } = useReportActions();
 
@@ -70,6 +70,11 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       description: `Editing assessment ${assessment.id} is not implemented yet.`,
     });
   };
+
+  // Calculate total pages
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  
+  console.log(`AssessmentList - Total count: ${totalCount}, Page size: ${pageSize}, Total pages: ${totalPages}`);
 
   return (
     <div className="space-y-6 animate-fade-in">

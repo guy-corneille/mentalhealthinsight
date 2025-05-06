@@ -3,56 +3,33 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
+import { Assessment, PaginatedResponse } from '../types';
 
-// Types
-interface Assessment {
-  id: number | string;
-  patient: string;
-  patient_name?: string;
-  facility: string | number;
-  facility_name?: string;
-  assessment_date: string;
-  score: number;
-  notes: string;
-  evaluator: string;
-  evaluator_name?: string;
-}
-
-interface PaginatedResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Assessment[];
-}
-
-export function useAssessmentList() {
+export function useAssessments() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // State for filtering and pagination
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [sortBy, setSortBy] = useState<string>('assessment_date');
+  const [sortBy, setSortBy] = useState<string | null>('assessment_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  // Function to fetch assessments
+  // Data fetching with pagination and sorting
   const fetchAssessments = useCallback(async () => {
+    console.log(`Fetching assessments, page: ${currentPage}, size: ${pageSize}, search: ${searchQuery || 'none'}, sort: ${sortBy || 'none'}, direction: ${sortDirection}`);
+    
     try {
-      console.log(`Fetching assessments: page=${currentPage}, size=${pageSize}, search=${searchQuery}, sort=${sortBy}, direction=${sortDirection}`);
-      
-      const ordering = sortDirection === 'desc' ? `-${sortBy}` : sortBy;
-      
-      const response = await api.get<PaginatedResponse>('/api/assessments/', {
+      // Make sure we're using the correct endpoint structure that matches the backend
+      const response = await api.get<PaginatedResponse<Assessment>>('/api/assessments/', {
         params: {
           search: searchQuery || undefined,
           page: currentPage,
           page_size: pageSize,
-          ordering
+          ordering: sortBy ? (sortDirection === 'desc' ? `-${sortBy}` : sortBy) : '-assessment_date'
         }
       });
       
-      console.log('Assessment API response:', response);
+      console.log(`API Success - Count: ${response.count}, Results: ${response.results?.length}`);
       return response;
     } catch (error) {
       console.error('Error fetching assessments:', error);
@@ -60,27 +37,31 @@ export function useAssessmentList() {
     }
   }, [searchQuery, currentPage, pageSize, sortBy, sortDirection]);
 
-  // Query for fetching data
-  const {
-    data,
-    isLoading,
-    isFetching,
+  // Query for assessment data
+  const { 
+    data: paginatedData, 
+    isLoading, 
     error,
+    isFetching,
     refetch
   } = useQuery({
     queryKey: ['assessments', searchQuery, currentPage, pageSize, sortBy, sortDirection],
     queryFn: fetchAssessments,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
   });
 
-  // Extract data from response
-  const assessments = data?.results || [];
-  const totalCount = data?.count || 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  // Ensure we have the correct total count and results extraction
+  const totalCount = paginatedData?.count || 0;
+  const assessments = paginatedData?.results || [];
+
+  // Log pagination details for debugging
+  console.log(`Current page: ${currentPage}, Page size: ${pageSize}, Total count: ${totalCount}`);
+  console.log(`Number of assessments displayed: ${assessments.length}`);
   
   // Mutation for deleting assessments
   const deleteMutation = useMutation({
     mutationFn: (id: number | string) => {
+      console.log(`Deleting assessment with ID: ${id} (type: ${typeof id})`);
       return api.delete(`/api/assessments/${id}/`);
     },
     onSuccess: () => {
@@ -88,6 +69,8 @@ export function useAssessmentList() {
         title: "Assessment deleted",
         description: "The assessment has been successfully deleted.",
       });
+      
+      // Invalidate and refetch to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: ['assessments'] });
     },
     onError: (error) => {
@@ -100,28 +83,32 @@ export function useAssessmentList() {
     }
   });
 
-  // Event handlers
   const handleSearchChange = useCallback((value: string) => {
+    console.log("Search query changed to:", value);
     setSearchQuery(value);
     setCurrentPage(1); // Reset to first page on new search
   }, []);
 
   const handleDeleteAssessment = useCallback((id: number | string) => {
-    if (window.confirm("Are you sure you want to delete this assessment?")) {
+    if (window.confirm("Are you sure you want to delete this assessment? This action cannot be undone.")) {
+      console.log(`Confirming deletion of assessment ID: ${id} (type: ${typeof id})`);
       deleteMutation.mutate(id);
     }
   }, [deleteMutation]);
 
   const handlePageChange = useCallback((page: number) => {
+    console.log(`Changing to page ${page}`);
     setCurrentPage(page);
   }, []);
 
   const handlePageSizeChange = useCallback((size: number) => {
+    console.log(`Changing page size to ${size}`);
     setPageSize(size);
     setCurrentPage(1); // Reset to first page when changing page size
   }, []);
 
   const handleSort = useCallback((column: string) => {
+    console.log(`Sorting by column: ${column}`);
     if (sortBy === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -134,22 +121,19 @@ export function useAssessmentList() {
   return {
     assessments,
     totalCount,
-    totalPages,
     currentPage,
     pageSize,
-    searchQuery,
-    sortBy,
-    sortDirection,
     isLoading,
-    isFetching,
     error,
+    isFetching,
+    searchQuery,
     handleSearchChange,
+    handleDeleteAssessment,
     handlePageChange,
     handlePageSizeChange,
+    sortBy,
+    sortDirection,
     handleSort,
-    handleDeleteAssessment,
     refetch
   };
 }
-
-export type { Assessment };

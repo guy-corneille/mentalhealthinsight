@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import SearchInput from '@/components/common/SearchInput';
+import SearchInput from './SearchInput';
 
 interface AssessmentFiltersProps {
   searchQuery: string;
