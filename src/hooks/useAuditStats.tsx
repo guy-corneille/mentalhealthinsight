@@ -5,7 +5,7 @@ import { format, subMonths, startOfYear } from 'date-fns';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
 
-// Type definitions for audit stats
+// Types for audit stats
 interface AuditSummary {
   totalCount: number;
   averageScore?: number;
@@ -36,6 +36,8 @@ export interface ChartData {
 
 export function useAuditStats() {
   const { toast } = useToast();
+  
+  // State for filters
   const [timeRange, setTimeRange] = useState<string>('12months');
   const [facilityId, setFacilityId] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -75,7 +77,7 @@ export function useAuditStats() {
       return null;
     }
     
-    // Prepare period data for chart (if available)
+    // Prepare period data for chart
     const countByPeriodData = (apiData.facilities || []).map(facility => ({
       month: facility.facilityName,
       'Audit Count': facility.count
@@ -93,7 +95,6 @@ export function useAuditStats() {
   const fetchAuditStats = useCallback((auditId: string) => {
     console.log(`Setting specific audit ID to: ${auditId}`);
     setSpecificAuditId(auditId);
-    // The query will automatically refetch when specificAuditId changes
   }, []);
 
   // Search function
@@ -102,6 +103,7 @@ export function useAuditStats() {
     setSearchQuery(query);
   }, []);
 
+  // Query for audit stats
   const { isLoading, error, data: apiData, refetch } = useQuery({
     queryKey: ['auditStats', timeRange, facilityId, specificAuditId, searchQuery],
     queryFn: async () => {
@@ -118,7 +120,6 @@ export function useAuditStats() {
       console.log("Requesting audit stats with params:", params);
       
       try {
-        // The endpoint path must match what we have in the backend
         const response = await api.get<AuditStatsResponse>('/api/reports/audit-statistics/', { params });
         return response;
       } catch (error) {

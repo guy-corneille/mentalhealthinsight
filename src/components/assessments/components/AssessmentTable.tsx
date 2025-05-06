@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon } from 'lucide-react';
 import { Spinner } from "@/components/ui/spinner";
 import AssessmentActions from './AssessmentActions';
-import { Assessment } from '../types';
+import { Assessment } from '@/hooks/useAssessmentList';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SortableHeaderProps {

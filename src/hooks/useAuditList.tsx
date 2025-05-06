@@ -1,8 +1,8 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import api from '@/services/api';
 import { useToast } from "@/hooks/use-toast";
+import api from '@/services/api';
 
 export interface Audit {
   id: string;
@@ -17,7 +17,7 @@ export interface Audit {
   scheduled_date?: string;
 }
 
-export interface AuditApiResponse {
+interface PaginatedResponse {
   count: number;
   next: string | null;
   previous: string | null;
@@ -27,36 +27,71 @@ export interface AuditApiResponse {
 export function useAuditList() {
   const { toast } = useToast();
   
-  // State for search, pagination and sorting
+  // State for filtering and pagination
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [sortBy, setSortBy] = useState<string | null>('audit_date');
+  const [sortBy, setSortBy] = useState<string>('audit_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   
-  // Function to handle search query changes
+  // Function to fetch audits
+  const fetchAudits = useCallback(async () => {
+    try {
+      console.log(`Fetching audits: page=${currentPage}, size=${pageSize}, search=${searchQuery}, sort=${sortBy}, direction=${sortDirection}`);
+      
+      const ordering = sortDirection === 'desc' ? `-${sortBy}` : sortBy;
+      
+      const response = await api.get<PaginatedResponse>('/api/audits/', {
+        params: {
+          search: searchQuery || undefined,
+          page: currentPage,
+          page_size: pageSize,
+          ordering
+        }
+      });
+      
+      console.log('Audit API response:', response);
+      return response;
+    } catch (error) {
+      console.error('Error fetching audits:', error);
+      throw error;
+    }
+  }, [searchQuery, currentPage, pageSize, sortBy, sortDirection]);
+
+  // Query for fetching data
+  const {
+    data,
+    isLoading,
+    isFetching,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['audits', searchQuery, currentPage, pageSize, sortBy, sortDirection],
+    queryFn: fetchAudits,
+    refetchOnWindowFocus: false
+  });
+
+  // Extract data from response
+  const audits = data?.results || [];
+  const totalCount = data?.count || 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  
+  // Event handlers
   const handleSearchChange = useCallback((value: string) => {
-    console.log("Search query changed to:", value);
     setSearchQuery(value);
     setCurrentPage(1); // Reset to first page on new search
   }, []);
-  
-  // Function to handle page changes
+
   const handlePageChange = useCallback((page: number) => {
-    console.log(`Changing to page ${page}`);
     setCurrentPage(page);
   }, []);
-  
-  // Function to handle page size changes
+
   const handlePageSizeChange = useCallback((size: number) => {
-    console.log(`Changing page size to ${size}`);
     setPageSize(size);
     setCurrentPage(1); // Reset to first page when changing page size
   }, []);
-  
-  // Function to handle sorting
+
   const handleSort = useCallback((column: string) => {
-    console.log(`Sorting by column: ${column}`);
     if (sortBy === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -66,50 +101,11 @@ export function useAuditList() {
     setCurrentPage(1); // Reset to first page when sorting
   }, [sortBy, sortDirection]);
 
-  // Fetch audits data from API
-  const fetchAudits = async () => {
-    try {
-      const response = await api.get<AuditApiResponse>('/api/audits/', {
-        params: {
-          search: searchQuery || undefined,
-          page: currentPage,
-          page_size: pageSize,
-          ordering: sortBy ? (sortDirection === 'desc' ? `-${sortBy}` : sortBy) : '-audit_date'
-        }
-      });
-      return response;
-    } catch (error) {
-      console.error('Error fetching audits:', error);
-      throw error;
-    }
-  };
-
-  // Query for audits data
-  const {
-    data: auditData,
-    isLoading,
-    isFetching,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['audits', searchQuery, currentPage, pageSize, sortBy, sortDirection],
-    queryFn: fetchAudits,
-    refetchOnWindowFocus: false,
-  });
-
-  // Extract data from response
-  const audits = auditData?.results || [];
-  const totalCount = auditData?.count || 0;
-
-  // Calculate total pages
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
-
-  // Handle view audit details
+  // Actions for audits
   const handleViewAudit = useCallback((id: string) => {
     window.location.href = `/audits/review/${id}`;
   }, []);
 
-  // Handle continue audit
   const handleContinueAudit = useCallback((audit: Audit) => {
     window.location.href = `/facilities/audit/${audit.facility}?auditId=${audit.id}`;
   }, []);
@@ -117,15 +113,15 @@ export function useAuditList() {
   return {
     audits,
     totalCount,
+    totalPages,
     currentPage,
     pageSize,
-    isLoading,
-    isFetching,
-    error,
     searchQuery,
     sortBy,
     sortDirection,
-    totalPages,
+    isLoading,
+    isFetching,
+    error,
     handleSearchChange,
     handlePageChange,
     handlePageSizeChange,
