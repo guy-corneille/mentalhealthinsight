@@ -1,26 +1,27 @@
 
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-/**
- * Component for route protection (currently disabled)
- * 
- * This component will be updated later to implement proper
- * role-based authentication. For now, it simply renders
- * the children without any authentication checks.
- */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
-  
-  // Log information about the route access for debugging
-  console.log(`Accessing route: ${location.pathname} - Authorization checks disabled`);
-  
-  // Simply render children without any protection
-  // Will be updated later with proper role-based authentication
+
+  if (isLoading) {
+    // Show loading state if auth is still loading
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    // Redirect to login if not authenticated
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Render children if authenticated
   return <>{children}</>;
 };
 
