@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -13,7 +12,6 @@ import {
   UserIcon,
   DatabaseIcon,
   ListChecksIcon,
-  FileTextIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   ClipboardListIcon,
@@ -95,10 +93,10 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       path: '#', 
       children: [
         { icon: BarChartIcon, label: 'Assessment Trends', path: '/assessment-trends' },
-        { icon: BarChart2Icon, label: 'Audit Trends', path: '/audit-trends' }
+        { icon: BarChart2Icon, label: 'Audit Trends', path: '/audit-trends' },
+        { icon: BarChartIcon, label: 'Benchmarks', path: '/benchmarks' }
       ]
-    },
-    { icon: FileTextIcon, label: 'Reports', path: '/reports' }
+    }
   ];
   
   const secondaryItems = [

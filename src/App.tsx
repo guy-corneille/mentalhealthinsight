@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import './App.css';
@@ -22,6 +21,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
 import Criteria from './pages/Criteria';
+import Benchmarks from '@/pages/Benchmarks';
 
 // Components
 import { Toaster } from "@/components/ui/toaster";
@@ -58,6 +58,9 @@ function App() {
           <Route path="/criteria" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
           <Route path="/criteria/add" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
           <Route path="/criteria/edit/:id" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
+          
+          {/* Add the Benchmarks route */}
+          <Route path="/benchmarks" element={<Benchmarks />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>
