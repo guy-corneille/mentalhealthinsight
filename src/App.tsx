@@ -22,10 +22,9 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
 import Criteria from './pages/Criteria';
-import Benchmarks from './pages/Benchmarks';
-import Index from './pages/Index';
 
 // Components
+import { Toaster } from "@/components/ui/toaster";
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Context
@@ -36,7 +35,7 @@ function App() {
     <AuthProvider>
       <div className="App">
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
@@ -54,7 +53,6 @@ function App() {
           <Route path="/audits" element={<ProtectedRoute><Audits /></ProtectedRoute>} />
           <Route path="/audit-trends" element={<ProtectedRoute><AuditTrends /></ProtectedRoute>} />
           <Route path="/audits/review/:id" element={<ProtectedRoute><AuditReview /></ProtectedRoute>} />
-          <Route path="/benchmarks" element={<ProtectedRoute><Benchmarks /></ProtectedRoute>} />
           
           {/* Add the Criteria routes */}
           <Route path="/criteria" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
@@ -63,6 +61,7 @@ function App() {
           
           <Route path="*" element={<NotFound />} />
         </Routes>
+        <Toaster />
       </div>
     </AuthProvider>
   );

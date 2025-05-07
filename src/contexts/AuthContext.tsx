@@ -39,7 +39,7 @@ const defaultAuthContext: AuthContextType = {
 };
 
 // Create the context with default values
-export const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+const AuthContext = createContext<AuthContextType>(defaultAuthContext);
 
 // Simplified AuthProvider that just provides the default context
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

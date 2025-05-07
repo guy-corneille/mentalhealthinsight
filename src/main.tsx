@@ -6,7 +6,6 @@ import App from './App.tsx';
 import './index.css';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Toaster } from 'sonner';
 
 // Create a client
 const queryClient = new QueryClient();
@@ -18,7 +17,6 @@ createRoot(document.getElementById("root")!).render(
         <BrowserRouter>
           <App />
         </BrowserRouter>
-        <Toaster position="top-right" richColors />
       </TooltipProvider>
     </NotificationProvider>
   </QueryClientProvider>
