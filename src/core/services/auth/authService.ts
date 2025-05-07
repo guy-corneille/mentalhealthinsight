@@ -6,7 +6,7 @@
  * It provides mock implementations for authentication operations since
  * real authentication has been disabled.
  */
-import api from '@/core/services/api';
+import api from '@/services/api';
 import { User, UserRegistration, PendingUser } from '@/types/auth';
 
 // Types for API responses

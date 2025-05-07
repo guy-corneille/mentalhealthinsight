@@ -5,7 +5,7 @@
  * This service handles all API operations related to patients.
  * It provides CRUD operations and React Query hooks for patient management.
  */
-import api from '@/core/services/api';
+import api from '@/services/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Define types for the patient data
