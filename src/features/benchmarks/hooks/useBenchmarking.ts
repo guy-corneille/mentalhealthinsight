@@ -10,6 +10,7 @@ export interface BenchmarkData {
   documentationQuality: BenchmarkMetric;
   staffPerformance: BenchmarkMetric;
   patientSatisfaction: BenchmarkMetric;
+  [key: string]: BenchmarkMetric; // Add index signature for Record type compatibility
 }
 
 export interface BenchmarkTarget {
@@ -17,6 +18,12 @@ export interface BenchmarkTarget {
   targetValue: number;
   targetDate: Date;
   description: string;
+}
+
+interface AuditStats {
+  completed: number;
+  total: number;
+  [key: string]: any;
 }
 
 export function useBenchmarking() {
@@ -33,10 +40,11 @@ export function useBenchmarking() {
     queryFn: async (): Promise<BenchmarkData> => {
       try {
         // Fetch real audit statistics, modify the API call based on selectedTimeframe
-        const auditStats = await api.get('/api/reports/audit-statistics/', {
+        const response = await api.get('/api/reports/audit-statistics/', {
           params: { timeframe: selectedTimeframe }
         });
         
+        const auditStats = response.data as AuditStats;
         const completionRate = auditStats.completed / auditStats.total * 100;
         const benchmarkValue = 90; // Industry standard benchmark
 

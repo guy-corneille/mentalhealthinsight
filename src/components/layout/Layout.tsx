@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { PanelLeftIcon, PanelLeftCloseIcon } from 'lucide-react';
 import Header from './Header';
-import Sidebar from './Sidebar';
+import Sidebar, { SidebarProps } from './Sidebar';
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
 

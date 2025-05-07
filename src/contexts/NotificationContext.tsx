@@ -1,7 +1,6 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { toast } from "sonner";
-import { useToast } from "@/hooks/use-toast";
+import { toast as sonnerToast } from "sonner";
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
@@ -27,8 +26,7 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const { toast: shadcnToast } = useToast();
-
+  
   // Calculate unread notifications
   const unreadCount = notifications.filter(notification => !notification.read).length;
 
@@ -67,8 +65,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     setNotifications(prevNotifications => [newNotification, ...prevNotifications]);
 
-    // Use only one toast system - sonner for all notifications
-    toast[type](title, {
+    // Use sonner toast for all notifications
+    sonnerToast[type](title, {
       description: message,
     });
   }, [recentNotifications]);
