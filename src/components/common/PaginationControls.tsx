@@ -15,110 +15,141 @@ interface PaginationControlsProps {
   onPageChange: (page: number) => void;
 }
 
-const PaginationControls: React.FC<PaginationControlsProps> = ({
-  currentPage,
-  totalPages,
-  onPageChange,
+const PaginationControls: React.FC<PaginationControlsProps> = ({ 
+  currentPage, 
+  totalPages, 
+  onPageChange 
 }) => {
-  // Create an array of page numbers to display
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxPagesToShow = 5;
+  // Generate pagination items
+  const generatePaginationItems = () => {
+    const items = [];
     
-    if (totalPages <= maxPagesToShow) {
-      // If we have fewer pages than our max, show all
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Always show first page
-      pages.push(1);
-      
-      // Calculate range around current page
-      let start = Math.max(2, currentPage - 1);
-      let end = Math.min(totalPages - 1, currentPage + 1);
-      
-      // Adjust if we're at the start or end
-      if (currentPage <= 2) {
-        end = Math.min(totalPages - 1, maxPagesToShow - 1);
-      } else if (currentPage >= totalPages - 1) {
-        start = Math.max(2, totalPages - maxPagesToShow + 2);
-      }
-      
-      // Add ellipsis if needed
-      if (start > 2) {
-        pages.push(-1); // Use -1 to represent ellipsis
-      }
-      
-      // Add middle pages
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      
-      // Add ellipsis if needed
-      if (end < totalPages - 1) {
-        pages.push(-2); // Use -2 to represent ellipsis
-      }
-      
-      // Always show last page
-      if (totalPages > 1) {
-        pages.push(totalPages);
-      }
+    // Always show first page
+    items.push(
+      <PaginationItem key="first">
+        <PaginationLink
+          onClick={(e) => {
+            e.preventDefault();
+            onPageChange(1);
+          }}
+          isActive={currentPage === 1}
+        >
+          1
+        </PaginationLink>
+      </PaginationItem>
+    );
+    
+    // Add ellipsis if needed at beginning
+    if (currentPage > 3) {
+      items.push(
+        <PaginationItem key="ellipsis1">
+          <span className="px-2">...</span>
+        </PaginationItem>
+      );
     }
     
-    return pages;
+    // Show page before current unless it's the first or second page
+    if (currentPage > 2) {
+      items.push(
+        <PaginationItem key={currentPage - 1}>
+          <PaginationLink
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(currentPage - 1);
+            }}
+          >
+            {currentPage - 1}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+    
+    // Show current page (unless it's the first page)
+    if (currentPage !== 1 && currentPage !== totalPages) {
+      items.push(
+        <PaginationItem key={currentPage}>
+          <PaginationLink
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(currentPage);
+            }}
+            isActive
+          >
+            {currentPage}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+    
+    // Show page after current unless it's the last or second-to-last page
+    if (currentPage < totalPages - 1) {
+      items.push(
+        <PaginationItem key={currentPage + 1}>
+          <PaginationLink
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(currentPage + 1);
+            }}
+          >
+            {currentPage + 1}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+    
+    // Add ellipsis if needed at end
+    if (currentPage < totalPages - 2) {
+      items.push(
+        <PaginationItem key="ellipsis2">
+          <span className="px-2">...</span>
+        </PaginationItem>
+      );
+    }
+    
+    // Always show last page unless there's only 1 page
+    if (totalPages > 1) {
+      items.push(
+        <PaginationItem key="last">
+          <PaginationLink
+            onClick={(e) => {
+              e.preventDefault();
+              onPageChange(totalPages);
+            }}
+            isActive={currentPage === totalPages}
+          >
+            {totalPages}
+          </PaginationLink>
+        </PaginationItem>
+      );
+    }
+    
+    return items;
   };
-
-  console.log(`PaginationControls - Current page: ${currentPage}, Total pages: ${totalPages}`);
 
   return (
     <Pagination className="mt-4">
       <PaginationContent>
-        {/* Previous button */}
         <PaginationItem>
           <PaginationPrevious
             onClick={(e) => {
               e.preventDefault();
-              if (currentPage > 1) {
-                onPageChange(currentPage - 1);
-              }
+              if (currentPage > 1) onPageChange(currentPage - 1);
             }}
-            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
             aria-disabled={currentPage === 1}
+            className={currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""}
           />
         </PaginationItem>
         
-        {/* Page numbers */}
-        {getPageNumbers().map((page, index) => (
-          <PaginationItem key={index}>
-            {page < 0 ? (
-              <span className="px-4 py-2">...</span>
-            ) : (
-              <PaginationLink
-                onClick={(e) => {
-                  e.preventDefault();
-                  onPageChange(page);
-                }}
-                isActive={page === currentPage}
-                className="cursor-pointer"
-              >
-                {page}
-              </PaginationLink>
-            )}
-          </PaginationItem>
-        ))}
+        {generatePaginationItems()}
         
-        {/* Next button */}
         <PaginationItem>
           <PaginationNext
             onClick={(e) => {
               e.preventDefault();
-              if (currentPage < totalPages) {
-                onPageChange(currentPage + 1);
-              }
+              if (currentPage < totalPages) onPageChange(currentPage + 1);
             }}
-            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
             aria-disabled={currentPage === totalPages}
+            className={currentPage === totalPages ? "opacity-50 cursor-not-allowed" : ""}
           />
         </PaginationItem>
       </PaginationContent>

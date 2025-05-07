@@ -4,12 +4,6 @@
  * 
  * This service provides the base API client configuration and error handling.
  * It's used by all other services to make API requests.
- * 
- * Features:
- * - Base URL configuration
- * - Request/response interceptors
- * - Error handling with toast notifications
- * - Automatic error logging
  */
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
@@ -24,10 +18,9 @@ interface ApiErrorResponse {
 }
 
 // Create a base API instance with common configuration
-// This is where API requests are configured
 const api = axios.create({
-  // Base URL for all API requests - adjust this to match your backend
-  baseURL: 'http://localhost:8000',  // Base URL without trailing slash
+  // Base URL for all API requests
+  baseURL: 'http://localhost:8000',
   
   // Default headers for all requests
   headers: {
@@ -35,14 +28,13 @@ const api = axios.create({
   },
   
   // Set timeout to prevent hanging requests
-  timeout: 15000, // 15 seconds timeout to allow for slower responses
+  timeout: 15000, // 15 seconds timeout
 });
 
 // Request interceptor for API calls
 api.interceptors.request.use(
   (config) => {
-    console.log(`Making API request to: ${config.url}`, config.data);
-    // No longer adding auth tokens - all requests go through without authentication
+    console.log(`Making API request to: ${config.url}`, config.method, config.params || {});
     return config;
   },
   (error) => {
@@ -52,56 +44,33 @@ api.interceptors.request.use(
 );
 
 // Response interceptor for handling API responses and errors
-// This processes the responses from the API
 api.interceptors.response.use(
   (response) => {
-    console.log(`Successful response from: ${response.config.url}`, response.data);
-    // Show toast for successful create/update/delete operations
-    if (
-      (response.config.method === 'post' || 
-       response.config.method === 'put' || 
-       response.config.method === 'patch' || 
-       response.config.method === 'delete') &&
-      !response.config.url?.includes('login') && 
-      !response.config.url?.includes('logout')
-    ) {
-      const action = response.config.method === 'post' ? 'created' : 
-                     response.config.method === 'delete' ? 'deleted' : 'updated';
-      toast.success(`Item successfully ${action}`);
-    }
+    console.log(`Successful response from: ${response.config.url}`, response.status);
     return response.data;  // Return data directly
   },
   (error: AxiosError) => {
     // Log detailed error information for debugging
-    console.error('API Error:', error.response?.data || error.message);
+    console.error('API Error:', error.message);
     console.error('Status:', error.response?.status);
     console.error('Request URL:', error.config?.url);
-    console.error('Request Data:', error.config?.data);
-    
-    // Type assertion for the error response data
-    const responseData = error.response?.data as ApiErrorResponse | undefined;
+    console.error('Request Method:', error.config?.method);
     
     // Create a more user-friendly error message
+    const responseData = error.response?.data as ApiErrorResponse | undefined;
+    
     let errorMessage = 
       responseData?.message || 
       responseData?.detail ||
       responseData?.error ||
       (responseData?.non_field_errors && responseData.non_field_errors[0]) ||
-      (error.message as string) || 
+      (error.message) || 
       'An unknown error occurred';
     
     // Show toast notification for API errors
     toast.error(`Error: ${errorMessage}`);
     
-    const apiError = new Error(errorMessage);
-    
-    // Add status code to error object for easier handling
-    Object.assign(apiError, { 
-      status: error.response?.status, 
-      data: error.response?.data 
-    });
-    
-    throw apiError;
+    return Promise.reject(error);
   }
 );
 

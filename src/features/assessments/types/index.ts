@@ -38,3 +38,24 @@ export interface PaginatedResponse<T> {
   previous: string | null;
   results: T[];
 }
+
+// Audit related types
+export interface Audit {
+  id: string;
+  facility: number;
+  facility_name: string;
+  audit_date: string;
+  overall_score: number;
+  status: 'scheduled' | 'completed' | 'incomplete';
+  notes: string;
+  auditor_name?: string;
+  auditor?: string;
+  scheduled_date?: string;
+}
+
+export interface AuditApiResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Audit[];
+}

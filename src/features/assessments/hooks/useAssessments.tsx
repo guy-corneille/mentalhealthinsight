@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
-import { Assessment, PaginatedResponse } from '@/components/assessments/types';
+import { Assessment, PaginatedResponse } from '../types';
 
 export function useAssessments() {
   const { toast } = useToast();
@@ -19,7 +19,7 @@ export function useAssessments() {
     console.log(`Fetching assessments, page: ${currentPage}, size: ${pageSize}, search: ${searchQuery || 'none'}, sort: ${sortBy || 'none'}, direction: ${sortDirection}`);
     
     try {
-      // Ensure we're using the correct endpoint structure
+      // Make sure we're using the correct endpoint structure
       const response = await api.get<PaginatedResponse<Assessment>>('/api/assessments/', {
         params: {
           search: searchQuery || undefined,
@@ -53,6 +53,9 @@ export function useAssessments() {
   // Ensure we have the correct total count and results extraction
   const totalCount = paginatedData?.count || 0;
   const assessments = paginatedData?.results || [];
+  
+  // Calculate total pages
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
   
   // Mutation for deleting assessments
   const deleteMutation = useMutation({
@@ -130,6 +133,7 @@ export function useAssessments() {
     sortBy,
     sortDirection,
     handleSort,
-    refetch
+    refetch,
+    totalPages
   };
 }

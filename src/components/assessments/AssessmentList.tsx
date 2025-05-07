@@ -8,7 +8,7 @@ import AssessmentTable from './components/AssessmentTable';
 import AssessmentDetailsDialog from './components/AssessmentDetailsDialog';
 import PaginationControls from '@/components/common/PaginationControls';
 import AssessmentFilters from './components/AssessmentFilters';
-import { Assessment } from './types';
+import { Assessment } from '@/features/assessments/types';
 
 // Import custom hooks
 import { useAssessments } from '@/features/assessments/hooks/useAssessments';
@@ -32,6 +32,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
     totalCount,
     currentPage,
     pageSize,
+    totalPages,
     isLoading, 
     error, 
     isFetching, 
@@ -70,9 +71,6 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       description: `Editing assessment ${assessment.id} is not implemented yet.`,
     });
   };
-
-  // Calculate total pages
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
     <div className="space-y-6 animate-fade-in">

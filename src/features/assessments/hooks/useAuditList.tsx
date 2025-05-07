@@ -3,26 +3,7 @@ import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { useToast } from "@/hooks/use-toast";
-
-export interface Audit {
-  id: string;
-  facility: number;
-  facility_name: string;
-  audit_date: string;
-  overall_score: number;
-  status: 'scheduled' | 'completed' | 'incomplete';
-  notes: string;
-  auditor_name?: string;
-  auditor?: string;
-  scheduled_date?: string;
-}
-
-export interface AuditApiResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: Audit[];
-}
+import { Audit, AuditApiResponse } from '../types';
 
 export function useAuditList() {
   const { toast } = useToast();
@@ -67,7 +48,9 @@ export function useAuditList() {
   }, [sortBy, sortDirection]);
 
   // Fetch audits data from API
-  const fetchAudits = async () => {
+  const fetchAudits = useCallback(async () => {
+    console.log(`Fetching audits, page: ${currentPage}, size: ${pageSize}, search: ${searchQuery || 'none'}, sort: ${sortBy || 'none'}, direction: ${sortDirection}`);
+    
     try {
       const response = await api.get<AuditApiResponse>('/api/audits/', {
         params: {
@@ -77,12 +60,14 @@ export function useAuditList() {
           ordering: sortBy ? (sortDirection === 'desc' ? `-${sortBy}` : sortBy) : '-audit_date'
         }
       });
+      
+      console.log(`Audits API Success - Count: ${response.count}, Results: ${response.results?.length}`);
       return response;
     } catch (error) {
       console.error('Error fetching audits:', error);
       throw error;
     }
-  };
+  }, [searchQuery, currentPage, pageSize, sortBy, sortDirection]);
 
   // Query for audits data
   const {
@@ -106,11 +91,13 @@ export function useAuditList() {
 
   // Handle view audit details
   const handleViewAudit = useCallback((id: string) => {
+    console.log(`Navigate to audit review: ${id}`);
     window.location.href = `/audits/review/${id}`;
   }, []);
 
   // Handle continue audit
   const handleContinueAudit = useCallback((audit: Audit) => {
+    console.log(`Continue audit: ${audit.id} for facility: ${audit.facility}`);
     window.location.href = `/facilities/audit/${audit.facility}?auditId=${audit.id}`;
   }, []);
 
