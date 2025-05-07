@@ -1,7 +1,6 @@
 
 import React from 'react';
 import StatsOverview from './StatsOverview';
-import BenchmarkOverview from './BenchmarkOverview';
 
 const Dashboard = () => {
   return (
@@ -14,11 +13,6 @@ const Dashboard = () => {
       </div>
       
       <StatsOverview />
-      
-      {/* <div>
-        <h3 className="text-xl font-semibold mb-4">Performance Benchmarks</h3>
-        <BenchmarkOverview />
-      </div> */}
     </div>
   );
 };

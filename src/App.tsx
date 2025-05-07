@@ -22,6 +22,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
 import Criteria from './pages/Criteria';
+import Benchmarks from './pages/Benchmarks';
 
 // Components
 import { Toaster } from "@/components/ui/toaster";
@@ -53,6 +54,7 @@ function App() {
           <Route path="/audits" element={<ProtectedRoute><Audits /></ProtectedRoute>} />
           <Route path="/audit-trends" element={<ProtectedRoute><AuditTrends /></ProtectedRoute>} />
           <Route path="/audits/review/:id" element={<ProtectedRoute><AuditReview /></ProtectedRoute>} />
+          <Route path="/benchmarks" element={<ProtectedRoute><Benchmarks /></ProtectedRoute>} />
           
           {/* Add the Criteria routes */}
           <Route path="/criteria" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
