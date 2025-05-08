@@ -1,40 +1,22 @@
 
 import { useState, useEffect } from 'react';
-import { BenchmarkCategory, BenchmarkComparison, BenchmarkPerformance, BenchmarkTarget } from '../types';
-import { calculateBenchmarkStatus, calculatePerformanceGap } from '@/utils/benchmarkUtils';
+import { useAuditStats } from '@/features/assessments/hooks/useAuditStats';
+import { useBenchmarks } from '@/hooks/useBenchmarks';
+import { 
+  BenchmarkCategory, 
+  BenchmarkComparison, 
+  BenchmarkPerformance, 
+  BenchmarkTarget,
+  BenchmarkingData
+} from '../types';
+import { 
+  calculateBenchmarkStatus, 
+  calculatePerformanceGap 
+} from '@/utils/benchmarkUtils';
+import { transformRealDataToBenchmarks } from '../utils/benchmarkDataAdapter';
 
-// Sample benchmark data (would come from API in a real app)
-const sampleBenchmarkCategories: BenchmarkCategory[] = [
-  {
-    id: 'clinical-outcomes',
-    name: 'Clinical Outcomes',
-    metrics: [
-      {
-        metricId: 'symptom-reduction',
-        metricName: 'Symptom Reduction Rate',
-        targetValue: 75,
-        currentValue: 68,
-        source: 'national',
-        description: 'Percentage of patients showing significant symptom reduction after treatment'
-      },
-      {
-        metricId: 'readmission-rate',
-        metricName: 'Readmission Rate',
-        targetValue: 12,
-        currentValue: 18,
-        source: 'regional',
-        description: 'Percentage of patients readmitted within 30 days'
-      },
-      {
-        metricId: 'treatment-completion',
-        metricName: 'Treatment Completion Rate',
-        targetValue: 85,
-        currentValue: 79,
-        source: 'organizational',
-        description: 'Percentage of patients who complete their treatment plan'
-      }
-    ]
-  },
+// Base benchmark categories structure
+const benchmarkCategories: BenchmarkCategory[] = [
   {
     id: 'operational-efficiency',
     name: 'Operational Efficiency',
@@ -43,7 +25,6 @@ const sampleBenchmarkCategories: BenchmarkCategory[] = [
         metricId: 'assessment-completion',
         metricName: 'Assessment Completion Rate',
         targetValue: 95,
-        currentValue: 92,
         source: 'organizational',
         description: 'Percentage of required assessments completed on time'
       },
@@ -51,62 +32,173 @@ const sampleBenchmarkCategories: BenchmarkCategory[] = [
         metricId: 'documentation-compliance',
         metricName: 'Documentation Compliance',
         targetValue: 98,
-        currentValue: 94,
         source: 'national',
         description: 'Percentage of patient records with complete documentation'
+      },
+      {
+        metricId: 'audit-completion',
+        metricName: 'Audit Completion Rate',
+        targetValue: 90,
+        source: 'organizational',
+        description: 'Percentage of scheduled audits that were completed'
       }
     ]
   },
   {
-    id: 'patient-experience',
-    name: 'Patient Experience',
+    id: 'quality-compliance',
+    name: 'Quality & Compliance',
     metrics: [
       {
-        metricId: 'satisfaction-score',
-        metricName: 'Patient Satisfaction Score',
+        metricId: 'overall-audit-score',
+        metricName: 'Overall Audit Score',
         targetValue: 85,
-        currentValue: 82,
         source: 'national',
-        description: 'Average satisfaction score from patient surveys (0-100)'
+        description: 'Average score across all audit criteria'
       },
       {
-        metricId: 'wait-time',
-        metricName: 'Average Wait Time',
-        targetValue: 15,
-        currentValue: 22,
-        source: 'regional',
-        description: 'Average wait time for initial appointment (days)'
+        metricId: 'compliance-rate',
+        metricName: 'Compliance Rate',
+        targetValue: 95,
+        source: 'regulatory',
+        description: 'Percentage of criteria meeting regulatory requirements'
+      },
+      {
+        metricId: 'critical-findings',
+        metricName: 'Critical Findings Rate',
+        targetValue: 5,
+        source: 'organizational',
+        description: 'Percentage of audits with critical findings (lower is better)'
+      }
+    ]
+  },
+  {
+    id: 'performance-trends',
+    name: 'Performance Trends',
+    metrics: [
+      {
+        metricId: 'trend-audit-completion',
+        metricName: 'Audit Completion Trend',
+        targetValue: 90,
+        source: 'historical',
+        description: 'Trend in audit completion rates over time'
+      },
+      {
+        metricId: 'trend-documentation-quality',
+        metricName: 'Documentation Quality Trend',
+        targetValue: 85,
+        source: 'historical',
+        description: 'Trend in documentation quality scores over time'
       }
     ]
   }
 ];
 
 export const useBenchmarking = (categoryId?: string) => {
-  const [categories, setCategories] = useState<BenchmarkCategory[]>([]);
+  const [categories, setCategories] = useState<BenchmarkCategory[]>(benchmarkCategories);
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(categoryId);
   const [benchmarkPerformance, setBenchmarkPerformance] = useState<BenchmarkPerformance[]>([]);
+  const [benchmarkingData, setBenchmarkingData] = useState<BenchmarkingData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Fetch benchmark data (simulated)
+  // Get real audit stats data
+  const { chartData, isLoading: isAuditStatsLoading, error: auditStatsError } = useAuditStats();
+  
+  // Get benchmark metrics from the hook
+  const { data: benchmarkMetrics, isLoading: isBenchmarkLoading, error: benchmarkError } = useBenchmarks();
+
+  // Process and transform real data into benchmark formats
   useEffect(() => {
     const fetchBenchmarkData = async () => {
       setIsLoading(true);
       try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Wait for all data sources to be ready
+        if (isAuditStatsLoading || isBenchmarkLoading) return;
         
-        // In a real app, this would be an API call
-        setCategories(sampleBenchmarkCategories);
+        // Handle errors from data sources
+        if (auditStatsError) {
+          throw auditStatsError;
+        }
         
-        // Calculate performance metrics
-        const performance = sampleBenchmarkCategories.map(category => {
+        if (benchmarkError) {
+          throw benchmarkError;
+        }
+
+        // Transform the audit stats into benchmark data
+        const transformedData = transformRealDataToBenchmarks(chartData);
+        setBenchmarkingData(transformedData);
+
+        // Update categories with real values where available
+        const updatedCategories = [...categories];
+        
+        // Update Operational Efficiency metrics
+        if (transformedData.operational) {
+          const opCategory = updatedCategories.find(cat => cat.id === 'operational-efficiency');
+          if (opCategory) {
+            opCategory.metrics = opCategory.metrics.map(metric => {
+              let currentValue;
+              if (metric.metricId === 'assessment-completion') {
+                currentValue = transformedData.operational.assessmentCompletionRate;
+              } else if (metric.metricId === 'documentation-compliance') {
+                currentValue = transformedData.operational.documentationCompliance;
+              } else if (metric.metricId === 'audit-completion') {
+                currentValue = transformedData.operational.auditCompletionRate;
+              }
+              
+              return { ...metric, currentValue };
+            });
+          }
+        }
+        
+        // Update Quality & Compliance metrics
+        if (transformedData.quality) {
+          const qcCategory = updatedCategories.find(cat => cat.id === 'quality-compliance');
+          if (qcCategory) {
+            qcCategory.metrics = qcCategory.metrics.map(metric => {
+              let currentValue;
+              if (metric.metricId === 'overall-audit-score') {
+                currentValue = chartData?.summary?.averageScore || 0;
+              } else if (metric.metricId === 'compliance-rate') {
+                currentValue = transformedData.quality.complianceRate;
+              } else if (metric.metricId === 'critical-findings') {
+                currentValue = transformedData.quality.criticalFindingsRate;
+              }
+              
+              return { ...metric, currentValue };
+            });
+          }
+        }
+        
+        // Update Performance Trends metrics
+        // Note: For trends, we're only updating the current value to show in the card
+        // The actual trend data is in transformedData.trends
+        if (transformedData.trends) {
+          const trendCategory = updatedCategories.find(cat => cat.id === 'performance-trends');
+          if (trendCategory) {
+            trendCategory.metrics = trendCategory.metrics.map(metric => {
+              let currentValue;
+              if (metric.metricId === 'trend-audit-completion') {
+                const auditCompletionTrend = transformedData.trends.find(t => t.metric === "Audit Completion");
+                currentValue = auditCompletionTrend?.values[auditCompletionTrend.values.length - 1] || 0;
+              } else if (metric.metricId === 'trend-documentation-quality') {
+                const docQualityTrend = transformedData.trends.find(t => t.metric === "Documentation Quality");
+                currentValue = docQualityTrend?.values[docQualityTrend.values.length - 1] || 0;
+              }
+              
+              return { ...metric, currentValue };
+            });
+          }
+        }
+        
+        setCategories(updatedCategories);
+        
+        // Calculate performance metrics based on updated categories
+        const performance = updatedCategories.map(category => {
           const metrics: BenchmarkComparison[] = category.metrics.map(metric => {
             const currentValue = metric.currentValue || 0;
             
-            // For metrics like wait time or readmission rate, lower is better
-            const isInverseMetric = metric.metricId.includes('wait-time') || 
-                                    metric.metricId.includes('readmission');
+            // For metrics like critical findings, lower is better
+            const isInverseMetric = metric.metricId.includes('critical-findings');
             
             // Calculate the percentage difference
             const percentDifference = isInverseMetric
@@ -120,6 +212,41 @@ export const useBenchmarking = (categoryId?: string) => {
               : (currentValue >= metric.targetValue ? 'above' : 
                  (currentValue >= metric.targetValue * 0.9 ? 'at' : 'below'));
               
+            // Add historical values for trend metrics
+            let historicalValues, historicalLabels;
+            
+            if (category.id === 'performance-trends') {
+              if (metric.metricId === 'trend-audit-completion') {
+                const trendData = transformedData.trends.find(t => t.metric === "Audit Completion");
+                if (trendData) {
+                  historicalValues = trendData.values;
+                  historicalLabels = trendData.periods;
+                }
+              } else if (metric.metricId === 'trend-documentation-quality') {
+                const trendData = transformedData.trends.find(t => t.metric === "Documentation Quality");
+                if (trendData) {
+                  historicalValues = trendData.values;
+                  historicalLabels = trendData.periods;
+                }
+              }
+            }
+            
+            // Determine trend based on historical data if available
+            let trendValue: 'improving' | 'steady' | 'declining' = 'steady';
+            
+            if (historicalValues && historicalValues.length > 2) {
+              const recentAvg = (historicalValues[historicalValues.length - 1] + historicalValues[historicalValues.length - 2]) / 2;
+              const earlierAvg = (historicalValues[0] + historicalValues[1]) / 2;
+              
+              if (isInverseMetric) {
+                // For inverse metrics (lower is better)
+                trendValue = recentAvg < earlierAvg ? 'improving' : recentAvg > earlierAvg ? 'declining' : 'steady';
+              } else {
+                // For standard metrics (higher is better)
+                trendValue = recentAvg > earlierAvg ? 'improving' : recentAvg < earlierAvg ? 'declining' : 'steady';
+              }
+            }
+              
             return {
               metricId: metric.metricId,
               metricName: metric.metricName,
@@ -127,8 +254,9 @@ export const useBenchmarking = (categoryId?: string) => {
               benchmarkValue: metric.targetValue,
               percentDifference,
               status: status as 'above' | 'at' | 'below',
-              trend: Math.random() > 0.6 ? 'improving' : 
-                     Math.random() > 0.3 ? 'steady' : 'declining'
+              trend: trendValue,
+              historicalValues,
+              historicalLabels
             };
           });
           
@@ -156,14 +284,14 @@ export const useBenchmarking = (categoryId?: string) => {
         setBenchmarkPerformance(performance);
         setIsLoading(false);
       } catch (err) {
-        console.error('Error fetching benchmark data:', err);
+        console.error('Error processing benchmark data:', err);
         setError(err instanceof Error ? err : new Error('Unknown error fetching benchmark data'));
         setIsLoading(false);
       }
     };
     
     fetchBenchmarkData();
-  }, []);
+  }, [isAuditStatsLoading, isBenchmarkLoading, chartData, benchmarkMetrics, auditStatsError, benchmarkError]);
   
   // Get a single category's performance data
   const getCategoryPerformance = (id: string) => {
@@ -188,8 +316,9 @@ export const useBenchmarking = (categoryId?: string) => {
     selectedCategory,
     setSelectedCategory,
     benchmarkPerformance,
-    isLoading,
-    error,
+    benchmarkingData,
+    isLoading: isLoading || isAuditStatsLoading || isBenchmarkLoading,
+    error: error || auditStatsError || benchmarkError,
     getCategoryPerformance,
     getImprovementAreas
   };

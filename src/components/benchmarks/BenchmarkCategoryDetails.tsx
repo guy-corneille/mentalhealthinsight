@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { getPerformanceColor, getPerformanceBgColor } from '@/utils/benchmarkUtils';
 import { ArrowDownRight, ArrowUpRight, Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface BenchmarkCategoryDetailsProps {
   categoryId: string;
@@ -31,6 +32,12 @@ const BenchmarkCategoryDetails: React.FC<BenchmarkCategoryDetailsProps> = ({
     const statusOrder = { 'below': 0, 'at': 1, 'above': 2 };
     return statusOrder[a.status] - statusOrder[b.status];
   });
+
+  // Prepare trend data for charts if available
+  const hasTrendData = sortedMetrics.some(metric => 
+    metric.historicalValues && metric.historicalValues.length > 0 && 
+    metric.historicalLabels && metric.historicalLabels.length > 0
+  );
   
   return (
     <div className="space-y-6">
@@ -62,6 +69,97 @@ const BenchmarkCategoryDetails: React.FC<BenchmarkCategoryDetailsProps> = ({
           </div>
         </CardContent>
       </Card>
+      
+      {/* Show trend charts if this is the Performance Trends category */}
+      {categoryId === 'performance-trends' && hasTrendData && (
+        <div className="space-y-6">
+          <h3 className="text-xl font-semibold mt-8 mb-4">Performance Over Time</h3>
+          
+          <div className="grid grid-cols-1 gap-6">
+            {sortedMetrics.filter(metric => metric.historicalValues && metric.historicalValues.length > 0).map(metric => {
+              // Prepare chart data
+              const chartData = metric.historicalLabels?.map((label, index) => ({
+                period: label,
+                actual: metric.historicalValues?.[index] || 0,
+                benchmark: metric.benchmarkValue
+              }));
+              
+              return (
+                <Card key={metric.metricId}>
+                  <CardHeader>
+                    <CardTitle className="text-lg">{metric.metricName}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={chartData}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="period" />
+                          <YAxis domain={[0, 100]} />
+                          <Tooltip />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="actual" 
+                            name="Actual Value" 
+                            stroke="#6366f1" 
+                            strokeWidth={2}
+                            activeDot={{ r: 8 }}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="benchmark" 
+                            name="Benchmark" 
+                            stroke="#94a3b8" 
+                            strokeDasharray="5 5"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    <div className="mt-4 flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-medium">Current: </span>
+                        <span className={`font-medium ${getPerformanceColor(metric.status)}`}>
+                          {metric.facilityValue.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium">Benchmark: </span>
+                        <span className="font-medium text-gray-600">
+                          {metric.benchmarkValue}%
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium">Trend: </span>
+                        {metric.trend === 'improving' ? (
+                          <span className="font-medium text-emerald-600 flex items-center">
+                            <ArrowUpRight className="h-4 w-4 mr-1" />
+                            Improving
+                          </span>
+                        ) : metric.trend === 'declining' ? (
+                          <span className="font-medium text-rose-600 flex items-center">
+                            <ArrowDownRight className="h-4 w-4 mr-1" />
+                            Declining
+                          </span>
+                        ) : (
+                          <span className="font-medium text-amber-600 flex items-center">
+                            <Minus className="h-4 w-4 mr-1" />
+                            Steady
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
       
       <h3 className="text-xl font-semibold mt-8 mb-4">Benchmark Metrics</h3>
       
@@ -131,7 +229,8 @@ const BenchmarkCategoryDetails: React.FC<BenchmarkCategoryDetailsProps> = ({
               <span className="font-medium capitalize">{source}:</span> {' '}
               {source === 'national' ? 'National association standards and averages' : 
                source === 'regional' ? 'Regional healthcare network averages' : 
-               source === 'organizational' ? 'Organization-defined targets' : 
+               source === 'organizational' ? 'Organization-defined targets' :
+               source === 'historical' ? 'Historical performance data' :
                'Custom benchmark values'}
             </li>
           ))}

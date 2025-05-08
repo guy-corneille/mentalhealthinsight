@@ -5,7 +5,7 @@
  * This file contains all the type definitions related to benchmarks.
  */
 
-export type BenchmarkSource = 'national' | 'regional' | 'organizational' | 'custom';
+export type BenchmarkSource = 'national' | 'regional' | 'organizational' | 'custom' | 'historical';
 
 export type BenchmarkTimeframe = 'monthly' | 'quarterly' | 'yearly';
 
@@ -27,6 +27,8 @@ export interface BenchmarkComparison {
   percentDifference: number;
   status: 'above' | 'at' | 'below';
   trend?: 'improving' | 'steady' | 'declining';
+  historicalValues?: number[];
+  historicalLabels?: string[];
 }
 
 export interface BenchmarkCategory {
@@ -41,4 +43,34 @@ export interface BenchmarkPerformance {
   aggregateScore: number;
   benchmarkScore: number;
   metrics: BenchmarkComparison[];
+}
+
+// New types for real data benchmarking
+export interface OperationalEfficiencyMetrics {
+  assessmentCompletionRate: number;
+  documentationCompliance: number;
+  auditCompletionRate: number;
+}
+
+export interface QualityComplianceMetrics {
+  auditScores: {
+    category: string;
+    score: number;
+    benchmark: number;
+  }[];
+  complianceRate: number;
+  criticalFindingsRate: number;
+}
+
+export interface PerformanceTrendMetrics {
+  metric: string;
+  periods: string[];
+  values: number[];
+  benchmarks: number[];
+}
+
+export interface BenchmarkingData {
+  operational: OperationalEfficiencyMetrics;
+  quality: QualityComplianceMetrics;
+  trends: PerformanceTrendMetrics[];
 }

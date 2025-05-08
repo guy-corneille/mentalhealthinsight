@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { BenchmarkCategory } from '@/features/benchmarks/types';
-import { calculateImprovementTarget } from '@/utils/benchmarkUtils';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { AlertCircle, CheckCircle2, Clock } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { calculateImprovementTarget } from '@/utils/benchmarkUtils';
+import { ArrowUp, ArrowDown, AlertTriangle, CheckCircle, Calendar } from 'lucide-react';
 
 interface ImprovementArea {
   metricId: string;
@@ -13,10 +13,10 @@ interface ImprovementArea {
   facilityValue: number;
   benchmarkValue: number;
   percentDifference: number;
-  status: string;
+  status: 'above' | 'at' | 'below';
   categoryName: string;
   gap: number;
-  trend?: string;
+  trend?: 'improving' | 'steady' | 'declining';
 }
 
 interface BenchmarkImprovementPlanProps {
@@ -25,232 +25,218 @@ interface BenchmarkImprovementPlanProps {
 }
 
 const BenchmarkImprovementPlan: React.FC<BenchmarkImprovementPlanProps> = ({ 
-  improvementAreas,
-  categories
+  improvementAreas, 
+  categories 
 }) => {
-  // Prepare data for the gap chart
-  const gapChartData = improvementAreas.slice(0, 5).map(area => {
-    // Determine if this is a metric where lower is better
-    const isInverseMetric = area.metricId.includes('wait-time') || 
-                          area.metricId.includes('readmission');
-    
-    // Calculate targets for 3, 6, and 12 month timeframes
-    const target3Month = calculateImprovementTarget(
-      area.facilityValue, 
-      area.benchmarkValue, 
-      3, 
-      isInverseMetric
+  if (!improvementAreas || improvementAreas.length === 0) {
+    return (
+      <div className="text-center py-12 border rounded-lg">
+        <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-2" />
+        <h3 className="text-xl font-semibold mb-2">All Benchmarks Met</h3>
+        <p className="text-muted-foreground">
+          Congratulations! All performance metrics are meeting or exceeding their benchmarks.
+        </p>
+      </div>
     );
-    
-    const target6Month = calculateImprovementTarget(
-      area.facilityValue, 
-      area.benchmarkValue, 
-      6, 
-      isInverseMetric
-    );
-    
-    const target12Month = calculateImprovementTarget(
-      area.facilityValue, 
-      area.benchmarkValue, 
-      12, 
-      isInverseMetric
-    );
+  }
+
+  // Add implementation guidance for each metric
+  const areasWithGuidance = improvementAreas.map(area => {
+    let guidance = '';
+    let timeframe = 'medium'; // default
+    let priority = 'medium'; // default
+
+    // Assign priority based on gap size
+    if (area.gap > 25) {
+      priority = 'high';
+    } else if (area.gap < 10) {
+      priority = 'low';
+    }
+
+    // Determine timeframe based on gap and trend
+    if (area.trend === 'improving' || area.gap < 10) {
+      timeframe = 'long';
+    } else if (area.trend === 'declining' || area.gap > 25) {
+      timeframe = 'short';
+    }
+
+    // Generate metric-specific guidance
+    if (area.metricId.includes('assessment-completion')) {
+      guidance = 'Implement reminder systems and streamline the assessment process to ensure timely completion.';
+    } else if (area.metricId.includes('documentation')) {
+      guidance = 'Provide staff training on documentation standards and implement quality checks.';
+    } else if (area.metricId.includes('audit')) {
+      guidance = 'Establish a regular audit schedule and allocate dedicated resources to ensure completion.';
+    } else if (area.metricId.includes('compliance')) {
+      guidance = 'Review compliance requirements and implement process improvements to address gaps.';
+    } else if (area.metricId.includes('critical-findings')) {
+      guidance = 'Create an action plan to address critical findings and prevent recurrence.';
+    } else {
+      guidance = 'Analyze the root causes of performance gaps and develop targeted improvement strategies.';
+    }
     
     return {
-      name: area.metricName,
-      current: area.facilityValue,
-      benchmark: area.benchmarkValue,
-      '3 Month Target': target3Month,
-      '6 Month Target': target6Month,
-      '12 Month Target': target12Month
+      ...area,
+      guidance,
+      timeframe,
+      priority,
+      targetValue: calculateImprovementTarget(
+        area.facilityValue,
+        area.benchmarkValue,
+        timeframe === 'short' ? 1 : timeframe === 'medium' ? 3 : 6,
+        area.metricId.includes('critical-findings') // Lower is better for critical findings
+      )
     };
+  });
+  
+  // Sort by priority (high to low)
+  const sortedAreas = [...areasWithGuidance].sort((a, b) => {
+    const priorityOrder = { 'high': 0, 'medium': 1, 'low': 2 };
+    return priorityOrder[a.priority] - priorityOrder[b.priority];
   });
   
   return (
     <div className="space-y-6">
-      {improvementAreas.length > 0 ? (
-        <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Priority Improvement Areas</CardTitle>
-              <CardDescription>
-                Focus on these metrics to have the biggest impact on your benchmark performance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {improvementAreas.slice(0, 3).map((area, index) => {
-                  // Determine if this is a metric where lower is better
-                  const isInverseMetric = area.metricId.includes('wait-time') || 
-                                        area.metricId.includes('readmission');
-                  
-                  // Calculate the improvement progress
-                  const progressValue = isInverseMetric
-                    ? Math.max(0, Math.min(100, 100 - (area.gap)))
-                    : Math.max(0, Math.min(100, 100 - (area.gap)));
-                  
-                  // Calculate targets
-                  const target3Month = calculateImprovementTarget(
-                    area.facilityValue, 
-                    area.benchmarkValue, 
-                    3, 
-                    isInverseMetric
-                  );
-                  
-                  return (
-                    <div key={area.metricId} className="border rounded-lg p-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between mb-3 gap-2">
-                        <div>
-                          <h4 className="font-semibold text-lg">{area.metricName}</h4>
-                          <p className="text-sm text-muted-foreground">{area.categoryName}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <AlertCircle className="h-4 w-4 text-amber-500" />
-                          <span className="text-sm font-medium">
-                            {Math.round(area.gap)}% {isInverseMetric ? 'above' : 'below'} benchmark
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div className="flex flex-col">
-                          <span className="text-sm text-muted-foreground">Current Value</span>
-                          <span className="font-medium">{area.facilityValue}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm text-muted-foreground">Benchmark Target</span>
-                          <span className="font-medium">{area.benchmarkValue}</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm text-muted-foreground">3-Month Goal</span>
-                          <span className="font-medium">{target3Month.toFixed(1)}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress to Benchmark</span>
-                          <span>{progressValue.toFixed(0)}%</span>
-                        </div>
-                        <Progress value={progressValue} className="h-2" />
-                      </div>
-                      
-                      <div className="mt-4">
-                        <h5 className="text-sm font-medium mb-2">Recommended Actions:</h5>
-                        <ul className="list-disc pl-5 space-y-1 text-sm">
-                          {area.metricId.includes('readmission') ? (
-                            <>
-                              <li>Review discharge planning procedures</li>
-                              <li>Enhance follow-up care coordination</li>
-                              <li>Implement post-discharge check-in program</li>
-                            </>
-                          ) : area.metricId.includes('wait-time') ? (
-                            <>
-                              <li>Review scheduling efficiency</li>
-                              <li>Analyze no-show patterns</li>
-                              <li>Consider additional staffing during peak hours</li>
-                            </>
-                          ) : area.metricId.includes('completion') ? (
-                            <>
-                              <li>Implement assessment completion reminders</li>
-                              <li>Provide staff training on assessment tools</li>
-                              <li>Review workflow for assessment bottlenecks</li>
-                            </>
-                          ) : (
-                            <>
-                              <li>Review current protocols and procedures</li>
-                              <li>Identify barriers to meeting the benchmark</li>
-                              <li>Develop targeted improvement initiatives</li>
-                            </>
-                          )}
-                        </ul>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Improvement Projection</CardTitle>
-              <CardDescription>
-                Projected timeline to reach benchmark standards
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={gapChartData}
-                    layout="vertical"
-                    margin={{ top: 20, right: 30, left: 100, bottom: 5 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis type="category" dataKey="name" width={100} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="current" fill="#94a3b8" name="Current Value" />
-                    <Bar dataKey="3 Month Target" fill="#a855f7" name="3 Month Target" />
-                    <Bar dataKey="6 Month Target" fill="#8b5cf6" name="6 Month Target" />
-                    <Bar dataKey="12 Month Target" fill="#6366f1" name="12 Month Target" />
-                    <Bar dataKey="benchmark" fill="#10b981" name="Benchmark" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="flex items-center bg-muted/30 rounded-lg p-3">
-                  <Clock className="h-5 w-5 mr-3 text-healthiq-600" />
-                  <div>
-                    <h5 className="font-medium">Short-term (3 months)</h5>
-                    <p className="text-sm text-muted-foreground">
-                      Focus on process improvements
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center bg-muted/30 rounded-lg p-3">
-                  <CheckCircle2 className="h-5 w-5 mr-3 text-healthiq-600" />
-                  <div>
-                    <h5 className="font-medium">Mid-term (6 months)</h5>
-                    <p className="text-sm text-muted-foreground">
-                      Staff training and system upgrades
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center bg-muted/30 rounded-lg p-3">
-                  <CheckCircle2 className="h-5 w-5 mr-3 text-healthiq-600" />
-                  <div>
-                    <h5 className="font-medium">Long-term (12 months)</h5>
-                    <p className="text-sm text-muted-foreground">
-                      Cultural and structural changes
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>All Benchmarks Met</CardTitle>
-            <CardDescription>
-              Congratulations! You are meeting or exceeding all benchmarks.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center py-8">
-              <CheckCircle2 className="h-16 w-16 text-emerald-500 mb-4" />
-              <p>Continue monitoring performance to maintain excellence</p>
+      <div className="bg-muted p-6 rounded-lg mb-6">
+        <h3 className="text-xl font-semibold mb-2">Improvement Plan Overview</h3>
+        <p className="text-muted-foreground mb-4">
+          This plan identifies {improvementAreas.length} metrics that require attention to meet benchmark targets.
+          Focus on high priority items for maximum impact.
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div className="p-4 bg-white rounded-md shadow-sm">
+            <div className="font-semibold text-amber-600 flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-4 w-4" />
+              High Priority
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div className="text-2xl font-bold">
+              {sortedAreas.filter(a => a.priority === 'high').length}
+            </div>
+            <div className="text-sm text-muted-foreground">metrics requiring immediate attention</div>
+          </div>
+          
+          <div className="p-4 bg-white rounded-md shadow-sm">
+            <div className="font-semibold text-blue-600 flex items-center gap-2 mb-2">
+              <Calendar className="h-4 w-4" />
+              Improvement Timeline
+            </div>
+            <div className="text-2xl font-bold">
+              3-6
+            </div>
+            <div className="text-sm text-muted-foreground">months to reach benchmarks</div>
+          </div>
+          
+          <div className="p-4 bg-white rounded-md shadow-sm">
+            <div className="font-semibold text-healthiq-600 flex items-center gap-2 mb-2">
+              <ArrowUp className="h-4 w-4" />
+              Average Gap
+            </div>
+            <div className="text-2xl font-bold">
+              {Math.round(sortedAreas.reduce((sum, area) => sum + area.gap, 0) / sortedAreas.length)}%
+            </div>
+            <div className="text-sm text-muted-foreground">below benchmark targets</div>
+          </div>
+        </div>
+      </div>
+      
+      <h3 className="text-xl font-semibold mb-4">Improvement Actions</h3>
+      
+      <div className="grid grid-cols-1 gap-6">
+        {sortedAreas.map((area) => {
+          // Calculate color for priority
+          const priorityColor = 
+            area.priority === 'high' ? 'bg-rose-100 text-rose-700' :
+            area.priority === 'medium' ? 'bg-amber-100 text-amber-700' :
+            'bg-emerald-100 text-emerald-700';
+          
+          // Calculate timeframe text and color
+          const timeframeText = 
+            area.timeframe === 'short' ? '1 month' :
+            area.timeframe === 'medium' ? '3 months' : 
+            '6 months';
+          
+          return (
+            <Card key={area.metricId}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">{area.metricName}</CardTitle>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${priorityColor}`}>
+                        {area.priority === 'high' ? 'High Priority' : 
+                         area.priority === 'medium' ? 'Medium Priority' : 'Low Priority'}
+                      </span>
+                    </div>
+                    <CardDescription>
+                      {area.categoryName} · Gap: {area.gap.toFixed(1)}%
+                    </CardDescription>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="text-sm font-medium">Target Timeline</div>
+                    <div className="text-sm text-muted-foreground">{timeframeText}</div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between pb-2">
+                  <div className="flex-1">
+                    <div className="flex justify-between mb-1 text-sm">
+                      <span>Current: {area.facilityValue.toFixed(1)}%</span>
+                      <span>Benchmark: {area.benchmarkValue}%</span>
+                    </div>
+                    <Progress 
+                      value={(area.facilityValue / area.benchmarkValue) * 100} 
+                      className="h-2"
+                      // For inverse metrics (like critical findings), invert the progress calculation
+                      indicator={area.metricId.includes('critical-findings') ? 'negative' : 'positive'}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Target:</span>
+                    <span className="font-bold text-healthiq-700">
+                      {area.targetValue.toFixed(1)}%
+                    </span>
+                    <ArrowUp className="h-4 w-4 text-emerald-600" />
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">Implementation Guidance:</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {area.guidance}
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <h4 className="font-semibold text-sm mb-1">Root Cause Analysis:</h4>
+                    <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                      <li>Identify process bottlenecks</li>
+                      <li>Review resource allocation</li>
+                      <li>Evaluate staff training needs</li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold text-sm mb-1">Key Actions:</h4>
+                    <ul className="list-disc pl-5 text-sm text-muted-foreground">
+                      <li>Implement regular monitoring</li>
+                      <li>Set incremental improvement goals</li>
+                      <li>Review progress monthly</li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full">Create Improvement Task</Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 };
