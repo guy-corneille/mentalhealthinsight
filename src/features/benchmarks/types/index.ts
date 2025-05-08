@@ -1,11 +1,10 @@
-
 /**
  * Benchmark Types
  * 
  * This file contains all the type definitions related to benchmarks.
  */
 
-export type BenchmarkSource = 'national' | 'regional' | 'organizational' | 'custom' | 'historical';
+export type BenchmarkSource = 'national' | 'regional' | 'organizational' | 'custom' | 'historical' | 'regulatory';
 
 export type BenchmarkTimeframe = 'monthly' | 'quarterly' | 'yearly';
 

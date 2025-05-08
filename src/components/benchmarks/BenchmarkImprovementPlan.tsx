@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { BenchmarkCategory } from '@/features/benchmarks/types';
@@ -189,8 +188,7 @@ const BenchmarkImprovementPlan: React.FC<BenchmarkImprovementPlanProps> = ({
                     <Progress 
                       value={(area.facilityValue / area.benchmarkValue) * 100} 
                       className="h-2"
-                      // For inverse metrics (like critical findings), invert the progress calculation
-                      indicator={area.metricId.includes('critical-findings') ? 'negative' : 'positive'}
+                      indicatorClassName={area.metricId.includes('critical-findings') ? "bg-rose-500" : undefined}
                     />
                   </div>
                   
