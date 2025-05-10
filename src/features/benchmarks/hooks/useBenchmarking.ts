@@ -15,7 +15,7 @@ import {
 } from '@/utils/benchmarkUtils';
 import { transformRealDataToBenchmarks } from '../utils/benchmarkDataAdapter';
 
-// Base benchmark categories structure
+// Base benchmark categories structure with targets
 const benchmarkCategories: BenchmarkCategory[] = [
   {
     id: 'operational-efficiency',
@@ -24,21 +24,21 @@ const benchmarkCategories: BenchmarkCategory[] = [
       {
         metricId: 'assessment-completion',
         metricName: 'Assessment Completion Rate',
-        targetValue: 95,
+        targetValue: 90, // Target value
         source: 'organizational',
         description: 'Percentage of required assessments completed on time'
       },
       {
         metricId: 'documentation-compliance',
         metricName: 'Documentation Compliance',
-        targetValue: 98,
+        targetValue: 90, // Target value
         source: 'national',
         description: 'Percentage of patient records with complete documentation'
       },
       {
         metricId: 'audit-completion',
         metricName: 'Audit Completion Rate',
-        targetValue: 90,
+        targetValue: 90, // Target value
         source: 'organizational',
         description: 'Percentage of scheduled audits that were completed'
       }
@@ -51,21 +51,21 @@ const benchmarkCategories: BenchmarkCategory[] = [
       {
         metricId: 'overall-audit-score',
         metricName: 'Overall Audit Score',
-        targetValue: 85,
+        targetValue: 80, // Target value
         source: 'national',
         description: 'Average score across all audit criteria'
       },
       {
         metricId: 'compliance-rate',
         metricName: 'Compliance Rate',
-        targetValue: 95,
+        targetValue: 90, // Target value
         source: 'regulatory',
         description: 'Percentage of criteria meeting regulatory requirements'
       },
       {
         metricId: 'critical-findings',
         metricName: 'Critical Findings Rate',
-        targetValue: 5,
+        targetValue: 10, // Target value - lower is better
         source: 'organizational',
         description: 'Percentage of audits with critical findings (lower is better)'
       }
@@ -78,14 +78,14 @@ const benchmarkCategories: BenchmarkCategory[] = [
       {
         metricId: 'trend-audit-completion',
         metricName: 'Audit Completion Trend',
-        targetValue: 90,
+        targetValue: 90, // Target value
         source: 'historical',
         description: 'Trend in audit completion rates over time'
       },
       {
         metricId: 'trend-documentation-quality',
         metricName: 'Documentation Quality Trend',
-        targetValue: 85,
+        targetValue: 85, // Target value
         source: 'historical',
         description: 'Trend in documentation quality scores over time'
       }
@@ -101,7 +101,7 @@ export const useBenchmarking = (categoryId?: string) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Get real audit stats data
+  // Get real audit stats data - source of truth
   const { chartData, isLoading: isAuditStatsLoading, error: auditStatsError } = useAuditStats();
   
   // Get benchmark metrics from the hook
@@ -109,10 +109,10 @@ export const useBenchmarking = (categoryId?: string) => {
 
   // Process and transform real data into benchmark formats
   useEffect(() => {
-    const fetchBenchmarkData = async () => {
+    const processBenchmarkData = async () => {
       setIsLoading(true);
       try {
-        // Wait for all data sources to be ready
+        // Wait for data sources to be ready
         if (isAuditStatsLoading || isBenchmarkLoading) return;
         
         // Handle errors from data sources
@@ -124,9 +124,20 @@ export const useBenchmarking = (categoryId?: string) => {
           throw benchmarkError;
         }
 
-        // Transform the audit stats into benchmark data
+        // Only proceed if we have chartData
+        if (!chartData) {
+          setIsLoading(false);
+          return;
+        }
+
+        // Transform the audit stats into benchmark data - strict approach with no fallbacks
         const transformedData = transformRealDataToBenchmarks(chartData);
         setBenchmarkingData(transformedData);
+
+        if (!transformedData) {
+          setIsLoading(false);
+          return;
+        }
 
         // Update categories with real values where available
         const updatedCategories = [...categories];
@@ -137,15 +148,22 @@ export const useBenchmarking = (categoryId?: string) => {
           if (opCategory) {
             opCategory.metrics = opCategory.metrics.map(metric => {
               let currentValue;
-              if (metric.metricId === 'assessment-completion') {
-                currentValue = transformedData.operational.assessmentCompletionRate;
-              } else if (metric.metricId === 'documentation-compliance') {
-                currentValue = transformedData.operational.documentationCompliance;
-              } else if (metric.metricId === 'audit-completion') {
-                currentValue = transformedData.operational.auditCompletionRate;
+              switch (metric.metricId) {
+                case 'assessment-completion':
+                  currentValue = transformedData.operational.assessmentCompletionRate;
+                  break;
+                case 'documentation-compliance':
+                  currentValue = transformedData.operational.documentationCompliance;
+                  break;
+                case 'audit-completion':
+                  currentValue = transformedData.operational.auditCompletionRate;
+                  break;
+                default:
+                  // Do not set a currentValue if no match
+                  break;
               }
               
-              return { ...metric, currentValue };
+              return currentValue !== undefined ? { ...metric, currentValue } : metric;
             });
           }
         }
@@ -156,36 +174,53 @@ export const useBenchmarking = (categoryId?: string) => {
           if (qcCategory) {
             qcCategory.metrics = qcCategory.metrics.map(metric => {
               let currentValue;
-              if (metric.metricId === 'overall-audit-score') {
-                currentValue = chartData?.summary?.averageScore || 0;
-              } else if (metric.metricId === 'compliance-rate') {
-                currentValue = transformedData.quality.complianceRate;
-              } else if (metric.metricId === 'critical-findings') {
-                currentValue = transformedData.quality.criticalFindingsRate;
+              switch (metric.metricId) {
+                case 'overall-audit-score':
+                  currentValue = chartData?.summary?.averageScore;
+                  break;
+                case 'compliance-rate':
+                  currentValue = transformedData.quality.complianceRate;
+                  break;
+                case 'critical-findings':
+                  currentValue = transformedData.quality.criticalFindingsRate;
+                  break;
+                default:
+                  // Do not set a currentValue if no match
+                  break;
               }
               
-              return { ...metric, currentValue };
+              return currentValue !== undefined ? { ...metric, currentValue } : metric;
             });
           }
         }
         
         // Update Performance Trends metrics
-        // Note: For trends, we're only updating the current value to show in the card
-        // The actual trend data is in transformedData.trends
-        if (transformedData.trends) {
+        if (transformedData.trends && transformedData.trends.length > 0) {
           const trendCategory = updatedCategories.find(cat => cat.id === 'performance-trends');
           if (trendCategory) {
             trendCategory.metrics = trendCategory.metrics.map(metric => {
               let currentValue;
-              if (metric.metricId === 'trend-audit-completion') {
-                const auditCompletionTrend = transformedData.trends.find(t => t.metric === "Audit Completion");
-                currentValue = auditCompletionTrend?.values[auditCompletionTrend.values.length - 1] || 0;
-              } else if (metric.metricId === 'trend-documentation-quality') {
-                const docQualityTrend = transformedData.trends.find(t => t.metric === "Documentation Quality");
-                currentValue = docQualityTrend?.values[docQualityTrend.values.length - 1] || 0;
+              let trend;
+              
+              switch (metric.metricId) {
+                case 'trend-audit-completion':
+                  trend = transformedData.trends.find(t => t.metric === "Audit Completion");
+                  if (trend && trend.values.length > 0) {
+                    currentValue = trend.values[trend.values.length - 1];
+                  }
+                  break;
+                case 'trend-documentation-quality':
+                  trend = transformedData.trends.find(t => t.metric === "Documentation Quality");
+                  if (trend && trend.values.length > 0) {
+                    currentValue = trend.values[trend.values.length - 1];
+                  }
+                  break;
+                default:
+                  // Do not set a currentValue if no match
+                  break;
               }
               
-              return { ...metric, currentValue };
+              return currentValue !== undefined ? { ...metric, currentValue } : metric;
             });
           }
         }
@@ -194,83 +229,99 @@ export const useBenchmarking = (categoryId?: string) => {
         
         // Calculate performance metrics based on updated categories
         const performance = updatedCategories.map(category => {
-          const metrics: BenchmarkComparison[] = category.metrics.map(metric => {
-            const currentValue = metric.currentValue || 0;
-            
-            // For metrics like critical findings, lower is better
-            const isInverseMetric = metric.metricId.includes('critical-findings');
-            
-            // Calculate the percentage difference
-            const percentDifference = isInverseMetric
-              ? ((metric.targetValue - currentValue) / metric.targetValue) * 100
-              : ((currentValue - metric.targetValue) / metric.targetValue) * 100;
-            
-            // Determine status (above/at/below benchmark)
-            const status = isInverseMetric
-              ? (currentValue <= metric.targetValue ? 'above' : 
-                 (currentValue <= metric.targetValue * 1.1 ? 'at' : 'below'))
-              : (currentValue >= metric.targetValue ? 'above' : 
-                 (currentValue >= metric.targetValue * 0.9 ? 'at' : 'below'));
+          const metrics: BenchmarkComparison[] = category.metrics
+            // Only include metrics that have actual data
+            .filter(metric => metric.currentValue !== undefined)
+            .map(metric => {
+              const currentValue = metric.currentValue || 0;
               
-            // Add historical values for trend metrics
-            let historicalValues, historicalLabels;
-            
-            if (category.id === 'performance-trends') {
-              if (metric.metricId === 'trend-audit-completion') {
-                const trendData = transformedData.trends.find(t => t.metric === "Audit Completion");
-                if (trendData) {
-                  historicalValues = trendData.values;
-                  historicalLabels = trendData.periods;
-                }
-              } else if (metric.metricId === 'trend-documentation-quality') {
-                const trendData = transformedData.trends.find(t => t.metric === "Documentation Quality");
-                if (trendData) {
-                  historicalValues = trendData.values;
-                  historicalLabels = trendData.periods;
-                }
-              }
-            }
-            
-            // Determine trend based on historical data if available
-            let trendValue: 'improving' | 'steady' | 'declining' = 'steady';
-            
-            if (historicalValues && historicalValues.length > 2) {
-              const recentAvg = (historicalValues[historicalValues.length - 1] + historicalValues[historicalValues.length - 2]) / 2;
-              const earlierAvg = (historicalValues[0] + historicalValues[1]) / 2;
+              // For metrics like critical findings, lower is better
+              const isInverseMetric = metric.metricId.includes('critical-findings');
+              
+              // Calculate the percentage difference
+              const percentDifference = isInverseMetric
+                ? ((metric.targetValue - currentValue) / metric.targetValue) * 100
+                : ((currentValue - metric.targetValue) / metric.targetValue) * 100;
+              
+              // Determine status (above/at/below benchmark)
+              let status: 'above' | 'at' | 'below';
               
               if (isInverseMetric) {
-                // For inverse metrics (lower is better)
-                trendValue = recentAvg < earlierAvg ? 'improving' : recentAvg > earlierAvg ? 'declining' : 'steady';
+                status = currentValue <= metric.targetValue ? 'above' : 
+                      (currentValue <= metric.targetValue * 1.1 ? 'at' : 'below');
               } else {
-                // For standard metrics (higher is better)
-                trendValue = recentAvg > earlierAvg ? 'improving' : recentAvg < earlierAvg ? 'declining' : 'steady';
+                status = currentValue >= metric.targetValue ? 'above' : 
+                      (currentValue >= metric.targetValue * 0.9 ? 'at' : 'below');
               }
-            }
+                
+              // Add historical values for trend metrics
+              let historicalValues, historicalLabels;
               
-            return {
-              metricId: metric.metricId,
-              metricName: metric.metricName,
-              facilityValue: currentValue,
-              benchmarkValue: metric.targetValue,
-              percentDifference,
-              status: status as 'above' | 'at' | 'below',
-              trend: trendValue,
-              historicalValues,
-              historicalLabels
-            };
-          });
+              if (category.id === 'performance-trends' && transformedData.trends) {
+                let relevantTrend;
+                
+                if (metric.metricId === 'trend-audit-completion') {
+                  relevantTrend = transformedData.trends.find(t => t.metric === "Audit Completion");
+                } else if (metric.metricId === 'trend-documentation-quality') {
+                  relevantTrend = transformedData.trends.find(t => t.metric === "Documentation Quality");
+                }
+                
+                if (relevantTrend) {
+                  historicalValues = relevantTrend.values;
+                  historicalLabels = relevantTrend.periods;
+                }
+              }
+              
+              // Determine trend based on historical data if available
+              let trendValue: 'improving' | 'steady' | 'declining' = 'steady';
+              
+              if (historicalValues && historicalValues.length > 2) {
+                const recentAvg = (historicalValues[historicalValues.length - 1] + historicalValues[historicalValues.length - 2]) / 2;
+                const earlierAvg = (historicalValues[0] + historicalValues[1]) / 2;
+                
+                if (isInverseMetric) {
+                  // For inverse metrics (lower is better)
+                  trendValue = recentAvg < earlierAvg ? 'improving' : recentAvg > earlierAvg ? 'declining' : 'steady';
+                } else {
+                  // For standard metrics (higher is better)
+                  trendValue = recentAvg > earlierAvg ? 'improving' : recentAvg < earlierAvg ? 'declining' : 'steady';
+                }
+              }
+                
+              return {
+                metricId: metric.metricId,
+                metricName: metric.metricName,
+                facilityValue: currentValue,
+                benchmarkValue: metric.targetValue,
+                percentDifference,
+                status,
+                trend: trendValue,
+                historicalValues,
+                historicalLabels
+              };
+            });
           
-          // Calculate aggregate score for the category
+          // Calculate aggregate score for the category, but only if we have metrics
           const totalMetrics = metrics.length;
+          
+          // Skip score calculation if no metrics with data
+          if (totalMetrics === 0) {
+            return {
+              categoryId: category.id,
+              categoryName: category.name,
+              aggregateScore: 0,
+              benchmarkScore: 100,
+              metrics: []
+            };
+          }
+          
           const metricScores = metrics.map(m => {
             if (m.status === 'above') return 3;
             if (m.status === 'at') return 2;
             return 1;
           });
           
-          const aggregateScore = totalMetrics > 0
-            ? (metricScores.reduce((sum, score) => sum + score, 0) / (totalMetrics * 3)) * 100
-            : 0;
+          const aggregateScore = (metricScores.reduce((sum, score) => sum + score, 0) / (totalMetrics * 3)) * 100;
             
           return {
             categoryId: category.id,
@@ -290,7 +341,7 @@ export const useBenchmarking = (categoryId?: string) => {
       }
     };
     
-    fetchBenchmarkData();
+    processBenchmarkData();
   }, [isAuditStatsLoading, isBenchmarkLoading, chartData, benchmarkMetrics, auditStatsError, benchmarkError]);
   
   // Get a single category's performance data

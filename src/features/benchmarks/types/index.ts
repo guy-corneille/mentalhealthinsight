@@ -1,3 +1,4 @@
+
 /**
  * Benchmark Types
  * 
@@ -44,7 +45,10 @@ export interface BenchmarkPerformance {
   metrics: BenchmarkComparison[];
 }
 
-// New types for real data benchmarking
+// Assessment status type to track completion status
+export type AssessmentStatus = 'scheduled' | 'completed' | 'incomplete';
+
+// Refined operational metrics based solely on API data
 export interface OperationalEfficiencyMetrics {
   assessmentCompletionRate: number;
   documentationCompliance: number;

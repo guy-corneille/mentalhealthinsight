@@ -7,7 +7,7 @@ import {
   PerformanceTrendMetrics
 } from '../types';
 
-// Helper function to generate date ranges for trend data
+// Helper function to generate date ranges for trend data based on actual data points
 const generateMonthLabels = (count: number = 6): string[] => {
   return Array.from({ length: count }).map((_, i) => {
     return format(subMonths(new Date(), count - 1 - i), 'MMM yyyy');
@@ -16,56 +16,76 @@ const generateMonthLabels = (count: number = 6): string[] => {
 
 /**
  * This adapter transforms audit statistics data into operational efficiency metrics
+ * using only actual data from the API with no fallbacks
  */
-export const transformAuditStatsToOperationalMetrics = (auditStats: any): OperationalEfficiencyMetrics => {
-  // If no data is available, return defaults
+export const transformAuditStatsToOperationalMetrics = (auditStats: any): OperationalEfficiencyMetrics | null => {
+  // Return null if no data is available
   if (!auditStats || !auditStats.summary) {
-    return {
-      assessmentCompletionRate: 0,
-      documentationCompliance: 0,
-      auditCompletionRate: 0
-    };
+    return null;
   }
 
-  // Extract real metrics from auditStats
-  const completedCount = auditStats.summary.totalCount || 0;
-  const scheduledCount = auditStats.summary.totalScheduled || completedCount * 1.2; // Estimate if not available
+  // Extract metrics from auditStats, only using what's actually available
+  const completedCount = auditStats.summary.completed || 0;
+  const scheduledCount = auditStats.summary.total || 0;
+  
+  // Only calculate rates if we have valid denominators
+  const assessmentCompletionRate = scheduledCount > 0 ? Math.round((completedCount / scheduledCount) * 100) : 0;
+  
+  // Get documentation compliance from criteria if available
+  let documentationCompliance = 0;
+  if (auditStats.criteria && Array.isArray(auditStats.criteria)) {
+    const docCriteria = auditStats.criteria.find((c: any) => 
+      c.name && c.name.toLowerCase().includes('document'));
+    if (docCriteria && typeof docCriteria.averageScore === 'number') {
+      documentationCompliance = docCriteria.averageScore;
+    }
+  }
+  
+  // Calculate audit completion rate
+  const auditCompletionRate = scheduledCount > 0 ? Math.round((completedCount / scheduledCount) * 100) : 0;
   
   return {
-    assessmentCompletionRate: Math.min(100, Math.round((completedCount / Math.max(1, scheduledCount)) * 100)),
-    documentationCompliance: auditStats.criteria?.find((c: any) => 
-      c.name.toLowerCase().includes('document'))?.averageScore || 85, // Fallback if not found
-    auditCompletionRate: Math.min(100, Math.round((completedCount / Math.max(1, scheduledCount)) * 100))
+    assessmentCompletionRate,
+    documentationCompliance,
+    auditCompletionRate
   };
 };
 
 /**
  * This adapter transforms audit criteria data into quality compliance metrics
+ * using only actual data from the API with no fallbacks
  */
-export const transformAuditDataToQualityMetrics = (auditData: any): QualityComplianceMetrics => {
-  // If no data is available, return defaults
-  if (!auditData || !auditData.criteria || !auditData.criteria.length) {
-    return {
-      auditScores: [],
-      complianceRate: 0,
-      criticalFindingsRate: 0
-    };
+export const transformAuditDataToQualityMetrics = (auditData: any): QualityComplianceMetrics | null => {
+  // Return null if no data is available
+  if (!auditData || !auditData.criteria || !Array.isArray(auditData.criteria) || auditData.criteria.length === 0) {
+    return null;
   }
 
-  // Transform criteria data to audit scores
-  const auditScores = auditData.criteria.map((criterion: any) => ({
-    category: criterion.name,
-    score: criterion.averageScore || 0,
-    benchmark: 85 // Default benchmark
-  }));
+  // Transform criteria data to audit scores, using only available data
+  const auditScores = auditData.criteria
+    .filter((criterion: any) => criterion && typeof criterion.averageScore === 'number')
+    .map((criterion: any) => ({
+      category: criterion.name || 'Unknown',
+      score: criterion.averageScore,
+      benchmark: criterion.benchmark || 0 // Only use benchmark if available
+    }));
+  
+  if (auditScores.length === 0) {
+    return null;
+  }
 
-  // Calculate overall compliance rate (percentage of criteria meeting benchmarks)
-  const meetingBenchmark = auditScores.filter(score => score.score >= score.benchmark).length;
-  const complianceRate = Math.round((meetingBenchmark / Math.max(1, auditScores.length)) * 100);
+  // Calculate compliance rate only with available data
+  const validScores = auditScores.filter(score => typeof score.benchmark === 'number');
+  const meetingBenchmark = validScores.filter(score => score.score >= score.benchmark).length;
+  const complianceRate = validScores.length > 0
+    ? Math.round((meetingBenchmark / validScores.length) * 100)
+    : 0;
 
-  // Calculate critical findings rate (percentage of scores below 70)
+  // Calculate critical findings rate (scores below 70, but only if we have scores)
   const criticalFindings = auditScores.filter(score => score.score < 70).length;
-  const criticalFindingsRate = Math.round((criticalFindings / Math.max(1, auditScores.length)) * 100);
+  const criticalFindingsRate = auditScores.length > 0
+    ? Math.round((criticalFindings / auditScores.length) * 100)
+    : 0;
 
   return {
     auditScores,
@@ -76,70 +96,79 @@ export const transformAuditDataToQualityMetrics = (auditData: any): QualityCompl
 
 /**
  * This adapter transforms historical audit data into performance trends
+ * using only actual data from the API with no fallbacks
  */
-export const generatePerformanceTrends = (auditData: any): PerformanceTrendMetrics[] => {
-  // Generate month labels for the last 6 months
-  const periods = generateMonthLabels();
-  
-  if (!auditData || !auditData.countByPeriodData) {
-    // Generate synthetic data if no real data is available
-    return [
-      {
-        metric: "Audit Completion",
-        periods,
-        values: periods.map(() => Math.floor(Math.random() * 30) + 70),
-        benchmarks: periods.map(() => 90)
-      },
-      {
-        metric: "Documentation Quality",
-        periods,
-        values: periods.map(() => Math.floor(Math.random() * 20) + 75),
-        benchmarks: periods.map(() => 85)
-      }
-    ];
+export const generatePerformanceTrends = (auditData: any): PerformanceTrendMetrics[] | null => {
+  // Return null if no valid trend data
+  if (!auditData || !auditData.countByPeriodData || !Array.isArray(auditData.countByPeriodData) || auditData.countByPeriodData.length === 0) {
+    return null;
   }
-
-  // If we have real count data, use it for the Audit Completion trend
-  const completionValues = auditData.countByPeriodData.map((d: any) => 
-    d['Audit Count'] || Math.floor(Math.random() * 30) + 70
-  );
   
-  // For other metrics, try to extract from criteria if available
-  const docQualityValues = auditData.criteria 
-    ? periods.map(() => {
-        const docCriteria = auditData.criteria.find((c: any) => 
-          c.name.toLowerCase().includes('document'));
-        return docCriteria?.averageScore || Math.floor(Math.random() * 20) + 75;
-      })
-    : periods.map(() => Math.floor(Math.random() * 20) + 75);
-
-  return [
-    {
+  // Use actual periods from the data
+  const periods = auditData.countByPeriodData.map((d: any) => d.month || '');
+  
+  // Only create trends if we have data
+  const trends: PerformanceTrendMetrics[] = [];
+  
+  // If we have real count data, use it for the Audit Completion trend
+  if (auditData.countByPeriodData.some((d: any) => d['Audit Count'] !== undefined)) {
+    const completionValues = auditData.countByPeriodData.map((d: any) => d['Audit Count'] || 0);
+    trends.push({
       metric: "Audit Completion",
       periods,
       values: completionValues,
-      benchmarks: periods.map(() => 90)
-    },
-    {
-      metric: "Documentation Quality",
-      periods,
-      values: docQualityValues,
-      benchmarks: periods.map(() => 85)
+      benchmarks: Array(periods.length).fill(0) // Will be updated later if benchmarks available
+    });
+  }
+  
+  // For documentation quality, check if we have criteria data
+  if (auditData.criteria && Array.isArray(auditData.criteria)) {
+    const docCriteria = auditData.criteria.find((c: any) => 
+      c.name && c.name.toLowerCase().includes('document'));
+    
+    if (docCriteria && docCriteria.scoreHistory && Array.isArray(docCriteria.scoreHistory)) {
+      trends.push({
+        metric: "Documentation Quality",
+        periods: docCriteria.scoreHistory.map((h: any) => h.period || ''),
+        values: docCriteria.scoreHistory.map((h: any) => h.score || 0),
+        benchmarks: Array(docCriteria.scoreHistory.length).fill(0) // Will be updated if benchmarks available
+      });
     }
-  ];
+  }
+  
+  return trends.length > 0 ? trends : null;
 };
 
 /**
  * Main adapter function that combines all metrics into a unified benchmarking data object
+ * using only actual data from the API with no fallbacks
  */
-export const transformRealDataToBenchmarks = (auditStats: any): BenchmarkingData => {
+export const transformRealDataToBenchmarks = (auditStats: any): BenchmarkingData | null => {
+  // Return null if no data is available
+  if (!auditStats) {
+    return null;
+  }
+  
   const operational = transformAuditStatsToOperationalMetrics(auditStats);
   const quality = transformAuditDataToQualityMetrics(auditStats);
   const trends = generatePerformanceTrends(auditStats);
   
+  // Only return data if at least one section has valid data
+  if (!operational && !quality && !trends) {
+    return null;
+  }
+  
   return {
-    operational,
-    quality,
-    trends
+    operational: operational || {
+      assessmentCompletionRate: 0,
+      documentationCompliance: 0,
+      auditCompletionRate: 0
+    },
+    quality: quality || {
+      auditScores: [],
+      complianceRate: 0,
+      criticalFindingsRate: 0
+    },
+    trends: trends || []
   };
 };
