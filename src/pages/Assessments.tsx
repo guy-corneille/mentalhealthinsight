@@ -8,19 +8,25 @@ const Assessments: React.FC = () => {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>('');
 
-  const handleStartEvaluation = (patientId: string, facilityId: string) => {
+  const handleStartEvaluation = (patientId: string, facilityId: string, assessmentId?: string) => {
     setSelectedPatientId(patientId);
     setSelectedFacilityId(facilityId);
+    if (assessmentId) {
+      setSelectedAssessmentId(assessmentId);
+    }
     setIsEvaluating(true);
   };
 
   const handleCompleteEvaluation = () => {
     setIsEvaluating(false);
+    setSelectedAssessmentId('');
   };
 
   const handleCancelEvaluation = () => {
     setIsEvaluating(false);
+    setSelectedAssessmentId('');
   };
 
   return (
@@ -29,7 +35,7 @@ const Assessments: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Patient Assessments</h1>
           <p className="text-muted-foreground mt-1">
-            Create, view, and manage individual patient assessments and evaluation results.
+            Schedule, conduct, and manage individual patient assessments and evaluation results.
           </p>
         </div>
         
@@ -37,6 +43,7 @@ const Assessments: React.FC = () => {
           <AssessmentEvaluation 
             patientId={selectedPatientId}
             facilityId={selectedFacilityId}
+            assessmentId={selectedAssessmentId}
             onComplete={handleCompleteEvaluation}
             onCancel={handleCancelEvaluation}
           />
