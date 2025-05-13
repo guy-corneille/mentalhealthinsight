@@ -197,40 +197,19 @@ class Patient(models.Model):
         return f"{self.first_name} {self.last_name} - {self.id}"
 
 class Assessment(models.Model):
-    STATUS_CHOICES = (
-        ('scheduled', 'Scheduled'),
-        ('completed', 'Completed'),
-        ('incomplete', 'Incomplete'),
-    )
-    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='assessments')
     criteria = models.ForeignKey(AssessmentCriteria, on_delete=models.CASCADE)
     evaluator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='conducted_assessments')
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
     assessment_date = models.DateTimeField()
-    scheduled_date = models.DateField(default=timezone.now)
     score = models.FloatField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
-    incomplete_reason = models.TextField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"Assessment {self.id} - {self.patient}"
-    
-    def mark_incomplete(self, reason=None):
-        """Utility method to mark assessment as incomplete with a reason"""
-        self.status = 'incomplete'
-        if reason:
-            self.incomplete_reason = reason
-        self.save()
-
-    def mark_completed(self):
-        """Utility method to mark assessment as completed"""
-        self.status = 'completed'
-        self.save()
 
 class IndicatorScore(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name='indicator_scores')

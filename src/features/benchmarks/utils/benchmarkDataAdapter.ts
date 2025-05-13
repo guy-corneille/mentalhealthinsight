@@ -25,11 +25,11 @@ export const transformAuditStatsToOperationalMetrics = (auditStats: any): Operat
   }
 
   // Extract metrics from auditStats, only using what's actually available
-  const completedAudits = auditStats.summary.completed || 0;
-  const scheduledAudits = auditStats.summary.total || 0;
+  const completedCount = auditStats.summary.completed || 0;
+  const scheduledCount = auditStats.summary.total || 0;
   
   // Only calculate rates if we have valid denominators
-  const auditCompletionRate = scheduledAudits > 0 ? Math.round((completedAudits / scheduledAudits) * 100) : 0;
+  const assessmentCompletionRate = scheduledCount > 0 ? Math.round((completedCount / scheduledCount) * 100) : 0;
   
   // Get documentation compliance from criteria if available
   let documentationCompliance = 0;
@@ -41,10 +41,8 @@ export const transformAuditStatsToOperationalMetrics = (auditStats: any): Operat
     }
   }
   
-  // Only include completed assessments in the calculation
-  const completedAssessments = auditStats.assessmentStats?.completed || 0;
-  const totalAssessments = auditStats.assessmentStats?.total || 0;
-  const assessmentCompletionRate = totalAssessments > 0 ? Math.round((completedAssessments / totalAssessments) * 100) : 0;
+  // Calculate audit completion rate
+  const auditCompletionRate = scheduledCount > 0 ? Math.round((completedCount / scheduledCount) * 100) : 0;
   
   return {
     assessmentCompletionRate,
@@ -136,16 +134,6 @@ export const generatePerformanceTrends = (auditData: any): PerformanceTrendMetri
         benchmarks: Array(docCriteria.scoreHistory.length).fill(0) // Will be updated if benchmarks available
       });
     }
-  }
-  
-  // If we have assessment completion data, add that trend
-  if (auditData.assessmentStats && auditData.assessmentStats.byPeriod && Array.isArray(auditData.assessmentStats.byPeriod)) {
-    trends.push({
-      metric: "Assessment Completion",
-      periods: auditData.assessmentStats.byPeriod.map((d: any) => d.period || ''),
-      values: auditData.assessmentStats.byPeriod.map((d: any) => d.completionRate || 0),
-      benchmarks: Array(auditData.assessmentStats.byPeriod.length).fill(0)
-    });
   }
   
   return trends.length > 0 ? trends : null;

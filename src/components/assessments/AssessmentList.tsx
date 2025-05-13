@@ -15,7 +15,7 @@ import { useAssessments } from '@/features/assessments/hooks/useAssessments';
 import { useReportActions } from './utils/reportUtils';
 
 interface AssessmentListProps {
-  onStartAssessment: (patientId: string, facilityId: string, assessmentId?: string) => void;
+  onStartAssessment: (patientId: string, facilityId: string) => void;
 }
 
 const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) => {
@@ -66,28 +66,10 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   };
 
   const handleEditAssessment = (assessment: Assessment) => {
-    if (assessment.status === 'scheduled') {
-      // Start the evaluation for scheduled assessments
-      toast({
-        title: "Starting Assessment",
-        description: `Beginning scheduled assessment for ${assessment.patient_name || assessment.patient}`,
-      });
-      onStartAssessment(assessment.patient.toString(), assessment.facility.toString(), assessment.id.toString());
-    } else if (assessment.status === 'completed') {
-      // Allow reviewing and editing completed assessments
-      toast({
-        title: "Reviewing Assessment",
-        description: `Review completed assessment for ${assessment.patient_name || assessment.patient}`,
-      });
-      onStartAssessment(assessment.patient.toString(), assessment.facility.toString(), assessment.id.toString());
-    } else {
-      // For incomplete assessments
-      toast({
-        title: "Resuming Assessment",
-        description: `Resuming incomplete assessment for ${assessment.patient_name || assessment.patient}`,
-      });
-      onStartAssessment(assessment.patient.toString(), assessment.facility.toString(), assessment.id.toString());
-    }
+    toast({
+      title: "Edit Assessment",
+      description: `Editing assessment ${assessment.id} is not implemented yet.`,
+    });
   };
 
   return (

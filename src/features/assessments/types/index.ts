@@ -13,10 +13,7 @@ export interface Assessment {
   facility: string | number;
   facility_name?: string;
   assessment_date: string;
-  scheduled_date?: string;
   score: number;
-  status: 'scheduled' | 'completed' | 'incomplete';
-  incomplete_reason?: string;
   notes: string;
   evaluator: string;
   evaluator_name?: string;
@@ -41,9 +38,6 @@ export interface PaginatedResponse<T> {
   previous: string | null;
   results: T[];
 }
-
-// Assessment status type to track completion status
-export type AssessmentStatus = 'scheduled' | 'completed' | 'incomplete';
 
 // Audit related types
 export interface Audit {

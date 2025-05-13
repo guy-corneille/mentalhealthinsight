@@ -1,9 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Calendar, Plus } from 'lucide-react';
-import SearchInput from './SearchInput';
-import ScheduleAssessmentDialog from '../ScheduleAssessmentDialog';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 interface AssessmentFiltersProps {
   searchQuery: string;
@@ -14,41 +13,37 @@ interface AssessmentFiltersProps {
 const AssessmentFilters: React.FC<AssessmentFiltersProps> = ({
   searchQuery,
   onSearchChange,
-  onNewAssessmentClick,
+  onNewAssessmentClick
 }) => {
-  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent form submission from refreshing the page
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSearchChange(e.target.value);
+  };
 
   return (
     <div className="flex flex-col sm:flex-row justify-between gap-4">
-      <SearchInput 
-        placeholder="Search assessments..." 
-        value={searchQuery}
-        onChange={(e) => onSearchChange(e.target.value)}
-      />
-      
-      <div className="flex gap-2">
-        <Button 
-          variant="outline"
-          className="flex items-center gap-2"
-          onClick={() => setIsScheduleDialogOpen(true)}
-        >
-          <Calendar className="h-4 w-4" />
-          <span>Schedule</span>
-        </Button>
-        
-        <Button 
-          onClick={onNewAssessmentClick}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          <span>New Assessment</span>
-        </Button>
-      </div>
-      
-      <ScheduleAssessmentDialog 
-        open={isScheduleDialogOpen}
-        onOpenChange={setIsScheduleDialogOpen}
-      />
+      <form onSubmit={handleSearchSubmit} className="w-full sm:w-64 relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="text"
+          className="w-full pl-9"
+          placeholder="Search assessments..."
+          value={searchQuery}
+          onChange={handleInputChange}
+        />
+      </form>
+      <Button
+        onClick={(e) => {
+          e.preventDefault();
+          onNewAssessmentClick();
+        }}
+        className="bg-healthiq-600 hover:bg-healthiq-700"
+      >
+        New Assessment
+      </Button>
     </div>
   );
 };
