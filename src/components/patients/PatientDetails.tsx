@@ -167,7 +167,7 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ patient, viewOnly = fal
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Textarea {...field} disabled={viewOnly} />
+                    <Input {...field} disabled={viewOnly} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -224,7 +224,6 @@ const PatientDetails: React.FC<PatientDetailsProps> = ({ patient, viewOnly = fal
                       <SelectContent>
                         <SelectItem value="Active">Active</SelectItem>
                         <SelectItem value="Discharged">Discharged</SelectItem>
-                        <SelectItem value="Referred">Referred</SelectItem>
                         <SelectItem value="Inactive">Inactive</SelectItem>
                       </SelectContent>
                     </Select>

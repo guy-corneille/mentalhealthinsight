@@ -92,7 +92,7 @@ export const useReportActions = () => {
           
           <div class="footer">
             <p>This report is confidential and intended only for authorized personnel.</p>
-            <p>HealthIQ Assessment System</p>
+            <p>MentalHealthIQ Assessment System</p>
           </div>
           
           <script>

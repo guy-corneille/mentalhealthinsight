@@ -160,7 +160,7 @@ const AuditStatsDetails: React.FC = () => {
         </Card>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Score Distribution</CardTitle>
               <CardDescription>Breakdown of audit scores by range</CardDescription>
@@ -177,9 +177,9 @@ const AuditStatsDetails: React.FC = () => {
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
-          </Card>
+          </Card> */}
 
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Year-over-Year Comparison</CardTitle>
               <CardDescription>Compare audit results with previous year</CardDescription>
@@ -204,7 +204,7 @@ const AuditStatsDetails: React.FC = () => {
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
     </div>
