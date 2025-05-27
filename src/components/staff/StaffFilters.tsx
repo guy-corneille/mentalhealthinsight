@@ -76,20 +76,7 @@ const StaffFilters: React.FC<StaffFiltersProps> = ({ showFacilityFilter = true }
         )}
       </div>
       
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant="outline" className="border-none bg-muted/50">
-          <FilterIcon className="h-4 w-4 mr-2" />
-          Filter
-        </Button>
-        
-        <Button 
-          className="bg-healthiq-600 hover:bg-healthiq-700"
-          onClick={handleAddStaff}
-        >
-          <UserPlusIcon className="h-4 w-4 mr-2" />
-          Add Staff
-        </Button>
-      </div>
+
     </div>
   );
 };

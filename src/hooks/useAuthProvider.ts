@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, PendingUser, UserRegistration } from '../types/auth';
 import authService from '../services/authService';
@@ -23,6 +22,11 @@ export function useAuthProvider() {
       } catch (error) {
         console.error('Failed to parse stored user:', error);
         localStorage.removeItem('mentalhealthiq_user');
+        toast({
+          title: "Error",
+          description: "Failed to restore user session",
+          variant: "destructive"
+        });
       }
     }
     
@@ -39,13 +43,18 @@ export function useAuthProvider() {
         localStorage.removeItem('mentalhealthiq_token');
         localStorage.removeItem('mentalhealthiq_user');
         setUser(null);
+        toast({
+          title: "Session Expired",
+          description: "Please log in again",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     verifyToken();
-  }, []);
+  }, [toast]);
 
   // Login function - fixed to only pass username as per authService update
   const login = async (username: string, password: string): Promise<User> => {

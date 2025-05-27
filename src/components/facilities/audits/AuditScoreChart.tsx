@@ -8,7 +8,7 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { ChartTooltip, ChartContainer } from '../../../components/ui/chart';
+import { ChartTooltip, ChartContainer } from '../../ui/chart';
 
 interface AuditScoreChartProps {
   chartData: { name: string; score: number }[];

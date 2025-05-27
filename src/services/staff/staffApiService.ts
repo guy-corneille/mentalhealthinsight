@@ -1,4 +1,3 @@
-
 import api from '../api';
 import { StaffMember, StaffQualification } from './types';
 
@@ -20,7 +19,7 @@ const staffApiService = {
   getAllStaff: async (): Promise<StaffMember[]> => {
     console.log('Fetching all staff from API');
     try {
-      const response = await api.get<any>('/staff/');
+      const response = await api.get<any>('/api/staff/');
       
       console.log('API response for staff:', response);
       
@@ -46,7 +45,7 @@ const staffApiService = {
   getStaffByFacility: async (facilityId: number): Promise<StaffMember[]> => {
     console.log(`Fetching staff for facility ${facilityId} from API`);
     try {
-      const response = await api.get<any>(`/facilities/${facilityId}/staff/`);
+      const response = await api.get<any>(`/api/facilities/${facilityId}/staff/`);
       
       console.log(`API response for facility ${facilityId} staff:`, response);
       
@@ -72,7 +71,7 @@ const staffApiService = {
   getStaffById: async (id: string): Promise<StaffMember> => {
     console.log(`Fetching staff member with ID ${id} from API`);
     try {
-      const response = await api.get<StaffMember>(`/staff/${id}/`);
+      const response = await api.get<StaffMember>(`/api/staff/${id}/`);
       
       console.log(`API response for staff ${id}:`, response);
       
@@ -98,7 +97,7 @@ const staffApiService = {
       };
       
       console.log('Sending staff data with ID:', dataWithId);
-      const response = await api.post<StaffMember>('/staff/', dataWithId);
+      const response = await api.post<StaffMember>('/api/staff/', dataWithId);
       
       console.log('API response for create staff:', response);
       
@@ -118,14 +117,7 @@ const staffApiService = {
   updateStaffMember: async (id: string, staffData: Partial<StaffMember>): Promise<StaffMember> => {
     console.log(`Updating staff member with ID ${id} via API`, staffData);
     try {
-      // Always include the ID in the request body as well
-      const dataWithId = { 
-        ...staffData,
-        id: id  // Ensure ID is included in the request body
-      };
-      
-      console.log(`Sending updated staff data with ID:`, dataWithId);
-      const response = await api.put<StaffMember>(`/staff/${id}/`, dataWithId);
+      const response = await api.put<StaffMember>(`/api/staff/${id}/`, staffData);
       
       console.log(`API response for update staff ${id}:`, response);
       
@@ -144,7 +136,7 @@ const staffApiService = {
   deleteStaffMember: async (id: string): Promise<void> => {
     console.log(`Deleting staff member with ID ${id} via API`);
     try {
-      await api.delete(`/staff/${id}/`);
+      await api.delete(`/api/staff/${id}/`);
       console.log(`Successfully deleted staff ${id}`);
     } catch (error) {
       console.error(`Error deleting staff ${id}:`, error);
@@ -160,7 +152,7 @@ const staffApiService = {
   getStaffQualifications: async (id: string): Promise<StaffQualification[]> => {
     console.log(`Fetching qualifications for staff member ${id} from API`);
     try {
-      const response = await api.get<StaffQualification[]>(`/staff/${id}/qualifications/`);
+      const response = await api.get<StaffQualification[]>(`/api/staff/${id}/qualifications/`);
       
       console.log(`API response for staff ${id} qualifications:`, response);
       

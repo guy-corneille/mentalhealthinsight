@@ -1,8 +1,7 @@
-
 /**
  * Core API Service
  * 
- * This service provides the base API client configuration and error handling.
+ * This service provides the base API configuration and error handling.
  * It's used by all other services to make API requests.
  */
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
@@ -28,12 +27,46 @@ const api = axios.create({
   },
   
   // Set timeout to prevent hanging requests
-  timeout: 15000, // 15 seconds timeout
+  timeout: 30000, // 30 seconds timeout
+  
+  // Enable sending cookies with requests
+  withCredentials: false, // Disable withCredentials since we're handling CSRF manually
 });
+
+// Function to get CSRF token from cookie
+const getCSRFToken = () => {
+  const name = 'csrftoken';
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+};
 
 // Request interceptor for API calls
 api.interceptors.request.use(
   (config) => {
+    // Add CSRF token to headers for non-GET requests
+    if (config.method !== 'get') {
+      const csrfToken = getCSRFToken();
+      if (csrfToken) {
+        config.headers['X-CSRFToken'] = csrfToken;
+      }
+    }
+
+    // Add mock auth token to headers
+    const token = localStorage.getItem('mentalhealthiq_token');
+    if (token) {
+      config.headers['Authorization'] = `Token ${token}`;
+    }
+
     console.log(`Making API request to: ${config.url}`, config.method, config.params || {});
     return config;
   },

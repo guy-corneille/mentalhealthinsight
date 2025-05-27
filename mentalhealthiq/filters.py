@@ -1,8 +1,8 @@
-
 # mentalhealthiq/filters.py
 import django_filters
 from django.db import models
 from .models import Facility, Patient, Assessment, AssessmentCriteria, Audit
+from django.utils import timezone
 
 class FacilityFilter(django_filters.FilterSet):
     search = django_filters.CharFilter(method='custom_search', label="Search")
@@ -39,6 +39,10 @@ class PatientFilter(django_filters.FilterSet):
 
 class AssessmentFilter(django_filters.FilterSet):
     search = django_filters.CharFilter(method='custom_search', label="Search")
+    status = django_filters.ChoiceFilter(choices=Assessment.STATUS_CHOICES)
+    scheduled_date_after = django_filters.DateFilter(field_name='scheduled_date', lookup_expr='gte')
+    scheduled_date_before = django_filters.DateFilter(field_name='scheduled_date', lookup_expr='lte')
+    is_overdue = django_filters.BooleanFilter(method='filter_overdue')
 
     class Meta:
         model = Assessment
@@ -49,8 +53,18 @@ class AssessmentFilter(django_filters.FilterSet):
             models.Q(notes__icontains=value) |
             models.Q(patient__first_name__icontains=value) |
             models.Q(patient__last_name__icontains=value) |
-            models.Q(score__icontains=value)
+            models.Q(score__icontains=value) |
+            models.Q(missed_reason__icontains=value)
         )
+    
+    def filter_overdue(self, queryset, name, value):
+        today = timezone.now().date()
+        if value:
+            return queryset.filter(
+                status='scheduled',
+                scheduled_date__lt=today
+            )
+        return queryset
 
 
 class AssessmentCriteriaFilter(django_filters.FilterSet):
@@ -69,6 +83,10 @@ class AssessmentCriteriaFilter(django_filters.FilterSet):
 
 class AuditFilter(django_filters.FilterSet):
     search = django_filters.CharFilter(method='custom_search', label="Search")
+    status = django_filters.ChoiceFilter(choices=Audit.STATUS_CHOICES)
+    scheduled_date_after = django_filters.DateFilter(field_name='scheduled_date', lookup_expr='gte')
+    scheduled_date_before = django_filters.DateFilter(field_name='scheduled_date', lookup_expr='lte')
+    is_overdue = django_filters.BooleanFilter(method='filter_overdue')
 
     class Meta:
         model = Audit
@@ -78,5 +96,15 @@ class AuditFilter(django_filters.FilterSet):
         return queryset.filter(
             models.Q(notes__icontains=value) |
             models.Q(facility__name__icontains=value) |
-            models.Q(overall_score__icontains=value)
+            models.Q(overall_score__icontains=value) |
+            models.Q(missed_reason__icontains=value)
         )
+        
+    def filter_overdue(self, queryset, name, value):
+        today = timezone.now().date()
+        if value:
+            return queryset.filter(
+                status='scheduled',
+                scheduled_date__lt=today
+            )
+        return queryset

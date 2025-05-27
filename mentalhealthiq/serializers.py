@@ -4,6 +4,7 @@ from .models import (
     AssessmentCriteria, Indicator, Patient, Assessment, IndicatorScore,
     Audit, AuditCriteria, Report
 )
+from django.utils import timezone
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -113,14 +114,17 @@ class AssessmentSerializer(serializers.ModelSerializer):
     criteria_name = serializers.CharField(source='criteria.name', read_only=True)
     evaluator_name = serializers.CharField(source='evaluator.display_name', read_only=True)
     facility_name = serializers.CharField(source='facility.name', read_only=True)
+    is_upcoming = serializers.BooleanField(read_only=True)
+    is_overdue = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = Assessment
         fields = ['id', 'patient', 'patient_name', 'criteria', 'criteria_name',
                  'evaluator', 'evaluator_name', 'facility', 'facility_name',
-                 'assessment_date', 'score', 'notes', 'indicator_scores',
-                 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']
+                 'assessment_date', 'scheduled_date', 'score', 'status',
+                 'missed_reason', 'notes', 'indicator_scores', 'is_upcoming',
+                 'is_overdue', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'is_upcoming', 'is_overdue']
     
     def get_patient_name(self, obj):
         return f"{obj.patient.first_name} {obj.patient.last_name}"
@@ -129,18 +133,39 @@ class AssessmentSerializer(serializers.ModelSerializer):
         """
         Check that the assessment makes sense.
         """
-        # Ensure facility exists
-        if not Facility.objects.filter(id=data['facility'].id).exists():
-            raise serializers.ValidationError("Facility does not exist.")
-        
-        # Ensure patient exists and belongs to the specified facility
-        try:
-            patient = Patient.objects.get(id=data['patient'].id)
-            if patient.facility.id != data['facility'].id:
-                raise serializers.ValidationError("Patient does not belong to the specified facility.")
-        except Patient.DoesNotExist:
-            raise serializers.ValidationError("Patient does not exist.")
-            
+        # Ensure patient belongs to the specified facility
+        patient = data['patient']
+        facility = data['facility']
+        # patient may be a Patient instance or a string (id)
+        if isinstance(patient, str):
+            try:
+                patient_obj = Patient.objects.get(id=patient)
+            except Patient.DoesNotExist:
+                raise serializers.ValidationError("Patient does not exist.")
+        else:
+            patient_obj = patient
+        if patient_obj.facility is None or patient_obj.facility.id != facility.id:
+            raise serializers.ValidationError("Patient does not belong to the specified facility.")
+        # Validate scheduled_date is not in the past for new assessments
+        if not self.instance and 'scheduled_date' in data:
+            if data['scheduled_date'] < timezone.now().date():
+                raise serializers.ValidationError("Scheduled date cannot be in the past.")
+        # Make criteria and evaluator optional for scheduled assessments
+        if data.get('status') == 'scheduled':
+            # For scheduled assessments, ensure these fields are not set
+            data['criteria'] = None
+            data['evaluator'] = None
+            data['assessment_date'] = None
+            data['score'] = 0
+        else:
+            # For completed assessments, ensure all required fields are provided
+            if not data.get('criteria'):
+                raise serializers.ValidationError("Criteria is required for completed assessments.")
+            # Temporarily make evaluator optional until user/auth is implemented
+            # if not data.get('evaluator'):
+            #     raise serializers.ValidationError("Evaluator is required for completed assessments.")
+            if not data.get('assessment_date'):
+                raise serializers.ValidationError("Assessment date is required for completed assessments.")
         return data
 
 class AuditCriteriaSerializer(serializers.ModelSerializer):
@@ -152,13 +177,16 @@ class AuditSerializer(serializers.ModelSerializer):
     criteria_scores = AuditCriteriaSerializer(many=True, read_only=True)
     facility_name = serializers.CharField(source='facility.name', read_only=True)
     auditor_name = serializers.CharField(source='auditor.display_name', read_only=True)
+    is_upcoming = serializers.BooleanField(read_only=True)
+    is_overdue = serializers.BooleanField(read_only=True)
     
     class Meta:
         model = Audit
         fields = ['id', 'facility', 'facility_name', 'auditor', 'auditor_name',
-                 'audit_date', 'overall_score', 'status', 'notes', 
-                 'criteria_scores', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']
+                 'audit_date', 'scheduled_date', 'overall_score', 'status', 
+                 'missed_reason', 'notes', 'criteria_scores', 'is_upcoming',
+                 'is_overdue', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'is_upcoming', 'is_overdue']
     
     def validate_overall_score(self, value):
         """
@@ -173,6 +201,21 @@ class AuditSerializer(serializers.ModelSerializer):
         if not Facility.objects.filter(id=value.id).exists():
             raise serializers.ValidationError("Facility does not exist.")
         return value
+        
+    def validate(self, data):
+        """
+        Check that the audit makes sense.
+        """
+        # Ensure facility exists
+        if not Facility.objects.filter(id=data['facility'].id).exists():
+            raise serializers.ValidationError("Facility does not exist.")
+        
+        # Validate scheduled_date is not in the past for new audits
+        if not self.instance and 'scheduled_date' in data:
+            if data['scheduled_date'] < timezone.now().date():
+                raise serializers.ValidationError("Scheduled date cannot be in the past.")
+            
+        return data
 
 class ReportSerializer(serializers.ModelSerializer):
     generated_by_name = serializers.CharField(source='generated_by.display_name', read_only=True)

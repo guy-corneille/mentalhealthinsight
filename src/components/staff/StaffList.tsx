@@ -1,23 +1,20 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import StaffTable from './StaffTable';
-import StaffModal from './modals/StaffModal';
 import { Spinner } from '@/components/ui/spinner';
 import PaginationControls from '@/components/common/PaginationControls';
 import { StaffListProvider, useStaffListContext } from './StaffListContext';
 import StaffFilters from './StaffFilters';
+import { Button } from '@/components/ui/button';
+import { PlusIcon } from 'lucide-react';
 
 // Inner component that uses the context
 const StaffListContent: React.FC = () => {
+  const navigate = useNavigate();
   const { 
     filteredStaff, 
     isLoading, 
-    error, 
-    modalOpen,
-    currentStaff,
-    setCurrentStaff,
-    setIsEditing,
-    setModalOpen
+    error
   } = useStaffListContext();
   
   // State for pagination
@@ -40,19 +37,13 @@ const StaffListContent: React.FC = () => {
   // Calculate total pages
   const totalPages = Math.ceil((filteredStaff?.length || 0) / itemsPerPage);
 
-  // Handle modal actions
+  // Handle staff actions
   const handleEditStaff = (staffId: string) => {
-    const staffMember = filteredStaff.find(staff => staff.id === staffId) || null;
-    setCurrentStaff(staffMember);
-    setIsEditing(true);
-    setModalOpen(true);
+    navigate(`/staff/edit/${staffId}`);
   };
 
   const handleViewStaff = (staffId: string) => {
-    const staffMember = filteredStaff.find(staff => staff.id === staffId) || null;
-    setCurrentStaff(staffMember);
-    setIsEditing(false);
-    setModalOpen(true);
+    navigate(`/staff/edit/${staffId}`);
   };
 
   // Loading and error states
@@ -72,7 +63,13 @@ const StaffListContent: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-between items-center">
       <StaffFilters showFacilityFilter={true} />
+        <Button onClick={() => navigate('/staff/add')}>
+          <PlusIcon className="h-4 w-4 mr-2" />
+          Add Staff Member
+        </Button>
+      </div>
 
       {/* Staff table with pagination */}
       <StaffTable 
@@ -87,15 +84,6 @@ const StaffListContent: React.FC = () => {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-        />
-      )}
-
-      {/* Staff modal */}
-      {modalOpen && currentStaff && (
-        <StaffModal
-          staffId={currentStaff.id}
-          viewOnly={!currentStaff}
-          onClose={() => setModalOpen(false)}
         />
       )}
     </div>

@@ -1,4 +1,3 @@
-
 import { useToast } from '@/hooks/use-toast';
 
 interface Indicator {
@@ -9,29 +8,33 @@ interface Indicator {
 
 interface CriteriaFormData {
   name: string;
+  category: string;
   description: string;
-  standard: string;
+  guidance?: string;
   weight: number;
   indicators: Indicator[];
   type: 'assessment' | 'audit';
+  standard?: string;
 }
+
+type ToastFunction = ReturnType<typeof useToast>['toast'];
 
 export const validateCriteria = (
   criteria: CriteriaFormData,
-  toastObj: ReturnType<typeof useToast>
+  showToast: ToastFunction
 ): boolean => {
-  if (!criteria.name || !criteria.description || !criteria.type || criteria.weight <= 0 || criteria.weight > 100) {
-    toastObj.toast({
+  if (!criteria.name || !criteria.description || !criteria.type || !criteria.category || criteria.weight <= 0 || criteria.weight > 100) {
+    showToast({
       variant: "destructive",
       title: "Validation error",
-      description: "Please fill all fields and ensure the weight is between 0 and 100."
+      description: "Please fill all required fields and ensure the weight is between 0 and 100."
     });
     return false;
   }
   
   for (const indicator of criteria.indicators) {
     if (!indicator.name || indicator.weight <= 0 || indicator.weight > 100) {
-      toastObj.toast({
+      showToast({
         variant: "destructive",
         title: "Validation error",
         description: "All indicators must have a name and a weight between 0 and 100."

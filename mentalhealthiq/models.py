@@ -197,19 +197,59 @@ class Patient(models.Model):
         return f"{self.first_name} {self.last_name} - {self.id}"
 
 class Assessment(models.Model):
+    STATUS_CHOICES = (
+        ('scheduled', 'Scheduled'),
+        ('completed', 'Completed'),
+        ('missed', 'Missed'),
+    )
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='assessments')
-    criteria = models.ForeignKey(AssessmentCriteria, on_delete=models.CASCADE)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='assessments', to_field='id')
+    criteria = models.ForeignKey(AssessmentCriteria, on_delete=models.CASCADE, null=True, blank=True)
     evaluator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='conducted_assessments')
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE)
-    assessment_date = models.DateTimeField()
-    score = models.FloatField()
+    assessment_date = models.DateTimeField(null=True, blank=True)
+    scheduled_date = models.DateTimeField(default=timezone.now)
+    score = models.FloatField(default=0)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    missed_reason = models.TextField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
         return f"Assessment {self.id} - {self.patient}"
+    
+    def save(self, *args, **kwargs):
+        # Ensure assessment_date is None for scheduled assessments
+        if self.status == 'scheduled':
+            self.assessment_date = None
+            self.criteria = None
+            self.evaluator = None
+            self.score = 0
+        super().save(*args, **kwargs)
+    
+    def mark_completed(self):
+        """Utility method to mark assessment as completed"""
+        self.status = 'completed'
+        self.save()
+    
+    def mark_missed(self, reason=None):
+        """Utility method to mark assessment as missed with optional reason"""
+        self.status = 'missed'
+        if reason:
+            self.missed_reason = reason
+        self.save()
+    
+    @property
+    def is_upcoming(self):
+        """Check if the assessment is upcoming"""
+        return self.status == 'scheduled' and self.scheduled_date > timezone.now()
+    
+    @property
+    def is_overdue(self):
+        """Check if the scheduled assessment is overdue"""
+        return self.status == 'scheduled' and self.scheduled_date < timezone.now()
 
 class IndicatorScore(models.Model):
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name='indicator_scores')
@@ -224,17 +264,17 @@ class Audit(models.Model):
     STATUS_CHOICES = (
         ('scheduled', 'Scheduled'),
         ('completed', 'Completed'),
-        ('incomplete', 'Incomplete'),
+        ('missed', 'Missed'),
     )
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name='audits')
     auditor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='conducted_audits')
     audit_date = models.DateTimeField()
-    scheduled_date = models.DateField(default=timezone.now)
+    scheduled_date = models.DateTimeField(default=timezone.now)
     overall_score = models.FloatField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
-    incomplete_reason = models.TextField(blank=True, null=True)
+    missed_reason = models.TextField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -242,17 +282,27 @@ class Audit(models.Model):
     def __str__(self):
         return f"Audit {self.id} - {self.facility.name}"
 
-    def mark_incomplete(self, reason=None):
-        """Utility method to mark audit as incomplete with a reason"""
-        self.status = 'incomplete'
-        if reason:
-            self.incomplete_reason = reason
-        self.save()
-
     def mark_completed(self):
         """Utility method to mark audit as completed"""
         self.status = 'completed'
         self.save()
+
+    def mark_missed(self, reason=None):
+        """Utility method to mark audit as missed with optional reason"""
+        self.status = 'missed'
+        if reason:
+            self.missed_reason = reason
+        self.save()
+        
+    @property
+    def is_upcoming(self):
+        """Check if the audit is upcoming"""
+        return self.status == 'scheduled' and self.scheduled_date > timezone.now()
+    
+    @property
+    def is_overdue(self):
+        """Check if the scheduled audit is overdue"""
+        return self.status == 'scheduled' and self.scheduled_date < timezone.now()
 
 class AuditCriteria(models.Model):
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name='criteria_scores')

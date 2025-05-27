@@ -22,6 +22,7 @@ import Register from './pages/Register';
 import NotFound from './pages/NotFound';
 import Criteria from './pages/Criteria';
 import Benchmarks from '@/pages/Benchmarks';
+import AssessmentEvaluationPage from './pages/AssessmentEvaluationPage';
 
 // Components
 import { Toaster } from "@/components/ui/toaster";
@@ -29,8 +30,17 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Context
 import { AuthProvider } from './contexts/AuthContext';
+import StaffForm from './components/staff/StaffForm';
+import PatientForm from './components/patients/PatientForm';
+import AssessmentList from './components/assessments/AssessmentList';
+import AssessmentView from './pages/assessments/AssessmentView';
 
 function App() {
+  const handleStartAssessment = (patientId: string, facilityId: string) => {
+    // Navigate to the assessment page
+    window.location.href = `/assessment/${patientId}?facility=${facilityId}`;
+  };
+
   return (
     <AuthProvider>
       <div className="App">
@@ -45,14 +55,25 @@ function App() {
           <Route path="/facilities/add" element={<ProtectedRoute><FacilityAdd /></ProtectedRoute>} />
           <Route path="/facilities/edit/:id" element={<ProtectedRoute><FacilityEdit /></ProtectedRoute>} />
           <Route path="/facilities/audit/:id" element={<ProtectedRoute><FacilityAudit /></ProtectedRoute>} />
+          
+          {/* Staff routes */}
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
+          <Route path="/staff/add" element={<ProtectedRoute><StaffForm /></ProtectedRoute>} />
+          <Route path="/staff/edit/:id" element={<ProtectedRoute><StaffForm isEdit /></ProtectedRoute>} />
+          
+          {/* Patient routes */}
           <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
-          <Route path="/assessments" element={<ProtectedRoute><Assessments /></ProtectedRoute>} />
+          <Route path="/patients/add" element={<ProtectedRoute><PatientForm /></ProtectedRoute>} />
+          <Route path="/patients/edit/:id" element={<ProtectedRoute><PatientForm isEdit /></ProtectedRoute>} />
+          
+          <Route path="/assessments" element={<ProtectedRoute><AssessmentList onStartAssessment={handleStartAssessment} /></ProtectedRoute>} />
+          <Route path="/assessments/view/:id" element={<ProtectedRoute><AssessmentView /></ProtectedRoute>} />
           <Route path="/assessment-trends" element={<ProtectedRoute><AssessmentTrends /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/audits" element={<ProtectedRoute><Audits /></ProtectedRoute>} />
           <Route path="/audit-trends" element={<ProtectedRoute><AuditTrends /></ProtectedRoute>} />
           <Route path="/audits/review/:id" element={<ProtectedRoute><AuditReview /></ProtectedRoute>} />
+          <Route path="/assessment/:patientId" element={<ProtectedRoute><AssessmentEvaluationPage /></ProtectedRoute>} />
           
           {/* Add the Criteria routes */}
           <Route path="/criteria" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />

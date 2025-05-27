@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
@@ -29,7 +28,7 @@ export interface Facility {
   updated_at: string;
   location?: string;
   lastAudit?: string;
-  score?: number; // Add score property for TypeScript
+  score?: number;
 }
 
 interface ApiResponse {
@@ -43,25 +42,39 @@ interface ApiResponse {
 export const getFacilities = async (): Promise<Facility[]> => {
   try {
     const response = await api.get<ApiResponse>('/api/facilities/');
-    if ('results' in response && Array.isArray(response.results)) {
-      return response.results;
-    } 
-    if (Array.isArray(response)) {
-      return response;
-    }
-    console.error('Unexpected response format from facilities API', response);
-    return [];
+    return Array.isArray(response.results) ? response.results : [];
   } catch (error) {
     console.error('Error fetching facilities:', error);
     throw error;
   }
 };
 
-// Function to fetch a single facility by ID
+// Function to fetch a single facility with audit data
 export const getFacility = async (id: number): Promise<Facility> => {
   try {
-    const response = await api.get<Facility>(`/api/facilities/${id}/`);
-    return response;
+    const facility = await api.get<Facility>(`/api/facilities/${id}/`);
+    
+    try {
+      const auditsResponse = await api.get(`/api/facilities/${id}/audits/`);
+      const audits = Array.isArray(auditsResponse) ? auditsResponse : [];
+      
+      if (audits.length > 0) {
+        // Sort audits by date to get the most recent
+        const sortedAudits = audits.sort((a, b) => 
+          new Date(b.audit_date).getTime() - new Date(a.audit_date).getTime()
+        );
+        
+        return {
+          ...facility,
+          score: sortedAudits[0].overall_score,
+          lastAudit: sortedAudits[0].audit_date
+        };
+      }
+    } catch (error) {
+      console.error(`Error fetching audits for facility ${id}:`, error);
+    }
+    
+    return facility;
   } catch (error) {
     console.error(`Error fetching facility with ID ${id}:`, error);
     throw error;
@@ -71,7 +84,20 @@ export const getFacility = async (id: number): Promise<Facility> => {
 // Function to create a new facility
 export const createFacility = async (facilityData: Partial<Facility>): Promise<Facility> => {
   try {
-    const response = await api.post<Facility>('/api/facilities/', facilityData);
+    // Ensure required fields are present
+    if (!facilityData.name || !facilityData.facility_type || !facilityData.address) {
+      throw new Error('Missing required fields: name, facility_type, or address');
+    }
+
+    // Set default values for required fields if not provided
+    const payload = {
+      ...facilityData,
+      status: facilityData.status || 'Active',
+      country: facilityData.country || 'Rwanda',
+      capacity: facilityData.capacity || 0
+    };
+
+    const response = await api.post<Facility>('/api/facilities/', payload);
     return response;
   } catch (error) {
     console.error('Error creating facility:', error);
@@ -100,7 +126,7 @@ export const deleteFacility = async (id: number): Promise<void> => {
   }
 };
 
-// React Query hooks for facilities
+// React Query hooks
 export const useFacilities = () => {
   return useQuery({
     queryKey: ['facilities'],
@@ -136,20 +162,35 @@ export const useFacility = (id: number) => {
 
 // Add mutations for CRUD operations
 export const useCreateFacility = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: (data: Partial<Facility>) => createFacility(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities'] });
+    }
   });
 };
 
 export const useUpdateFacility = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<Facility> }) => 
       updateFacility(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities'] });
+    }
   });
 };
 
 export const useDeleteFacility = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: (id: number) => deleteFacility(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['facilities'] });
+    }
   });
 };

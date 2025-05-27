@@ -1,4 +1,3 @@
-
 /**
  * Assessment Types
  * 
@@ -13,6 +12,8 @@ export interface Assessment {
   facility: string | number;
   facility_name?: string;
   assessment_date: string;
+  scheduled_date?: string;
+  status?: 'scheduled' | 'completed' | 'missed';
   score: number;
   notes: string;
   evaluator: string;
@@ -22,6 +23,7 @@ export interface Assessment {
   criteria?: number;
   criteria_name?: string;
   indicator_scores?: IndicatorScore[];
+  missed_reason?: string;
 }
 
 export interface IndicatorScore {

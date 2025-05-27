@@ -1,29 +1,25 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useToast } from '@/hooks/use-toast';
 import { validateCriteria } from './CriteriaValidation';
-
-interface Indicator {
-  id?: number;
-  name: string;
-  weight: number;
-}
+import { AssessmentCriteria, Indicator } from '@/services/criteriaService';
 
 interface CriteriaFormData {
   name: string;
+  category: string;
   description: string;
-  standard: string;
+  guidance?: string;
   weight: number;
   indicators: Indicator[];
   type: 'assessment' | 'audit';
+  standard?: string;
 }
 
 export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit') => {
   const navigate = useNavigate();
   const location = useLocation();
-  const toast = useToast();
+  const { toast } = useToast();
   
   // Extract type from URL query params if present
   const urlParams = new URLSearchParams(location.search);
@@ -34,11 +30,13 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
   
   const [criteria, setCriteria] = useState<CriteriaFormData>({
     name: '',
+    category: '',
     description: '',
-    standard: initialType === 'assessment' ? 'PHQ-9' : 'WHO-AIMS 2.0',
+    guidance: '',
     weight: 1.0,
     indicators: [{ name: '', weight: 1.0 }],
-    type: initialType
+    type: initialType,
+    standard: initialType === 'assessment' ? 'PHQ-9' : 'WHO-AIMS 2.0'
   });
   
   const [isLoading, setIsLoading] = useState(false);
@@ -50,18 +48,20 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
       const fetchData = async () => {
         try {
           const res = await axios.get(`http://localhost:8000/api/criteria/${id}/`);
-          const { name, description, standard, weight, indicators, type } = res.data;
+          const { name, description, category, guidance, weight, indicators, type } = res.data;
           setCriteria({
             name,
+            category,
             description,
-            standard,
-            weight,
+            guidance,
+            weight: weight || 1.0,
             indicators: indicators || [{ name: '', weight: 1.0 }],
-            type: type as 'assessment' | 'audit' || 'assessment'
+            type: type as 'assessment' | 'audit' || 'assessment',
+            standard: type as 'assessment' | 'audit' === 'assessment' ? 'PHQ-9' : 'WHO-AIMS 2.0'
           });
         } catch (error) {
           console.error('Error fetching criteria:', error);
-          toast.toast({
+          toast({
             variant: "destructive",
             title: "Error loading criteria",
             description: "Could not find the requested criteria.",
@@ -83,9 +83,9 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
     if (name === 'type') {
       const newType = value as 'assessment' | 'audit';
       const newStandard = newType === 'assessment' ? 'PHQ-9' : 'WHO-AIMS 2.0';
-      setCriteria({ ...criteria, [name]: newType, standard: newStandard });
+      setCriteria(prev => ({ ...prev, type: newType, standard: newStandard }));
     } else {
-      setCriteria({ ...criteria, [name]: value });
+      setCriteria(prev => ({ ...prev, [name]: value }));
     }
   };
 
@@ -125,7 +125,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
       const method = id ? axios.put : axios.post;
       const url = id ? `http://localhost:8000/api/criteria/${id}/` : 'http://localhost:8000/api/criteria/';
       await method(url, criteria);
-      toast.toast({
+      toast({
         title: "Success",
         description: `Criteria ${id ? 'updated' : 'created'} successfully!`,
       });
@@ -133,7 +133,7 @@ export const useCriteriaForm = (id?: string, defaultType?: 'assessment' | 'audit
       navigate('/criteria');
     } catch (error) {
       console.error("Error in form submission:", error);
-      toast.toast({
+      toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to save criteria. Please try again.",

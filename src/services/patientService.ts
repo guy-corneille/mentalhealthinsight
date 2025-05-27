@@ -1,4 +1,4 @@
-import { getFacilities } from '@/services/facilityService';
+import { getFacilities, useFacilities } from '@/services/facilityService';
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import React, { useState, useEffect } from 'react';
@@ -54,7 +54,7 @@ const patientService = {
   getAllPatients: async () => {
     console.log('Fetching all patients from API');
     try {
-      const response = await api.get<ApiResponse<Patient>>('/patients/');
+      const response = await api.get<ApiResponse<Patient>>('/api/patients/');
       
       console.log('API response for patients:', response);
       
@@ -81,7 +81,7 @@ const patientService = {
   getPatientsByFacility: async (facilityId: number): Promise<Patient[]> => {
     console.log(`Fetching patients for facility ${facilityId} from API`);
     try {
-      const response = await api.get<ApiResponse<Patient>>(`/facilities/${facilityId}/patients/`);
+      const response = await api.get<ApiResponse<Patient>>(`/api/facilities/${facilityId}/patients/`);
       
       console.log(`API response for facility ${facilityId} patients:`, response);
       
@@ -107,7 +107,7 @@ const patientService = {
   getPatientById: async (id: string): Promise<Patient> => {
     console.log(`Fetching patient with ID ${id} from API`);
     try {
-      const response = await api.get<Patient>(`/patients/${id}/`);
+      const response = await api.get<Patient>(`/api/patients/${id}/`);
       
       console.log(`API response for patient ${id}:`, response);
       
@@ -133,7 +133,7 @@ const patientService = {
       };
       
       console.log('Sending patient data with ID:', dataWithId);
-      const response = await api.post<Patient>('/patients/', dataWithId);
+      const response = await api.post<Patient>('/api/patients/', dataWithId);
       
       console.log('API response for create patient:', response);
       
@@ -160,7 +160,7 @@ const patientService = {
       };
       
       console.log(`Sending updated patient data with ID:`, dataWithId);
-      const response = await api.put<Patient>(`/patients/${id}/`, dataWithId);
+      const response = await api.put<Patient>(`/api/patients/${id}/`, dataWithId);
       
       console.log(`API response for update patient ${id}:`, response);
       
@@ -179,7 +179,7 @@ const patientService = {
   deletePatient: async (id: string): Promise<void> => {
     console.log(`Deleting patient with ID ${id} via API`);
     try {
-      await api.delete(`/patients/${id}/`);
+      await api.delete(`/api/patients/${id}/`);
       console.log(`Successfully deleted patient ${id}`);
     } catch (error) {
       console.error(`Error deleting patient ${id}:`, error);
@@ -260,29 +260,6 @@ export const useDeletePatient = () => {
   });
 };
 
-export const useFacilities = () => {
-  // We're creating a wrapper function to work with the existing code
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const facilities = await getFacilities();
-        setData(facilities);
-      } catch (err) {
-        setError(err as Error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, []);
-  
-  return { data, isLoading, error };
-};
+export { useFacilities };
 
 export default patientService;

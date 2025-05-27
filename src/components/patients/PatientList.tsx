@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { usePatients, Patient, useDeletePatient, useFacilities } from '@/services/patientService';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusIcon, Edit, Trash, Eye, FilterIcon } from "lucide-react";
+import { MoreHorizontal, PlusIcon, Edit, Trash, Eye } from "lucide-react";
 import { toast } from "sonner";
-import PatientDetails from './PatientDetails';
 import SearchInput from '@/components/common/SearchInput';
 import PaginationControls from '@/components/common/PaginationControls';
 import {
@@ -23,15 +22,11 @@ interface PatientListProps {
 }
 
 const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
+  const navigate = useNavigate();
   // Data fetching
   const { data: allPatients, isLoading, isError, error } = usePatients();
   const { data: facilities = [] } = useFacilities();
   const deletePatientMutation = useDeletePatient();
-
-  // Modal state
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [isViewOnly, setIsViewOnly] = useState(false);
 
   // Search and pagination state
   const [searchQuery, setSearchQuery] = useState('');
@@ -85,23 +80,17 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
   // Calculate total pages
   const totalPages = Math.ceil((filteredPatients?.length || 0) / itemsPerPage);
 
-  // Modal handlers
+  // Patient handlers
   const handleAddPatient = () => {
-    setSelectedPatient(null);
-    setIsViewOnly(false);
-    setIsDetailsOpen(true);
+    navigate('/patients/add');
   };
 
   const handleEditPatient = (patient: Patient) => {
-    setSelectedPatient(patient);
-    setIsViewOnly(false);
-    setIsDetailsOpen(true);
+    navigate(`/patients/edit/${patient.id}`);
   };
 
   const handleViewPatient = (patient: Patient) => {
-    setSelectedPatient(patient);
-    setIsViewOnly(true);
-    setIsDetailsOpen(true);
+    navigate(`/patients/edit/${patient.id}`);
   };
 
   const handleDeletePatient = async (patient: Patient) => {
@@ -113,13 +102,6 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
         console.error('Error deleting patient:', error);
         toast.error(`Failed to delete patient: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-    }
-  };
-
-  const handleCloseDetails = (success?: boolean, message?: string) => {
-    setIsDetailsOpen(false);
-    if (success && message) {
-      toast.success(message);
     }
   };
 
@@ -198,19 +180,15 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
               {paginatedPatients.map((patient) => (
                 <TableRow key={patient.id}>
                   <TableCell>{patient.id}</TableCell>
-                  <TableCell className="font-medium">{`${patient.first_name} ${patient.last_name}`}</TableCell>
+                  <TableCell>{`${patient.first_name} ${patient.last_name}`}</TableCell>
                   <TableCell>{patient.gender}</TableCell>
                   <TableCell>
-                    <Badge variant={
-                      patient.status === 'Active' ? 'default' :
-                        patient.status === 'Discharged' ? 'secondary' :
-                          'outline'
-                    }>
+                    <Badge variant={patient.status === 'Active' ? 'default' : 'secondary'}>
                       {patient.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{patient.facility_name || `Facility ${patient.facility}`}</TableCell>
-                  <TableCell>{new Date(patient.registration_date).toLocaleDateString()}</TableCell>
+                  <TableCell>{patient.facility_name}</TableCell>
+                  <TableCell>{new Date(patient.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -222,20 +200,16 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem onClick={() => handleViewPatient(patient)}>
-                          <Eye className="mr-2 h-4 w-4" />
+                          <Eye className="h-4 w-4 mr-2" />
                           View
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleEditPatient(patient)}>
-                          <Edit className="mr-2 h-4 w-4" />
+                          <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeletePatient(patient)}
-                          disabled={deletePatientMutation.isPending}
-                          className="text-red-600"
-                        >
-                          <Trash className="mr-2 h-4 w-4" />
-                          {deletePatientMutation.isPending ? 'Deleting...' : 'Delete'}
+                        <DropdownMenuItem onClick={() => handleDeletePatient(patient)}>
+                          <Trash className="h-4 w-4 mr-2" />
+                          Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -253,15 +227,6 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-        />
-      )}
-
-      {isDetailsOpen && (
-        <PatientDetails
-          patient={selectedPatient}
-          viewOnly={isViewOnly}
-          onClose={handleCloseDetails}
-          isOpen={isDetailsOpen}
         />
       )}
     </div>

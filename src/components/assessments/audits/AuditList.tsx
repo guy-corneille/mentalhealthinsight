@@ -1,12 +1,17 @@
-
 import React from 'react';
 import { useAuditList } from '@/features/assessments/hooks/useAuditList';
-import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon, MoreVertical } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import PaginationControls from '@/components/common/PaginationControls';
 import SearchInput from '@/components/common/SearchInput';
 
@@ -72,8 +77,16 @@ const AuditList: React.FC = () => {
     }
   };
 
+  // Get score color based on value
+  const getScoreColor = (score: number) => {
+    if (score >= 75) return 'bg-emerald-500';  // Green for 75 and above
+    if (score >= 69) return 'bg-yellow-500';   // Yellow for 69-74
+    if (score >= 50) return 'bg-orange-500';   // Orange for 50-68
+    return 'bg-red-500';                       // Red for below 50
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-[90%] mx-auto">
       {/* Search bar */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1 max-w-md">
@@ -94,7 +107,7 @@ const AuditList: React.FC = () => {
       )}
 
       {/* Audits table */}
-      <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
+      <div className="bg-card rounded-lg border shadow-sm overflow-hidden w-full">
         <Table>
           <TableHeader>
             <TableRow>
@@ -165,69 +178,53 @@ const AuditList: React.FC = () => {
             ) : audits.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                  No audits found. Schedule or start a new audit to get started.
+                  No audits found
+                  {searchQuery && <p className="text-sm mt-1">Try adjusting your search</p>}
                 </TableCell>
               </TableRow>
             ) : (
-              audits.map((audit) => {
-                const scoreColor =
-                  audit.overall_score >= 80 ? 'bg-emerald-500' :
-                  audit.overall_score >= 60 ? 'bg-amber-500' :
-                  'bg-rose-500';
-                
-                const auditDate = audit.audit_date 
-                  ? new Date(audit.audit_date).toLocaleDateString() 
-                  : (audit.scheduled_date ? new Date(audit.scheduled_date).toLocaleDateString() : 'Not set');
-
-                return (
-                  <TableRow key={audit.id}>
-                    <TableCell>{audit.facility_name}</TableCell>
-                    <TableCell>{auditDate}</TableCell>
-                    <TableCell>
-                      {audit.status === 'completed' ? (
-                        <div className="flex items-center space-x-2">
-                          <Progress
-                            value={audit.overall_score}
-                            className="h-2 w-16"
-                            indicatorClassName={scoreColor}
-                          />
-                          <span className="text-sm font-medium">
-                            {audit.overall_score}%
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(audit.status)}</TableCell>
-                    <TableCell>{audit.auditor_name || audit.auditor || 'Not assigned'}</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {audit.notes || 'No notes'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+              audits.map((audit) => (
+                <TableRow key={audit.id}>
+                  <TableCell className="font-medium">{audit.facility_name}</TableCell>
+                  <TableCell>{new Date(audit.audit_date).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Progress 
+                        value={audit.overall_score} 
+                        className="w-16 h-2"
+                        indicatorClassName={getScoreColor(audit.overall_score)}
+                      />
+                      <span className="text-sm">{audit.overall_score}%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(audit.status)}</TableCell>
+                  <TableCell>{audit.auditor_name}</TableCell>
+                  <TableCell className="max-w-[200px] truncate">
+                    {audit.notes || '-'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
                         {audit.status === 'scheduled' || audit.status === 'incomplete' ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleContinueAudit(audit)}
-                          >
+                          <DropdownMenuItem onClick={() => handleContinueAudit(audit)}>
                             Continue
-                          </Button>
+                          </DropdownMenuItem>
                         ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewAudit(audit.id)}
-                          >
+                          <DropdownMenuItem onClick={() => handleViewAudit(audit.id)}>
                             View
-                          </Button>
+                          </DropdownMenuItem>
                         )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
           </TableBody>
         </Table>
