@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
 import api from '@/services/api';
-import { Audit, PaginatedResponse } from '../types';
+import { Audit, AuditApiResponse } from '../types';
+import { AxiosResponse } from 'axios';
 
 export function useAudits() {
   const { toast } = useToast();
@@ -13,6 +14,7 @@ export function useAudits() {
   const [sortBy, setSortBy] = useState<string | null>('audit_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
+  // Data fetching with pagination and sorting
   const fetchAudits = useCallback(async () => {
     try {
       const params = new URLSearchParams({
@@ -29,24 +31,26 @@ export function useAudits() {
         params.append('ordering', orderingValue);
       }
 
-      const response = await api.get<PaginatedResponse<Audit>>(`/api/audits/?${params.toString()}`);
+      const response: AxiosResponse<AuditApiResponse> = await api.get(`/api/audits/?${params.toString()}`);
+      const data = response.data;
 
-      if (!response || typeof response.count !== 'number') {
+      if (!data || !Array.isArray(data.results)) {
         throw new Error('Invalid response format from server');
       }
 
-      return {
-        count: response.count,
-        results: response.results || [],
-        next: response.next,
-        previous: response.previous
-      };
+      return data;
     } catch (error) {
       console.error('Error fetching audits:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch audits. Please try again.',
+        variant: 'destructive'
+      });
       throw error;
     }
-  }, [searchQuery, currentPage, pageSize, sortBy, sortDirection]);
+  }, [searchQuery, currentPage, pageSize, sortBy, sortDirection, toast]);
 
+  // Query for audits data
   const { 
     data: paginatedData, 
     isLoading, 
@@ -59,12 +63,14 @@ export function useAudits() {
     refetchOnWindowFocus: false,
   });
 
+  // Extract data from response
   const totalCount = paginatedData?.count || 0;
   const audits = paginatedData?.results || [];
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
+  // Mutation for deleting audits
   const deleteMutation = useMutation({
-    mutationFn: (id: number | string) => api.delete(`/api/audits/${id}/`),
+    mutationFn: (id: string) => api.delete(`/api/audits/${id}/`),
     onSuccess: () => {
       toast({
         title: "Audit deleted",
@@ -84,10 +90,10 @@ export function useAudits() {
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page on new search
   }, []);
 
-  const handleDeleteAudit = useCallback((id: number | string) => {
+  const handleDeleteAudit = useCallback((id: string) => {
     if (window.confirm("Are you sure you want to delete this audit?")) {
       deleteMutation.mutate(id);
     }
@@ -99,7 +105,7 @@ export function useAudits() {
 
   const handlePageSizeChange = useCallback((size: number) => {
     setPageSize(size);
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page when changing page size
   }, []);
 
   const handleSort = useCallback((column: string) => {
@@ -109,15 +115,24 @@ export function useAudits() {
       setSortBy(column);
       setSortDirection('asc');
     }
-    setCurrentPage(1);
+    setCurrentPage(1); // Reset to first page when sorting
   }, [sortBy]);
+
+  // Handle view audit details
+  const handleViewAudit = useCallback((id: string) => {
+    window.location.href = `/audits/${id}`;
+  }, []);
+
+  // Handle continue audit
+  const handleContinueAudit = useCallback((audit: Audit) => {
+    window.location.href = `/facilities/audit/${audit.facility}?auditId=${audit.id}`;
+  }, []);
 
   return {
     audits,
     totalCount,
     currentPage,
     pageSize,
-    totalPages,
     isLoading,
     error,
     isFetching,
@@ -129,6 +144,9 @@ export function useAudits() {
     sortBy,
     sortDirection,
     handleSort,
-    refetch
+    handleViewAudit,
+    handleContinueAudit,
+    refetch,
+    totalPages
   };
 } 

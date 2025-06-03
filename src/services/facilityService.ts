@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosResponse } from 'axios';
+import React from 'react';
+import { useQuery, useMutation, useQueryClient, InvalidateQueryFilters } from '@tanstack/react-query';
 import api from '@/services/api';
 
 // Define the facility interface
@@ -27,47 +28,94 @@ export interface Facility {
   created_at: string;
   updated_at: string;
   location?: string;
-  lastAudit?: string;
-  score?: number;
+  latest_audit?: {
+    status: 'scheduled' | 'completed' | 'missed';
+    scheduled_date?: string;
+    overall_score?: number;
+  };
 }
 
-interface ApiResponse {
-  results?: Facility[];
+interface ApiResponse<T> {
+  results: T[];
   count?: number;
   next?: string | null;
   previous?: string | null;
 }
 
+interface AuditResponse {
+  id: string;
+  status: 'scheduled' | 'completed' | 'missed';
+  scheduled_date: string;
+  audit_date: string;
+  overall_score: number;
+}
+
 // Function to fetch all facilities
 export const getFacilities = async (): Promise<Facility[]> => {
   try {
-    const response = await api.get<ApiResponse>('/api/facilities/');
-    return Array.isArray(response.results) ? response.results : [];
+    const apiResponse = await api.get<ApiResponse<Facility>>('/api/facilities/');
+    
+    // Fetch latest audits for each facility
+    const facilitiesWithAudits = await Promise.all(
+      apiResponse.results.map(async (facility) => {
+        try {
+          const audits = await api.get<AuditResponse[]>(`/api/facilities/${facility.id}/audits/`);
+          
+          if (audits && audits.length > 0) {
+            // Sort audits by date to get the most recent
+            const sortedAudits = audits.sort((a, b) => 
+              new Date(b.audit_date || b.scheduled_date).getTime() - 
+              new Date(a.audit_date || a.scheduled_date).getTime()
+            );
+            
+            const latestAudit = sortedAudits[0];
+            return {
+              ...facility,
+              latest_audit: {
+                status: latestAudit.status,
+                scheduled_date: latestAudit.scheduled_date,
+                overall_score: latestAudit.overall_score
+              }
+            };
+          }
+          return facility;
+        } catch (error) {
+          console.error(`Error fetching audits for facility ${facility.id}:`, error);
+          return facility;
+        }
+      })
+    );
+
+    return facilitiesWithAudits;
   } catch (error) {
     console.error('Error fetching facilities:', error);
     throw error;
   }
 };
 
-// Function to fetch a single facility with audit data
+// Function to fetch a single facility
 export const getFacility = async (id: number): Promise<Facility> => {
   try {
     const facility = await api.get<Facility>(`/api/facilities/${id}/`);
     
     try {
-      const auditsResponse = await api.get(`/api/facilities/${id}/audits/`);
-      const audits = Array.isArray(auditsResponse) ? auditsResponse : [];
+      const audits = await api.get<AuditResponse[]>(`/api/facilities/${id}/audits/`);
       
-      if (audits.length > 0) {
+      if (audits && audits.length > 0) {
         // Sort audits by date to get the most recent
         const sortedAudits = audits.sort((a, b) => 
-          new Date(b.audit_date).getTime() - new Date(a.audit_date).getTime()
+          new Date(b.audit_date || b.scheduled_date).getTime() - 
+          new Date(a.audit_date || a.scheduled_date).getTime()
         );
         
+        const latestAudit = sortedAudits[0];
         return {
           ...facility,
-          score: sortedAudits[0].overall_score,
-          lastAudit: sortedAudits[0].audit_date
+          latest_audit: {
+            status: latestAudit.status,
+            scheduled_date: latestAudit.scheduled_date,
+            overall_score: latestAudit.overall_score
+          }
         };
       }
     } catch (error) {
@@ -76,7 +124,6 @@ export const getFacility = async (id: number): Promise<Facility> => {
     
     return facility;
   } catch (error) {
-    console.error(`Error fetching facility with ID ${id}:`, error);
     throw error;
   }
 };
@@ -97,19 +144,19 @@ export const createFacility = async (facilityData: Partial<Facility>): Promise<F
       capacity: facilityData.capacity || 0
     };
 
-    const response = await api.post<Facility>('/api/facilities/', payload);
-    return response;
+    const { data: facility } = await api.post<AxiosResponse<Facility>>('/api/facilities/', payload);
+    return facility;
   } catch (error) {
     console.error('Error creating facility:', error);
     throw error;
   }
 };
 
-// Function to update an existing facility
+// Function to update a facility
 export const updateFacility = async (id: number, facilityData: Partial<Facility>): Promise<Facility> => {
   try {
-    const response = await api.put<Facility>(`/api/facilities/${id}/`, facilityData);
-    return response;
+    const { data: facility } = await api.put<AxiosResponse<Facility>>(`/api/facilities/${id}/`, facilityData);
+    return facility;
   } catch (error) {
     console.error(`Error updating facility with ID ${id}:`, error);
     throw error;
@@ -126,7 +173,7 @@ export const deleteFacility = async (id: number): Promise<void> => {
   }
 };
 
-// React Query hooks
+// React Query hooks with proper typing
 export const useFacilities = () => {
   return useQuery({
     queryKey: ['facilities'],
@@ -135,29 +182,11 @@ export const useFacilities = () => {
 };
 
 export const useFacility = (id: number) => {
-  const [data, setData] = useState<Facility | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    const fetchFacility = async () => {
-      setIsLoading(true);
-      try {
-        const facilityData = await getFacility(id);
-        setData(facilityData);
-      } catch (err) {
-        setError(err as Error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchFacility();
-    }
-  }, [id]);
-
-  return { data, isLoading, error };
+  return useQuery({
+    queryKey: ['facility', id],
+    queryFn: () => getFacility(id),
+    enabled: !!id
+  });
 };
 
 // Add mutations for CRUD operations
@@ -176,8 +205,7 @@ export const useUpdateFacility = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Facility> }) => 
-      updateFacility(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Facility> }) => updateFacility(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['facilities'] });
     }
@@ -188,7 +216,7 @@ export const useDeleteFacility = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (id: number) => deleteFacility(id),
+    mutationFn: deleteFacility,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['facilities'] });
     }

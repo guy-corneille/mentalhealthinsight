@@ -36,14 +36,9 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Spinner } from '@/components/ui/spinner';
 import api from '@/services/api';
-import { usePatients, usePatientsByFacility } from '@/services/patientService';
+import { usePatients, usePatientsByFacility, Patient } from '@/services/patientService';
 import { getFacilities } from '@/services/facilityService';
-
-interface Patient {
-  id: string;
-  first_name: string;
-  last_name: string;
-}
+import { AxiosResponse } from 'axios';
 
 interface Facility {
   id: number;
@@ -120,13 +115,20 @@ const ScheduleAssessmentDialog: React.FC<ScheduleAssessmentDialogProps> = ({
       // Convert local datetime string to ISO string (no seconds)
       const scheduledDate = new Date(data.scheduledDate);
       const isoString = scheduledDate.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+      
+      // Get patient details to include primary staff
+      const patientResponse: AxiosResponse<Patient> = await api.get(`/api/patients/${data.patientId}/`);
+      const patient = patientResponse.data;
+      
       const assessmentData = {
         patient: data.patientId,
         facility: Number(data.facilityId),
         scheduled_date: isoString,
         score: 0, // Initial score of 0
         status: 'scheduled',
-        notes: data.notes || '',
+        notes: patient.primary_staff_name 
+          ? `${data.notes || ''}\n\nPrimary Staff: ${patient.primary_staff_name}`
+          : data.notes || '',
       };
       
       console.log('Sending assessment data:', assessmentData);

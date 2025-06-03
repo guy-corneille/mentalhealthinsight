@@ -46,13 +46,21 @@ export interface Audit {
   id: string;
   facility: number;
   facility_name: string;
+  auditor: string;
+  auditor_name: string;
   audit_date: string;
+  scheduled_date: string;
   overall_score: number;
-  status: 'scheduled' | 'completed' | 'incomplete';
-  notes: string;
-  auditor_name?: string;
-  auditor?: string;
-  scheduled_date?: string;
+  status: 'scheduled' | 'completed' | 'missed';
+  missed_reason?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  criteria_scores?: Array<{
+    criteria_name: string;
+    score: number;
+    notes?: string;
+  }>;
 }
 
 export interface AuditApiResponse {

@@ -1,4 +1,3 @@
-
 /**
  * Facility Table View Component
  * 
@@ -94,10 +93,14 @@ const FacilityTableView: React.FC<FacilityTableViewProps> = ({
                 {facility.capacity || '-'}
               </TableCell>
               <TableCell className="hidden lg:table-cell">
-                {facility.lastAudit || facility.last_inspection_date || '-'}
+                {facility.latest_audit?.scheduled_date 
+                  ? new Date(facility.latest_audit.scheduled_date).toLocaleDateString()
+                  : 'No audit'}
               </TableCell>
               <TableCell className="hidden lg:table-cell">
-                {facility.score !== undefined ? `${facility.score}/100` : '-'}
+                {facility.latest_audit?.overall_score !== undefined 
+                  ? `${facility.latest_audit.overall_score.toFixed(1)}`
+                  : 'No audit'}
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">

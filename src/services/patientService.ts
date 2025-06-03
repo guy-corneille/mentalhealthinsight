@@ -17,6 +17,8 @@ export interface Patient {
   status: string;
   facility: number;
   facility_name?: string;
+  primary_staff?: number;
+  primary_staff_name?: string;
   registration_date: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
@@ -49,26 +51,24 @@ const generatePatientId = (): string => {
 const patientService = {
   /**
    * Get all patients
+   * @param page Page number (1-based)
+   * @param pageSize Number of items per page
+   * @param searchQuery Optional search query
+   * @param facilityId Optional facility ID filter
    * @returns Promise with patient data
    */
-  getAllPatients: async () => {
-    console.log('Fetching all patients from API');
+  getAllPatients: async (page = 1, pageSize = 10, searchQuery = '', facilityId?: number) => {
+    const params = {
+      page,
+      page_size: pageSize,
+      ...(searchQuery && { search: searchQuery.trim() }),
+      ...(facilityId && { facility: facilityId })
+    };
+
     try {
-      const response = await api.get<ApiResponse<Patient>>('/api/patients/');
-      
-      console.log('API response for patients:', response);
-      
-      // Handle different response formats with proper type checking
-      if (Array.isArray(response)) {
-        return response as Patient[];
-      } else if (response && typeof response === 'object' && 'results' in response) {
-        return (response as PaginatedResponse<Patient>).results;
-      }
-      
-      console.warn('Invalid API response format for patients:', response);
-      return [] as Patient[];
+      const response = await api.get<PaginatedResponse<Patient>>('/patients/', { params });
+      return response;
     } catch (error) {
-      console.error('Error fetching patients:', error);
       throw error;
     }
   },
@@ -79,11 +79,8 @@ const patientService = {
    * @returns Promise with patients data for a specific facility
    */
   getPatientsByFacility: async (facilityId: number): Promise<Patient[]> => {
-    console.log(`Fetching patients for facility ${facilityId} from API`);
     try {
       const response = await api.get<ApiResponse<Patient>>(`/api/facilities/${facilityId}/patients/`);
-      
-      console.log(`API response for facility ${facilityId} patients:`, response);
       
       if (Array.isArray(response)) {
         return response;
@@ -91,10 +88,8 @@ const patientService = {
         return (response as PaginatedResponse<Patient>).results;
       }
       
-      console.warn(`Invalid API response for facility ${facilityId} patients:`, response);
       return [];
     } catch (error) {
-      console.error(`Error fetching patients for facility ${facilityId}:`, error);
       throw error;
     }
   },
@@ -105,15 +100,10 @@ const patientService = {
    * @returns Promise with patient data
    */
   getPatientById: async (id: string): Promise<Patient> => {
-    console.log(`Fetching patient with ID ${id} from API`);
     try {
       const response = await api.get<Patient>(`/api/patients/${id}/`);
-      
-      console.log(`API response for patient ${id}:`, response);
-      
       return response;
     } catch (error) {
-      console.error(`Error fetching patient ${id}:`, error);
       throw error;
     }
   },
@@ -124,22 +114,15 @@ const patientService = {
    * @returns Promise with created patient
    */
   createPatient: async (patientData: Partial<Patient>): Promise<Patient> => {
-    console.log('Creating new patient via API', patientData);
     try {
-      // Generate a patient ID if not provided
       const dataWithId = {
         ...patientData,
         id: patientData.id || generatePatientId(),
       };
       
-      console.log('Sending patient data with ID:', dataWithId);
       const response = await api.post<Patient>('/api/patients/', dataWithId);
-      
-      console.log('API response for create patient:', response);
-      
       return response;
     } catch (error) {
-      console.error('Error creating patient:', error);
       throw error;
     }
   },
@@ -151,22 +134,15 @@ const patientService = {
    * @returns Promise with updated patient
    */
   updatePatient: async (id: string, patientData: Partial<Patient>): Promise<Patient> => {
-    console.log(`Updating patient with ID ${id} via API`, patientData);
     try {
-      // Always include the ID in the request body
       const dataWithId = {
         ...patientData,
         id: id,
       };
       
-      console.log(`Sending updated patient data with ID:`, dataWithId);
       const response = await api.put<Patient>(`/api/patients/${id}/`, dataWithId);
-      
-      console.log(`API response for update patient ${id}:`, response);
-      
       return response;
     } catch (error) {
-      console.error(`Error updating patient ${id}:`, error);
       throw error;
     }
   },
@@ -177,26 +153,21 @@ const patientService = {
    * @returns Promise with success message
    */
   deletePatient: async (id: string): Promise<void> => {
-    console.log(`Deleting patient with ID ${id} via API`);
     try {
       await api.delete(`/api/patients/${id}/`);
-      console.log(`Successfully deleted patient ${id}`);
     } catch (error) {
-      console.error(`Error deleting patient ${id}:`, error);
       throw error;
     }
   },
 };
 
-/**
- * React Query hooks for patient operations
- */
-
-// Hook for fetching all patients
-export const usePatients = () => {
+// Hook for fetching all patients with pagination
+export const usePatients = (page = 1, pageSize = 10, searchQuery = '', facilityId?: number) => {
   return useQuery({
-    queryKey: ['patients'],
-    queryFn: patientService.getAllPatients,
+    queryKey: ['patients', page, pageSize, searchQuery, facilityId],
+    queryFn: () => patientService.getAllPatients(page, pageSize, searchQuery, facilityId),
+    staleTime: 0,
+    gcTime: 0,
   });
 };
 
@@ -205,7 +176,7 @@ export const usePatientsByFacility = (facilityId: number) => {
   return useQuery({
     queryKey: ['patients', 'facility', facilityId],
     queryFn: () => patientService.getPatientsByFacility(facilityId),
-    enabled: !!facilityId, // Only run query if facilityId is provided
+    enabled: !!facilityId,
   });
 };
 
@@ -214,7 +185,7 @@ export const usePatient = (id: string) => {
   return useQuery({
     queryKey: ['patient', id],
     queryFn: () => patientService.getPatientById(id),
-    enabled: !!id, // Only run query if id is provided
+    enabled: !!id,
   });
 };
 
@@ -226,7 +197,6 @@ export const useCreatePatient = () => {
     mutationFn: (patientData: Partial<Patient>) => 
       patientService.createPatient(patientData),
     onSuccess: () => {
-      // Invalidate patients query to refetch the list
       queryClient.invalidateQueries({ queryKey: ['patients'] });
     },
   });
@@ -240,7 +210,6 @@ export const useUpdatePatient = (id: string) => {
     mutationFn: (patientData: Partial<Patient>) => 
       patientService.updatePatient(id, patientData),
     onSuccess: () => {
-      // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['patients'] });
       queryClient.invalidateQueries({ queryKey: ['patient', id] });
     },
@@ -254,12 +223,9 @@ export const useDeletePatient = () => {
   return useMutation({
     mutationFn: (id: string) => patientService.deletePatient(id),
     onSuccess: () => {
-      // Invalidate patients query to refetch the list
       queryClient.invalidateQueries({ queryKey: ['patients'] });
     },
   });
 };
-
-export { useFacilities };
 
 export default patientService;

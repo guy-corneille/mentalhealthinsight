@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
@@ -11,7 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { FileText, Search } from 'lucide-react';
-import { usePatients, usePatient, useFacilities } from '@/services/patientService';
+import { usePatients, usePatient } from '@/services/patientService';
+import { useFacilities } from '@/services/facilityService';
 import { Spinner } from '@/components/ui/spinner';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -45,9 +45,12 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   
   // Fetch patients and facilities
-  const { data: patients, isLoading: isPatientsLoading } = usePatients();
+  const { data: patientsData, isLoading: isPatientsLoading } = usePatients(1, 100); // Get all patients for the dialog
   const { data: facilities, isLoading: isFacilitiesLoading } = useFacilities();
   const { data: selectedPatient, isLoading: isPatientLoading } = usePatient(selectedPatientId);
+
+  // Get the patients array from the paginated response
+  const patients = patientsData?.results || [];
 
   // Auto-select facility when patient is selected
   useEffect(() => {
@@ -77,7 +80,7 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
   };
 
   // Filter patients based on search query
-  const filteredPatients = patients?.filter(patient => {
+  const filteredPatients = patients.filter(patient => {
     if (!searchQuery.trim()) return true;
     
     const query = searchQuery.toLowerCase();
@@ -143,12 +146,12 @@ const NewAssessmentDialog: React.FC<NewAssessmentDialogProps> = ({
                 ) : (
                   <ScrollArea className="h-[200px] rounded-md border">
                     <div className="p-1">
-                      {filteredPatients?.length === 0 ? (
+                      {filteredPatients.length === 0 ? (
                         <div className="flex justify-center items-center h-20 text-muted-foreground">
                           No patients match your search
                         </div>
                       ) : (
-                        filteredPatients?.map((patient) => (
+                        filteredPatients.map((patient) => (
                           <div
                             key={patient.id}
                             className={`flex items-center p-2 rounded-md cursor-pointer ${

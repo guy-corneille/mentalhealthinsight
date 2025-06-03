@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePatients, Patient, useDeletePatient, useFacilities } from '@/services/patientService';
+import { usePatients, Patient, useDeletePatient } from '@/services/patientService';
+import { useFacilities } from '@/services/facilityService';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import FacilityFilter from '@/components/common/FacilityFilter';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface PatientListProps {
   facilityId?: number;
@@ -23,147 +27,154 @@ interface PatientListProps {
 
 const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
   const navigate = useNavigate();
-  // Data fetching
-  const { data: allPatients, isLoading, isError, error } = usePatients();
-  const { data: facilities = [] } = useFacilities();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(30);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFacility, setSelectedFacility] = useState<number | undefined>(facilityId);
+  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
+
+  // Fetch all patients and facilities
+  const { data: patientsData, isLoading, error } = usePatients(1, 1000); // Fetch all patients
+  const { data: facilities } = useFacilities();
+
+  // Delete patient mutation
   const deletePatientMutation = useDeletePatient();
 
-  // Search and pagination state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [facilityFilter, setFacilityFilter] = useState<string>(facilityId ? facilityId.toString() : 'all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([]);
-  const [paginatedPatients, setPaginatedPatients] = useState<Patient[]>([]);
-
-  // Pagination settings
-  const itemsPerPage = 10;
-
-  // Apply facility filter and search query
+  // Apply filters when data or search query changes
   useEffect(() => {
-    if (!allPatients) return;
+    if (!patientsData?.results) return;
 
-    // First filter by facility if facilityFilter is provided
-    let patients = facilityFilter !== 'all'
-      ? allPatients.filter(patient => patient.facility === parseInt(facilityFilter))
-      : allPatients;
+    let results = [...patientsData.results];
 
-    // Then apply search filter
+    // Apply facility filter
+    if (selectedFacility) {
+      results = results.filter(patient => patient.facility === selectedFacility);
+    }
+
+    // Apply search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      patients = patients.filter(patient =>
-        `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(query) ||
+      results = results.filter(patient => 
         patient.id.toLowerCase().includes(query) ||
+        `${patient.first_name} ${patient.last_name}`.toLowerCase().includes(query) ||
         patient.gender.toLowerCase().includes(query) ||
         patient.status.toLowerCase().includes(query) ||
         (patient.facility_name && patient.facility_name.toLowerCase().includes(query))
       );
     }
 
-    setFilteredPatients(patients);
+    setFilteredPatients(results);
+  }, [patientsData, searchQuery, selectedFacility]);
 
-    // Reset to first page when filter changes
-    if (currentPage !== 1) {
-      setCurrentPage(1);
-    }
-  }, [allPatients, searchQuery, facilityFilter]);
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredPatients.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedPatients = filteredPatients.slice(startIndex, endIndex);
 
-  // Update paginated data when filtered data or page changes
-  useEffect(() => {
-    if (!filteredPatients) return;
-
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedItems = filteredPatients.slice(startIndex, startIndex + itemsPerPage);
-
-    setPaginatedPatients(paginatedItems);
-  }, [filteredPatients, currentPage]);
-
-  // Calculate total pages
-  const totalPages = Math.ceil((filteredPatients?.length || 0) / itemsPerPage);
-
-  // Patient handlers
-  const handleAddPatient = () => {
-    navigate('/patients/add');
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
-  const handleEditPatient = (patient: Patient) => {
-    navigate(`/patients/edit/${patient.id}`);
+  // Handle items per page change
+  const handleItemsPerPageChange = (value: string) => {
+    setPageSize(Number(value));
+    setCurrentPage(1); // Reset to first page when changing page size
   };
 
-  const handleViewPatient = (patient: Patient) => {
-    navigate(`/patients/edit/${patient.id}`);
+  // Handle facility filter change
+  const handleFacilityChange = (facilityId: number | undefined) => {
+    setSelectedFacility(facilityId);
+    setCurrentPage(1); // Reset to first page when changing facility
   };
 
-  const handleDeletePatient = async (patient: Patient) => {
-    if (confirm(`Are you sure you want to delete patient ${patient.first_name} ${patient.last_name}?`)) {
+  // Handle search
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  // Handle patient deletion
+  const handleDelete = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this patient?')) {
       try {
-        await deletePatientMutation.mutateAsync(patient.id);
-        toast.success(`Patient deleted successfully`);
+        await deletePatientMutation.mutateAsync(id);
+        toast.success('Patient deleted successfully');
       } catch (error) {
-        console.error('Error deleting patient:', error);
-        toast.error(`Failed to delete patient: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        toast.error('Failed to delete patient');
       }
     }
   };
 
-  // Loading and error states
+  // Show loading state
   if (isLoading) {
-    return <div className="flex justify-center p-8">
-      <div className="flex items-center gap-2">
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-healthiq-600 border-t-transparent"></div>
-        <p>Loading patients...</p>
+    return (
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
-    </div>;
+    );
   }
 
-  if (isError) {
-    return <div className="bg-red-50 p-4 rounded-md text-red-800">
-      <p>Error loading patients: {error instanceof Error ? error.message : 'Unknown error'}</p>
-    </div>;
+  // Show error state
+  if (error) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-rose-500 mb-2">Error loading patients</p>
+        <p className="text-muted-foreground">{(error as Error).message || 'Unknown error occurred'}</p>
+      </div>
+    );
+  }
+
+  // Show empty state
+  if (!filteredPatients.length) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <SearchInput
+              value={searchQuery}
+              onChange={handleSearch}
+              placeholder="Search patients..."
+            />
+            <FacilityFilter
+              selectedFacility={selectedFacility}
+              onFacilityChange={handleFacilityChange}
+            />
+          </div>
+          <Button onClick={() => navigate('/patients/add')}>
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Add Patient
+          </Button>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No patients found</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Patients</h2>
-        <Button onClick={handleAddPatient} className="bg-healthiq-600 hover:bg-healthiq-700">
+        <div className="flex items-center gap-4">
+          <SearchInput
+            value={searchQuery}
+            onChange={handleSearch}
+            placeholder="Search patients..."
+          />
+          <FacilityFilter
+            selectedFacility={selectedFacility}
+            onFacilityChange={handleFacilityChange}
+          />
+        </div>
+        <Button onClick={() => navigate('/patients/add')}>
           <PlusIcon className="h-4 w-4 mr-2" />
           Add Patient
         </Button>
       </div>
 
-      {/* Search and filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="w-full sm:w-64">
-          <SearchInput
-            placeholder="Search patients..."
-            value={searchQuery}
-            onChange={setSearchQuery}
-          />
-        </div>
-
-        <div className="w-full sm:w-64">
-          <Select value={facilityFilter} onValueChange={setFacilityFilter}>
-            <SelectTrigger className="bg-muted/50 border-none focus-visible:ring-1">
-              <SelectValue placeholder="Filter by facility" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Facilities</SelectItem>
-              {facilities.map(facility => (
-                <SelectItem key={facility.id} value={facility.id.toString()}>
-                  {facility.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {paginatedPatients.length === 0 ? (
-        <div className="text-center p-8 border rounded-md bg-gray-50">
-          <p className="text-gray-500">No patients found</p>
-        </div>
-      ) : (
-        <div className="rounded-md border">
+      <ScrollArea className="h-[600px]">
           <Table>
             <TableHeader>
               <TableRow>
@@ -183,31 +194,30 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
                   <TableCell>{`${patient.first_name} ${patient.last_name}`}</TableCell>
                   <TableCell>{patient.gender}</TableCell>
                   <TableCell>
-                    <Badge variant={patient.status === 'Active' ? 'default' : 'secondary'}>
+                  <Badge variant={patient.status === 'active' ? 'default' : 'secondary'}>
                       {patient.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{patient.facility_name}</TableCell>
-                  <TableCell>{new Date(patient.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>{patient.facility_name || 'Unknown'}</TableCell>
+                <TableCell>{new Date(patient.registration_date).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleViewPatient(patient)}>
+                      <DropdownMenuItem onClick={() => navigate(`/patients/${patient.id}`)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditPatient(patient)}>
+                      <DropdownMenuItem onClick={() => navigate(`/patients/edit/${patient.id}`)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDeletePatient(patient)}>
+                      <DropdownMenuItem onClick={() => handleDelete(patient.id)}>
                           <Trash className="h-4 w-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
@@ -218,17 +228,32 @@ const PatientList: React.FC<PatientListProps> = ({ facilityId }) => {
               ))}
             </TableBody>
           </Table>
-        </div>
-      )}
+      </ScrollArea>
 
-      {/* Show pagination controls if we have enough items */}
-      {totalPages > 1 && (
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Items per page:</span>
+          <Select
+            value={pageSize.toString()}
+            onValueChange={handleItemsPerPageChange}
+          >
+            <SelectTrigger className="h-8 w-[70px]">
+              <SelectValue placeholder={pageSize} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="30">30</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
         />
-      )}
+      </div>
     </div>
   );
 };

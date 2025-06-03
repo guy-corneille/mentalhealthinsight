@@ -7,29 +7,48 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { ArrowLeft, Printer, Calendar, User, Building, FileText } from 'lucide-react';
 import api from '@/services/api';
-import { Assessment } from '@/features/assessments/types';
-import { AxiosResponse } from 'axios';
+import { Assessment, PaginatedResponse } from '@/features/assessments/types';
+import { useReportActions } from '@/components/assessments/utils/reportUtils';
 import Layout from '@/components/layout/Layout';
 
 const AssessmentView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { handlePrintReport } = useReportActions();
   const [assessment, setAssessment] = useState<Assessment | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAssessment = async () => {
+      if (!id) {
+        setError('No assessment ID provided');
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const response: AxiosResponse<Assessment> = await api.get(`/api/assessments/${id}/`);
-        setAssessment(response.data);
-      } catch (err) {
+        console.log('Fetching assessment with ID:', id);
+        const response = await api.get<PaginatedResponse<Assessment>>('/api/assessments/', {
+          params: {
+            id: id
+          }
+        });
+        
+        if (response.results && response.results.length > 0) {
+          console.log('Found assessment:', response.results[0]);
+          setAssessment(response.results[0]);
+        } else {
+          throw new Error('Assessment not found');
+        }
+      } catch (err: any) {
         console.error('Error fetching assessment:', err);
-        setError('Failed to load assessment details');
+        const errorMessage = err.response?.data?.detail || 'Failed to load assessment details';
+        setError(errorMessage);
         toast({
           title: "Error",
-          description: "Failed to load assessment details",
+          description: errorMessage,
           variant: "destructive",
         });
       } finally {
@@ -39,10 +58,6 @@ const AssessmentView: React.FC = () => {
 
     fetchAssessment();
   }, [id, toast]);
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   const getScoreColor = (score: number) => {
     if (score >= 75) return 'bg-emerald-500';
@@ -73,7 +88,7 @@ const AssessmentView: React.FC = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto py-8 px-4 animate-fade-in">
+      <div className="container mx-auto py-8 px-4">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <Button
@@ -84,7 +99,7 @@ const AssessmentView: React.FC = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Assessments
           </Button>
-          <Button onClick={handlePrint} className="flex items-center">
+          <Button onClick={() => handlePrintReport(assessment)} className="flex items-center">
             <Printer className="mr-2 h-4 w-4" />
             Print Report
           </Button>
@@ -102,7 +117,7 @@ const AssessmentView: React.FC = () => {
                   assessment.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
                   'bg-red-100 text-red-800'
                 }`}>
-                  {assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
+                  {assessment.status?.charAt(0).toUpperCase() + assessment.status?.slice(1)}
                 </span>
               </CardTitle>
             </CardHeader>
@@ -113,7 +128,7 @@ const AssessmentView: React.FC = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">Scheduled Date</p>
                     <p className="font-medium">
-                      {new Date(assessment.scheduled_date).toLocaleString()}
+                      {new Date(assessment.scheduled_date || '').toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -225,22 +240,26 @@ const AssessmentView: React.FC = () => {
                 {/* Indicator Scores */}
                 {assessment.indicator_scores && assessment.indicator_scores.length > 0 && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">Indicator Scores</p>
-                    <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground mb-2">Detailed Scores</p>
+                    <div className="space-y-2">
                       {assessment.indicator_scores.map((score) => (
-                        <div key={score.id} className="border rounded-lg p-4">
-                          <p className="font-medium mb-2">{score.indicator_name}</p>
-                          <div className="flex items-center gap-4">
-                            <Progress 
-                              value={score.score} 
-                              className="w-full h-2"
-                              indicatorClassName={getScoreColor(score.score)}
-                            />
+                        <div key={score.id} className="flex justify-between items-center p-2 bg-muted/30 rounded">
+                          <span>{score.indicator_name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Score:</span>
                             <span className="font-medium">{score.score}%</span>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              score.score >= 75 ? 'bg-emerald-100 text-emerald-800' :
+                              score.score >= 69 ? 'bg-yellow-100 text-yellow-800' :
+                              score.score >= 50 ? 'bg-orange-100 text-orange-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {score.score >= 75 ? 'Excellent' :
+                               score.score >= 69 ? 'Good' :
+                               score.score >= 50 ? 'Fair' :
+                               'Poor'}
+                            </span>
                           </div>
-                          {score.notes && (
-                            <p className="text-sm text-muted-foreground mt-2">{score.notes}</p>
-                          )}
                         </div>
                       ))}
                     </div>

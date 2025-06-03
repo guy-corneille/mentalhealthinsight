@@ -85,20 +85,28 @@ class AssessmentCriteriaSerializer(serializers.ModelSerializer):
 
 class PatientSerializer(serializers.ModelSerializer):
     facility_name = serializers.CharField(source='facility.name', read_only=True)
+    primary_staff_name = serializers.CharField(source='primary_staff.name', read_only=True)
     
     class Meta:
         model = Patient
         fields = ['id', 'first_name', 'last_name', 'date_of_birth', 'gender', 
                  'address', 'phone', 'email', 'national_id', 'status', 
-                 'facility', 'facility_name', 'registration_date', 
-                 'emergency_contact_name', 'emergency_contact_phone', 
-                 'notes', 'created_at', 'updated_at']
+                 'facility', 'facility_name', 'primary_staff', 'primary_staff_name',
+                 'registration_date', 'emergency_contact_name', 
+                 'emergency_contact_phone', 'notes', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
         
     def validate_facility(self, value):
         """Ensure the facility exists in the database."""
         if not Facility.objects.filter(id=value.id).exists():
             raise serializers.ValidationError("Facility does not exist.")
+        return value
+        
+    def validate_primary_staff(self, value):
+        """Ensure the staff member belongs to the patient's facility."""
+        if value and self.initial_data.get('facility'):
+            if value.facility.id != self.initial_data['facility']:
+                raise serializers.ValidationError("Staff member must belong to the patient's facility.")
         return value
 
 class IndicatorScoreSerializer(serializers.ModelSerializer):

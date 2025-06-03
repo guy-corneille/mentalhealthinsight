@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { useToast } from "@/hooks/use-toast";
 import { Audit } from '../types';
+import { useAuditReportActions } from '@/components/assessments/utils/auditReportUtils';
 
 export interface AuditApiResponse {
   count: number;
@@ -13,6 +14,7 @@ export interface AuditApiResponse {
 
 export function useAuditList() {
   const { toast } = useToast();
+  const { handlePrintAuditReport } = useAuditReportActions();
   
   // State for search, pagination and sorting
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,14 +105,20 @@ export function useAuditList() {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   // Handle view audit details
-  const handleViewAudit = useCallback((id: string) => {
-    window.location.href = `/audits/review/${id}`;
+  const handleViewAudit = useCallback((audit: Audit) => {
+    if (audit.status === 'scheduled') {
+      // For scheduled audits, redirect to evaluation page
+      window.location.href = `/audits/${audit.id}/evaluate`;
+    } else {
+      // For completed/missed audits, show details
+      window.location.href = `/audits/${audit.id}`;
+    }
   }, []);
 
-  // Handle continue audit
-  const handleContinueAudit = useCallback((audit: Audit) => {
-    window.location.href = `/facilities/audit/${audit.facility}?auditId=${audit.id}`;
-  }, []);
+  // Handle print audit report
+  const handlePrintAudit = useCallback((audit: Audit) => {
+    handlePrintAuditReport(audit);
+  }, [handlePrintAuditReport]);
 
   return {
     audits,
@@ -129,7 +137,7 @@ export function useAuditList() {
     handlePageSizeChange,
     handleSort,
     handleViewAudit,
-    handleContinueAudit,
+    handlePrintAudit,
     refetch
   };
 }

@@ -16,6 +16,7 @@ import AssessmentTrends from './pages/AssessmentTrends';
 import Reports from './pages/Reports';
 import Audits from './pages/Audits';
 import AuditTrends from './pages/AuditTrends';
+import AuditView from './pages/audits/AuditView';
 import AuditReview from './pages/AuditReview';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -31,7 +32,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 // Context
 import { AuthProvider } from './contexts/AuthContext';
 import StaffForm from './components/staff/StaffForm';
-import PatientForm from './components/patients/PatientForm';
+import PatientForm from './pages/PatientForm';
 import AssessmentList from './components/assessments/AssessmentList';
 import AssessmentView from './pages/assessments/AssessmentView';
 
@@ -63,8 +64,8 @@ function App() {
           
           {/* Patient routes */}
           <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
-          <Route path="/patients/add" element={<ProtectedRoute><PatientForm /></ProtectedRoute>} />
-          <Route path="/patients/edit/:id" element={<ProtectedRoute><PatientForm isEdit /></ProtectedRoute>} />
+          <Route path="/patients/add" element={<ProtectedRoute><PatientForm isEdit={false} /></ProtectedRoute>} />
+          <Route path="/patients/edit/:id" element={<ProtectedRoute><PatientForm isEdit={true} /></ProtectedRoute>} />
           
           <Route path="/assessments" element={<ProtectedRoute><AssessmentList onStartAssessment={handleStartAssessment} /></ProtectedRoute>} />
           <Route path="/assessments/view/:id" element={<ProtectedRoute><AssessmentView /></ProtectedRoute>} />
@@ -72,7 +73,7 @@ function App() {
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/audits" element={<ProtectedRoute><Audits /></ProtectedRoute>} />
           <Route path="/audit-trends" element={<ProtectedRoute><AuditTrends /></ProtectedRoute>} />
-          <Route path="/audits/review/:id" element={<ProtectedRoute><AuditReview /></ProtectedRoute>} />
+          <Route path="/audits/:id" element={<ProtectedRoute><AuditView /></ProtectedRoute>} />
           <Route path="/assessment/:patientId" element={<ProtectedRoute><AssessmentEvaluationPage /></ProtectedRoute>} />
           
           {/* Add the Criteria routes */}

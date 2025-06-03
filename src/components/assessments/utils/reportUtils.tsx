@@ -19,6 +19,14 @@ interface AssessmentsResponse {
   previous: string | null;
 }
 
+interface AssessmentWithDetails extends Assessment {
+  patient_details?: {
+    primary_staff?: {
+      display_name: string;
+    };
+  };
+}
+
 export const useReportActions = () => {
   const { toast } = useToast();
 
@@ -71,7 +79,7 @@ export const useReportActions = () => {
     return 'Needs Improvement';
   };
 
-  const handlePrintReport = async (assessment: Assessment) => {
+  const handlePrintReport = async (assessment: AssessmentWithDetails) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       toast({
@@ -95,11 +103,11 @@ export const useReportActions = () => {
         .slice(-3);
 
       // Generate the HTML content
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Assessment Report - ${assessment.patient_name || assessment.patient}</title>
-          <style>
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Assessment Report - ${assessment.patient_name || assessment.patient}</title>
+            <style>
               @page {
                 size: A4;
                 margin: 20mm;
@@ -291,7 +299,7 @@ export const useReportActions = () => {
                 color: #64748b;
               }
               
-            @media print {
+              @media print {
                 body { 
                   margin: 0;
                   padding: 20px;
@@ -302,19 +310,19 @@ export const useReportActions = () => {
                   background: none;
                   box-shadow: none;
                 }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="header">
+              }
+            </style>
+          </head>
+          <body>
+            <div class="header">
               <div class="logo-container">
                 <img src="/favicon.ico" alt="MentalHealthIQ Logo" class="logo" />
                 <span class="app-name">MentalHealthIQ</span>
               </div>
-            <h1>Patient Assessment Report</h1>
-              <p class="subtitle">Generated on ${format(new Date(), 'PPP p')}</p>
-          </div>
-          
+              <h1>Patient Assessment Report</h1>
+              <p class="subtitle">Generated on ${format(new Date(), 'PPP')}</p>
+            </div>
+            
             <div class="section">
               <div class="section-header">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -326,19 +334,23 @@ export const useReportActions = () => {
                 Patient Information
               </div>
               <div class="grid">
-            <div>
+                <div>
                   <div class="label">Patient ID</div>
                   <p class="value">${assessment.patient}</p>
-            </div>
-            <div>
+                </div>
+                <div>
                   <div class="label">Patient Name</div>
                   <p class="value">${assessment.patient_name || 'Unknown'}</p>
-            </div>
-            <div>
+                </div>
+                <div>
+                  <div class="label">Primary Staff</div>
+                  <p class="value">${assessment.patient_details?.primary_staff?.display_name || 'Not Assigned'}</p>
+                </div>
+                <div>
                   <div class="label">Facility</div>
                   <p class="value">${assessment.facility_name || assessment.facility}</p>
-            </div>
-            <div>
+                </div>
+                <div>
                   <div class="label">Assessment Date</div>
                   <p class="value">${format(new Date(assessment.assessment_date), 'PPP')}</p>
                 </div>
@@ -389,10 +401,10 @@ export const useReportActions = () => {
                   <div class="legend-item">
                     <div class="legend-color" style="background: #ef4444"></div>
                     <span>Needs Improvement (<50%)</span>
-            </div>
-            </div>
-          </div>
-          
+                  </div>
+                </div>
+              </div>
+              
               ${trendData.length > 0 ? `
                 <div class="trend">
                   ${trendData.map(prev => `
@@ -407,8 +419,8 @@ export const useReportActions = () => {
                   `).join('')}
                 </div>
               ` : ''}
-          </div>
-          
+            </div>
+            
             ${assessment.notes ? `
               <div class="section">
                 <div class="section-header">
@@ -426,7 +438,7 @@ export const useReportActions = () => {
             ` : ''}
 
             ${contact ? `
-          <div class="section">
+              <div class="section">
                 <div class="section-header">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
@@ -452,7 +464,7 @@ export const useReportActions = () => {
                     <p class="value">${contact.email}</p>
                   </div>
                 </div>
-          </div>
+              </div>
             ` : ''}
 
             <div class="signature-section">
@@ -467,20 +479,20 @@ export const useReportActions = () => {
                   <div class="value">${format(new Date(), 'PPP')}</div>
                 </div>
               </div>
-          </div>
-          
-          <script>
-            window.onload = function() {
-              window.print();
-            }
-          </script>
-        </body>
-      </html>
-    `);
-    
-    printWindow.document.close();
+            </div>
+            
+            <script>
+              window.onload = function() {
+                window.print();
+              }
+            </script>
+          </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
 
-    toast({
+      toast({
         title: "Report ready",
         description: "The print dialog should open automatically.",
       });

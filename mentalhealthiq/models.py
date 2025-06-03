@@ -186,6 +186,7 @@ class Patient(models.Model):
     national_id = models.CharField(max_length=20, blank=True, null=True, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Active')
     facility = models.ForeignKey(Facility, on_delete=models.SET_NULL, null=True, related_name='patients')
+    primary_staff = models.ForeignKey(StaffMember, on_delete=models.SET_NULL, null=True, blank=True, related_name='primary_patients')
     registration_date = models.DateField()
     emergency_contact_name = models.CharField(max_length=255, blank=True, null=True)
     emergency_contact_phone = models.CharField(max_length=20, blank=True, null=True)

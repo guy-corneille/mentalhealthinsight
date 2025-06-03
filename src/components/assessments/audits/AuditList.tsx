@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuditList } from '@/features/assessments/hooks/useAuditList';
-import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon, MoreVertical } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon, MoreVertical, Eye, FileText, ClipboardCheck } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import PaginationControls from '@/components/common/PaginationControls';
 import SearchInput from '@/components/common/SearchInput';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 interface SortableHeaderProps {
   column: string;
@@ -60,18 +61,18 @@ const AuditList: React.FC = () => {
     handlePageSizeChange,
     handleSort,
     handleViewAudit,
-    handleContinueAudit
+    handlePrintAudit
   } = useAuditList();
 
   // Get status badge
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'scheduled':
-        return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Scheduled</Badge>;
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">Scheduled</Badge>;
       case 'completed':
-        return <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">Completed</Badge>;
-      case 'incomplete':
-        return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Incomplete</Badge>;
+        return <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-200">Completed</Badge>;
+      case 'missed':
+        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">Missed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -85,7 +86,39 @@ const AuditList: React.FC = () => {
     return 'bg-red-500';                       // Red for below 50
   };
 
+  // Get date display
+  const getDateDisplay = (audit: any) => {
+    const isScheduled = audit.status === 'scheduled';
+    const date = isScheduled ? audit.scheduled_date : audit.audit_date;
+    if (!date) return '—';
+    
+    try {
+      const dateObj = new Date(date);
+      const formattedDate = dateObj.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+      const formattedTime = dateObj.toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      
+      return (
+        <div className="flex flex-col">
+          <span className="font-medium">{formattedDate}</span>
+          <span className="text-sm text-muted-foreground">{formattedTime}</span>
+        </div>
+      );
+    } catch (err) {
+      console.error('Error formatting date:', err);
+      return '—';
+    }
+  };
+
   return (
+    <TooltipProvider>
     <div className="space-y-6 w-[90%] mx-auto">
       {/* Search bar */}
       <div className="flex flex-col sm:flex-row gap-4">
@@ -123,7 +156,7 @@ const AuditList: React.FC = () => {
               <TableHead>
                 <SortableHeader
                   column="audit_date"
-                  label="Date"
+                    label="Status & Date"
                   sortBy={sortBy}
                   sortDirection={sortDirection}
                   onSort={handleSort}
@@ -133,15 +166,6 @@ const AuditList: React.FC = () => {
                 <SortableHeader
                   column="overall_score"
                   label="Score"
-                  sortBy={sortBy}
-                  sortDirection={sortDirection}
-                  onSort={handleSort}
-                />
-              </TableHead>
-              <TableHead>
-                <SortableHeader
-                  column="status"
-                  label="Status"
                   sortBy={sortBy}
                   sortDirection={sortDirection}
                   onSort={handleSort}
@@ -163,21 +187,21 @@ const AuditList: React.FC = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
-                  <Spinner size="lg" />
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    <Spinner className="w-8 h-8" />
                   <span className="ml-2">Loading audits...</span>
                 </TableCell>
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-rose-500">
+                  <TableCell colSpan={6} className="h-24 text-center text-rose-500">
                   <p>Error loading audits</p>
                   <p className="text-sm text-muted-foreground mt-1">Please try again later</p>
                 </TableCell>
               </TableRow>
             ) : audits.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                   No audits found
                   {searchQuery && <p className="text-sm mt-1">Try adjusting your search</p>}
                 </TableCell>
@@ -186,7 +210,12 @@ const AuditList: React.FC = () => {
               audits.map((audit) => (
                 <TableRow key={audit.id}>
                   <TableCell className="font-medium">{audit.facility_name}</TableCell>
-                  <TableCell>{new Date(audit.audit_date).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        {getStatusBadge(audit.status)}
+                        {getDateDisplay(audit)}
+                      </div>
+                    </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Progress 
@@ -197,10 +226,18 @@ const AuditList: React.FC = () => {
                       <span className="text-sm">{audit.overall_score}%</span>
                     </div>
                   </TableCell>
-                  <TableCell>{getStatusBadge(audit.status)}</TableCell>
                   <TableCell>{audit.auditor_name}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    {audit.notes || '-'}
+                    <TableCell>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="line-clamp-2 text-sm text-muted-foreground">
+                            {audit.notes || 'No notes'}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs whitespace-normal">{audit.notes || 'No notes'}</p>
+                        </TooltipContent>
+                      </Tooltip>
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -211,14 +248,22 @@ const AuditList: React.FC = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {audit.status === 'scheduled' || audit.status === 'incomplete' ? (
-                          <DropdownMenuItem onClick={() => handleContinueAudit(audit)}>
-                            Continue
+                          {audit.status === 'scheduled' ? (
+                            <DropdownMenuItem onClick={() => handleViewAudit(audit)} className="text-blue-600">
+                              <ClipboardCheck className="mr-2 h-4 w-4" />
+                              Continue Audit
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem onClick={() => handleViewAudit(audit.id)}>
-                            View
+                            <>
+                              <DropdownMenuItem onClick={() => handleViewAudit(audit)}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handlePrintAudit(audit)}>
+                                <FileText className="mr-2 h-4 w-4" />
+                                Print Report
                           </DropdownMenuItem>
+                            </>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -231,34 +276,18 @@ const AuditList: React.FC = () => {
       </div>
 
       {/* Pagination */}
-      {!isLoading && totalCount > 0 && (
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <div className="text-sm text-muted-foreground">
-            Showing {Math.min((currentPage - 1) * pageSize + 1, totalCount)} - {Math.min(currentPage * pageSize, totalCount)} of {totalCount} audits
-          </div>
-          
+        {!isLoading && audits.length > 0 && (
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalCount}
             onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
           />
-          
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Items per page:</span>
-            <select 
-              value={pageSize}
-              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-              className="text-sm bg-muted/50 border rounded px-2 py-1"
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
-          </div>
-        </div>
       )}
     </div>
+    </TooltipProvider>
   );
 };
 

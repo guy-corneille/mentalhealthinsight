@@ -25,3 +25,20 @@ export {
 
 // Export the types
 export type { StaffMember, StaffQualification, StaffMemberDisplay };
+
+export interface StaffMemberType {
+  id: string;
+  name: string;
+  position: string;
+  department: string;
+  facility: number;
+  facility_name: string;
+  join_date: string;
+  status: string;
+  email: string;
+  phone: string;
+  qualifications: Array<{
+    id: number;
+    qualification: string;
+  }>;
+}

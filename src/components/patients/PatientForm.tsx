@@ -10,6 +10,7 @@ import {
   UserCircleIcon,
   BuildingIcon,
   FileTextIcon,
+  UserGroupIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
 import { useFacilities } from '@/services/facilityService';
+import { useFacilityStaff } from '@/services/facilityStaffService';
 import { usePatient, useCreatePatient, useUpdatePatient, Patient } from '@/services/patientService';
 
 interface PatientFormProps {
@@ -36,14 +38,6 @@ const PatientForm: React.FC<PatientFormProps> = ({ isEdit = false }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const patientId = id || '';
-  const { data: patientData, isLoading: isFetchingPatient } = usePatient(patientId);
-  const createPatientMutation = useCreatePatient();
-  const updatePatientMutation = useUpdatePatient(patientId);
-  const { data: facilities = [] } = useFacilities();
-  
-  const isLoading = isFetchingPatient || createPatientMutation.isPending || updatePatientMutation.isPending;
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -55,10 +49,20 @@ const PatientForm: React.FC<PatientFormProps> = ({ isEdit = false }) => {
     email: '',
     national_id: '',
     facility: '',
+    primary_staff: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
     notes: '',
   });
+  
+  const patientId = id || '';
+  const { data: patientData, isLoading: isFetchingPatient } = usePatient(patientId);
+  const createPatientMutation = useCreatePatient();
+  const updatePatientMutation = useUpdatePatient(patientId);
+  const { data: facilities = [] } = useFacilities();
+  const { data: facilityStaff = [] } = useFacilityStaff(formData.facility || null);
+  
+  const isLoading = isFetchingPatient || createPatientMutation.isPending || updatePatientMutation.isPending;
 
   useEffect(() => {
     if (isEdit && patientData) {
@@ -72,12 +76,18 @@ const PatientForm: React.FC<PatientFormProps> = ({ isEdit = false }) => {
         email: patientData.email || '',
         national_id: patientData.national_id || '',
         facility: patientData.facility?.toString() || '',
+        primary_staff: patientData.primary_staff?.toString() || '',
         emergency_contact_name: patientData.emergency_contact_name || '',
         emergency_contact_phone: patientData.emergency_contact_phone || '',
         notes: patientData.notes || '',
       });
     }
   }, [isEdit, patientData]);
+
+  // Reset primary staff when facility changes
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, primary_staff: '' }));
+  }, [formData.facility]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -103,6 +113,7 @@ const PatientForm: React.FC<PatientFormProps> = ({ isEdit = false }) => {
     const patientPayload = {
       ...formData,
       facility: parseInt(formData.facility) || null,
+      primary_staff: formData.primary_staff ? parseInt(formData.primary_staff) : null,
     };
 
     if (isEdit && id) {
@@ -320,6 +331,29 @@ const PatientForm: React.FC<PatientFormProps> = ({ isEdit = false }) => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {formData.facility && (
+                    <div>
+                      <Label htmlFor="primary_staff" className="text-base">
+                        Primary Staff Member
+                      </Label>
+                      <Select
+                        value={formData.primary_staff}
+                        onValueChange={(value) => handleSelectChange(value, 'primary_staff')}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select primary staff member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {facilityStaff.map((staff) => (
+                            <SelectItem key={staff.id} value={staff.id}>
+                              {staff.name} - {staff.position}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   <div>
                     <Label htmlFor="address" className="text-base">Address</Label>

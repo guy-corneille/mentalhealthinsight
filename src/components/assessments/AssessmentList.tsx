@@ -15,6 +15,7 @@ import {
 import PaginationControls from '@/components/common/PaginationControls';
 import SearchInput from '@/components/common/SearchInput';
 import NewAssessmentDialog from './NewAssessmentDialog';
+import ScheduleAssessmentDialog from './components/ScheduleAssessmentDialog';
 import AssessmentDetailsDialog from './components/AssessmentDetailsDialog';
 import { Assessment } from '@/features/assessments/types';
 import { useAssessments } from '@/features/assessments/hooks/useAssessments';
@@ -63,8 +64,9 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  // State for dialogs
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // State for dialogs - separate states for each dialog
+  const [isNewAssessmentDialogOpen, setIsNewAssessmentDialogOpen] = useState(false);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [viewingAssessment, setViewingAssessment] = useState<Assessment | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [rescheduleAssessment, setRescheduleAssessment] = useState<Assessment | null>(null);
@@ -101,7 +103,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       description: `New assessment for patient ${patientId}`,
     });
     
-    setIsDialogOpen(false);
+    setIsNewAssessmentDialogOpen(false);
     onStartAssessment(patientId, facilityId);
   };
 
@@ -198,14 +200,14 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => setIsDialogOpen(true)}
+                onClick={() => setIsScheduleDialogOpen(true)}
                 className="flex items-center"
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 Schedule Assessment
               </Button>
               <Button
-                onClick={() => setIsDialogOpen(true)}
+                onClick={() => setIsNewAssessmentDialogOpen(true)}
                 className="flex items-center"
               >
                 <ClipboardCheck className="mr-2 h-4 w-4" />
@@ -431,9 +433,16 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
 
       {/* New Assessment Dialog */}
       <NewAssessmentDialog 
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        open={isNewAssessmentDialogOpen}
+        onOpenChange={setIsNewAssessmentDialogOpen}
         onCreateAssessment={handleCreateAssessment}
+      />
+
+      {/* Schedule Assessment Dialog */}
+      <ScheduleAssessmentDialog
+        open={isScheduleDialogOpen}
+        onOpenChange={setIsScheduleDialogOpen}
+        onAssessmentScheduled={refetch}
       />
 
       {/* Reschedule Dialog */}
