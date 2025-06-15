@@ -1,4 +1,3 @@
-
 import { format, subMonths } from 'date-fns';
 import { 
   BenchmarkingData, 
@@ -20,13 +19,13 @@ const generateMonthLabels = (count: number = 6): string[] => {
  */
 export const transformAuditStatsToOperationalMetrics = (auditStats: any): OperationalEfficiencyMetrics | null => {
   // Return null if no data is available
-  if (!auditStats || !auditStats.summary) {
+  if (!auditStats) {
     return null;
   }
 
   // Extract metrics from auditStats, only using what's actually available
-  const completedCount = auditStats.summary.completed || 0;
-  const scheduledCount = auditStats.summary.total || 0;
+  const completedCount = auditStats.completed || 0;
+  const scheduledCount = auditStats.total || 0;
   
   // Only calculate rates if we have valid denominators
   const assessmentCompletionRate = scheduledCount > 0 ? Math.round((completedCount / scheduledCount) * 100) : 0;
@@ -143,32 +142,72 @@ export const generatePerformanceTrends = (auditData: any): PerformanceTrendMetri
  * Main adapter function that combines all metrics into a unified benchmarking data object
  * using only actual data from the API with no fallbacks
  */
-export const transformRealDataToBenchmarks = (auditStats: any): BenchmarkingData | null => {
+export const transformRealDataToBenchmarks = (chartData: any): BenchmarkingData | null => {
+  try {
   // Return null if no data is available
-  if (!auditStats) {
+    if (!chartData) {
     return null;
   }
   
-  const operational = transformAuditStatsToOperationalMetrics(auditStats);
-  const quality = transformAuditDataToQualityMetrics(auditStats);
-  const trends = generatePerformanceTrends(auditStats);
-  
-  // Only return data if at least one section has valid data
-  if (!operational && !quality && !trends) {
+    // Extract metrics from chartData
+    const assessmentCompletion = chartData.completed ? {
+      value: Math.round((chartData.completed / chartData.total) * 100),
+      history: chartData.history?.map((h: any) => h.completion_rate) || [],
+      labels: chartData.history?.map((h: any) => h.period) || []
+    } : null;
+
+    const documentationCompliance = chartData.criteria?.find((c: any) => 
+      c.name?.toLowerCase().includes('document')
+    )?.averageScore || null;
+
+    const auditCompletion = chartData.completed ? {
+      value: Math.round((chartData.completed / chartData.total) * 100),
+      history: chartData.history?.map((h: any) => h.completion_rate) || [],
+      labels: chartData.history?.map((h: any) => h.period) || []
+    } : null;
+
+    const overallAuditScore = chartData.averageScore ? {
+      value: chartData.averageScore,
+      history: chartData.history?.map((h: any) => h.average_score) || [],
+      labels: chartData.history?.map((h: any) => h.period) || []
+    } : null;
+
+    const complianceRate = chartData.criteria?.find((c: any) => 
+      c.name?.toLowerCase().includes('compliance')
+    )?.averageScore || null;
+
+    const criticalFindings = chartData.criteria?.find((c: any) => 
+      c.name?.toLowerCase().includes('critical')
+    )?.averageScore || null;
+
+    return {
+      'assessment-completion': assessmentCompletion,
+      'documentation-compliance': documentationCompliance ? {
+        value: documentationCompliance,
+        history: [],
+        labels: []
+      } : null,
+      'audit-completion': auditCompletion,
+      'overall-audit-score': overallAuditScore,
+      'compliance-rate': complianceRate ? {
+        value: complianceRate,
+        history: [],
+        labels: []
+      } : null,
+      'critical-findings': criticalFindings ? {
+        value: criticalFindings,
+        history: [],
+        labels: []
+      } : null,
+      'trend-audit-completion': auditCompletion,
+      'trend-documentation-quality': documentationCompliance ? {
+        value: documentationCompliance,
+        history: [],
+        labels: []
+      } : null
+    };
+  } catch (error) {
+    console.error('Error transforming benchmark data:', error);
     return null;
   }
-  
-  return {
-    operational: operational || {
-      assessmentCompletionRate: 0,
-      documentationCompliance: 0,
-      auditCompletionRate: 0
-    },
-    quality: quality || {
-      auditScores: [],
-      complianceRate: 0,
-      criticalFindingsRate: 0
-    },
-    trends: trends || []
-  };
 };

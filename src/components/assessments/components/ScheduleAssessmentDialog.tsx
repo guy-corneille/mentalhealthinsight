@@ -45,6 +45,15 @@ interface Facility {
   name: string;
 }
 
+interface StaffMember {
+  id: string;
+  name: string;
+}
+
+interface PatientDetails extends Omit<Patient, 'primary_staff'> {
+  primary_staff?: string | null;
+}
+
 interface ScheduleAssessmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -112,24 +121,37 @@ const ScheduleAssessmentDialog: React.FC<ScheduleAssessmentDialogProps> = ({
     setIsLoading(true);
     
     try {
-      // Convert local datetime string to ISO string (no seconds)
+      // Convert local datetime string to ISO string and ensure it's a full datetime
       const scheduledDate = new Date(data.scheduledDate);
-      const isoString = scheduledDate.toISOString().slice(0, 16); // YYYY-MM-DDTHH:mm
+      // Format as YYYY-MM-DDTHH:mm:ss.sssZ for proper datetime handling
+      const isoString = scheduledDate.toISOString();
       
       // Get patient details to include primary staff
-      const patientResponse: AxiosResponse<Patient> = await api.get(`/api/patients/${data.patientId}/`);
+      const patientResponse: AxiosResponse<PatientDetails> = await api.get(`/api/patients/${data.patientId}/`);
       const patient = patientResponse.data;
       
       const assessmentData = {
         patient: data.patientId,
         facility: Number(data.facilityId),
         scheduled_date: isoString,
-        score: 0, // Initial score of 0
+        score: 0,
         status: 'scheduled',
-        notes: patient.primary_staff_name 
-          ? `${data.notes || ''}\n\nPrimary Staff: ${patient.primary_staff_name}`
-          : data.notes || '',
+        notes: data.notes || '',
       };
+      
+      // Add primary staff info to notes if available
+      try {
+        if (patient?.primary_staff) {
+          const staffResponse: AxiosResponse<StaffMember> = await api.get(`/api/staff/${patient.primary_staff}/`);
+          const staffMember = staffResponse.data;
+          if (staffMember?.name) {
+            assessmentData.notes = `${assessmentData.notes}\n\nPrimary Staff: ${staffMember.name}`.trim();
+          }
+        }
+      } catch (staffError) {
+        console.error('Error fetching staff details:', staffError);
+        // Continue with assessment creation even if staff details fetch fails
+      }
       
       console.log('Sending assessment data:', assessmentData);
       
@@ -137,14 +159,12 @@ const ScheduleAssessmentDialog: React.FC<ScheduleAssessmentDialogProps> = ({
       
       toast({
         title: 'Assessment Scheduled',
-        description: `Assessment scheduled for ${format(scheduledDate, 'MMMM d, yyyy')}`,
+        description: `Assessment scheduled for ${format(scheduledDate, 'MMMM d, yyyy h:mm a')}`,
       });
       
-      // Close dialog
+      // Close dialog and reset
       onOpenChange(false);
-      // Call refresh callback
       if (onAssessmentScheduled) onAssessmentScheduled();
-      // Reset form
       form.reset();
       setSelectedFacilityId("");
       

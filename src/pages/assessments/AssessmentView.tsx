@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { ArrowLeft, Printer, Calendar, User, Building, FileText } from 'lucide-react';
 import api from '@/services/api';
-import { Assessment, PaginatedResponse } from '@/features/assessments/types';
+import { Assessment } from '@/features/assessments/types';
 import { useReportActions } from '@/components/assessments/utils/reportUtils';
 import Layout from '@/components/layout/Layout';
 
@@ -30,15 +30,12 @@ const AssessmentView: React.FC = () => {
 
       try {
         console.log('Fetching assessment with ID:', id);
-        const response = await api.get<PaginatedResponse<Assessment>>('/api/assessments/', {
-          params: {
-            id: id
-          }
-        });
+        const data = await api.get<Assessment>(`/api/assessments/${id}/`);
+        console.log('API Response:', data);
         
-        if (response.results && response.results.length > 0) {
-          console.log('Found assessment:', response.results[0]);
-          setAssessment(response.results[0]);
+        if (data) {
+          console.log('Found assessment:', data);
+          setAssessment(data);
         } else {
           throw new Error('Assessment not found');
         }
@@ -197,72 +194,22 @@ const AssessmentView: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {/* Score */}
-                {assessment.score > 0 && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Overall Score</p>
-                    <div className="flex items-center gap-4">
-                      <Progress 
-                        value={assessment.score} 
-                        className="w-full h-2"
-                        indicatorClassName={getScoreColor(assessment.score)}
-                      />
-                      <span className="font-medium">{assessment.score}%</span>
-                    </div>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Assessment Type</p>
+                  <p className="font-medium">{assessment.criteria_name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Score</p>
+                  <div className="flex items-center gap-4">
+                    <Progress value={assessment.score} className="w-full" />
+                    <span className="font-medium">{assessment.score.toFixed(1)}%</span>
                   </div>
-                )}
-
-                {/* Criteria */}
-                {assessment.criteria_name && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Assessment Criteria</p>
-                    <p className="font-medium">{assessment.criteria_name}</p>
-                  </div>
-                )}
-
-                {/* Notes */}
+                </div>
                 {assessment.notes && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">Notes</p>
-                    <p className="whitespace-pre-wrap">{assessment.notes}</p>
-                  </div>
-                )}
-
-                {/* Missed Reason */}
-                {assessment.missed_reason && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Missed Reason</p>
-                    <p className="text-red-600">{assessment.missed_reason}</p>
-                  </div>
-                )}
-
-                {/* Indicator Scores */}
-                {assessment.indicator_scores && assessment.indicator_scores.length > 0 && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Detailed Scores</p>
-                    <div className="space-y-2">
-                      {assessment.indicator_scores.map((score) => (
-                        <div key={score.id} className="flex justify-between items-center p-2 bg-muted/30 rounded">
-                          <span>{score.indicator_name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Score:</span>
-                            <span className="font-medium">{score.score}%</span>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              score.score >= 75 ? 'bg-emerald-100 text-emerald-800' :
-                              score.score >= 69 ? 'bg-yellow-100 text-yellow-800' :
-                              score.score >= 50 ? 'bg-orange-100 text-orange-800' :
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {score.score >= 75 ? 'Excellent' :
-                               score.score >= 69 ? 'Good' :
-                               score.score >= 50 ? 'Fair' :
-                               'Poor'}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="text-sm text-muted-foreground">Notes</p>
+                    <p className="font-medium whitespace-pre-wrap">{assessment.notes}</p>
                   </div>
                 )}
               </div>

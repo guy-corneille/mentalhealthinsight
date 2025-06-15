@@ -1,5 +1,6 @@
 import { useToast } from "@/hooks/use-toast";
 import { Assessment } from '@/features/assessments/types';
+import { PaginatedResponse } from '@/types/common';
 import { AxiosResponse } from 'axios';
 import api from '@/services/api';
 import { format } from 'date-fns';
@@ -10,13 +11,6 @@ interface FacilityContact {
   address?: string;
   phone?: string;
   email?: string;
-}
-
-interface AssessmentsResponse {
-  results: Assessment[];
-  count: number;
-  next: string | null;
-  previous: string | null;
 }
 
 interface AssessmentWithDetails extends Assessment {
@@ -32,13 +26,13 @@ export const useReportActions = () => {
 
   const fetchPreviousAssessments = async (patientId: string) => {
     try {
-      const { data }: AxiosResponse<AssessmentsResponse> = await api.get('/api/assessments/', {
+      const response = await api.get<AxiosResponse<PaginatedResponse<Assessment>>>('/api/assessments/', {
         params: {
           patient: patientId,
           ordering: '-assessment_date'
         }
       });
-      return data.results || [];
+      return response.data.results || [];
     } catch (error) {
       console.error('Error fetching previous assessments:', error);
       return [];
@@ -47,7 +41,8 @@ export const useReportActions = () => {
 
   const fetchFacilityContact = async (facilityId: string | number) => {
     try {
-      const { data }: AxiosResponse<FacilityContact> = await api.get(`/api/facilities/${facilityId}/`);
+      const response = await api.get<AxiosResponse<FacilityContact>>(`/api/facilities/${facilityId}/`);
+      const data = response.data;
       if (!data || typeof data !== 'object') {
         console.error('Invalid facility data format');
         return null;

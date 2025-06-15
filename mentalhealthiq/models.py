@@ -271,9 +271,9 @@ class Audit(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name='audits')
     auditor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='conducted_audits')
-    audit_date = models.DateTimeField()
+    audit_date = models.DateTimeField(null=True, blank=True)
     scheduled_date = models.DateTimeField(default=timezone.now)
-    overall_score = models.FloatField()
+    overall_score = models.FloatField(default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
     missed_reason = models.TextField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
@@ -302,8 +302,20 @@ class Audit(models.Model):
     
     @property
     def is_overdue(self):
-        """Check if the scheduled audit is overdue"""
-        return self.status == 'scheduled' and self.scheduled_date < timezone.now()
+        """Check if the audit is overdue."""
+        if self.status == 'scheduled' and self.scheduled_date:
+            return timezone.now() > self.scheduled_date
+        return False
+
+    def save(self, *args, **kwargs):
+        """Override save to automatically mark as missed if overdue."""
+        if self.is_overdue and self.status == 'scheduled':
+            self.status = 'missed'
+            self.missed_reason = 'Automatically marked as missed - scheduled date passed'
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['-scheduled_date']
 
 class AuditCriteria(models.Model):
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name='criteria_scores')
@@ -334,3 +346,114 @@ class Report(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.report_type}"
+
+class BenchmarkCriteria(models.Model):
+    CATEGORY_CHOICES = (
+        ('audit', 'Audit Score'),
+        ('assessment', 'Assessment Completion'),
+    )
+
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
+    weight = models.FloatField(default=1.0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.category})"
+
+    class Meta:
+        verbose_name_plural = "Benchmark Criteria"
+
+class BenchmarkComparison(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    facility_a = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name='comparisons_as_a')
+    facility_b = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name='comparisons_as_b')
+    comparison_date = models.DateTimeField(default=timezone.now)
+    overall_score_a = models.FloatField()
+    overall_score_b = models.FloatField()
+    detailed_results = models.JSONField()
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Comparison: {self.facility_a.name} vs {self.facility_b.name} ({self.comparison_date.date()})"
+
+    class Meta:
+        ordering = ['-comparison_date']
+
+class FacilityRanking(models.Model):
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name='rankings')
+    ranking_date = models.DateTimeField(default=timezone.now)
+    overall_rank = models.IntegerField()
+    total_facilities = models.IntegerField()
+    audit_score = models.FloatField()
+    previous_rank = models.IntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.facility.name} - Rank #{self.overall_rank}"
+
+    class Meta:
+        ordering = ['overall_rank', '-ranking_date']
+        unique_together = ['facility', 'ranking_date']
+
+class MetricSnapshot(models.Model):
+    METRIC_TYPES = (
+        ('patient_load', 'Patient Load'),
+        ('assessment_completion', 'Assessment Completion'),
+    )
+    
+    facility = models.ForeignKey(Facility, on_delete=models.CASCADE, related_name='metrics')
+    metric_type = models.CharField(max_length=50, choices=METRIC_TYPES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    # Patient Load Metrics
+    active_patients = models.IntegerField()
+    discharged_patients = models.IntegerField()
+    inactive_patients = models.IntegerField()
+    capacity_utilization = models.FloatField()  # Percentage
+    
+    # Assessment Metrics
+    scheduled_assessments = models.IntegerField()
+    completed_assessments = models.IntegerField()
+    completion_rate = models.FloatField()  # Percentage
+
+    def __str__(self):
+        return f"{self.facility.name} - {self.metric_type} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['facility', 'metric_type', 'timestamp'])
+        ]
+        ordering = ['-timestamp']
+
+class Feedback(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('under_review', 'Under Review'),
+        ('done', 'Done')
+    ]
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    submitted_by = models.ForeignKey('User', on_delete=models.CASCADE, related_name='submitted_feedback')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.status}"
+
+class FeedbackComment(models.Model):
+    feedback = models.ForeignKey(Feedback, on_delete=models.CASCADE, related_name='comments')
+    comment = models.TextField()
+    added_by = models.ForeignKey('User', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comment on {self.feedback.title} by {self.added_by.username}"

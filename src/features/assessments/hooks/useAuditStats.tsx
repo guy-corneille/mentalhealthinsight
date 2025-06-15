@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { format, subMonths, startOfYear } from 'date-fns';
@@ -82,9 +81,12 @@ export function useAuditStats() {
     }));
 
     return {
-      summary: apiData.summary,
-      facilities: apiData.facilities,
-      criteria: apiData.criteria,
+      summary: {
+        totalCount: apiData.summary?.totalCount || 0,
+        averageScore: apiData.summary?.averageScore || 0
+      },
+      facilities: apiData.facilities || [],
+      criteria: apiData.criteria || [],
       countByPeriodData
     };
   }, []);

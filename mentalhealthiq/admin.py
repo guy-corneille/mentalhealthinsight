@@ -1,7 +1,6 @@
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, PendingUser, Facility, StaffMember, StaffQualification, AssessmentCriteria, Indicator, Patient, Assessment, IndicatorScore, Audit, AuditCriteria, Report
+from .models import User, PendingUser, Facility, StaffMember, StaffQualification, AssessmentCriteria, Indicator, Patient, Assessment, IndicatorScore, Audit, AuditCriteria, Report, MetricSnapshot, Feedback, FeedbackComment
 
 # Register User model with custom admin interface
 @admin.register(User)
@@ -96,3 +95,23 @@ class ReportAdmin(admin.ModelAdmin):
     list_filter = ('report_type',)
     search_fields = ('title', 'description')
     date_hierarchy = 'generated_at'
+
+@admin.register(MetricSnapshot)
+class MetricSnapshotAdmin(admin.ModelAdmin):
+    list_display = ('facility', 'metric_type', 'timestamp', 'capacity_utilization', 'completion_rate')
+    list_filter = ('facility', 'metric_type', 'timestamp')
+    search_fields = ('facility__name',)
+    ordering = ('-timestamp',)
+@admin.register(Feedback)
+class FeedbackAdmin(admin.ModelAdmin):
+    list_display = ('title', 'submitted_by', 'status', 'created_at', 'updated_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('title', 'description', 'submitted_by__username')
+    readonly_fields = ('created_at', 'updated_at')
+
+@admin.register(FeedbackComment)
+class FeedbackCommentAdmin(admin.ModelAdmin):
+    list_display = ('feedback', 'added_by', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('comment', 'added_by__username', 'feedback__title')
+

@@ -2,6 +2,7 @@ import { AxiosResponse } from 'axios';
 import React from 'react';
 import { useQuery, useMutation, useQueryClient, InvalidateQueryFilters } from '@tanstack/react-query';
 import api from '@/services/api';
+import { PaginatedResponse } from '@/services/api';
 
 // Define the facility interface
 export interface Facility {
@@ -53,77 +54,33 @@ interface AuditResponse {
 // Function to fetch all facilities
 export const getFacilities = async (): Promise<Facility[]> => {
   try {
-    const apiResponse = await api.get<ApiResponse<Facility>>('/api/facilities/');
+    const response = await api.get<Facility[] | PaginatedResponse<Facility>>('/api/facilities/');
     
-    // Fetch latest audits for each facility
-    const facilitiesWithAudits = await Promise.all(
-      apiResponse.results.map(async (facility) => {
-        try {
-          const audits = await api.get<AuditResponse[]>(`/api/facilities/${facility.id}/audits/`);
-          
-          if (audits && audits.length > 0) {
-            // Sort audits by date to get the most recent
-            const sortedAudits = audits.sort((a, b) => 
-              new Date(b.audit_date || b.scheduled_date).getTime() - 
-              new Date(a.audit_date || a.scheduled_date).getTime()
-            );
-            
-            const latestAudit = sortedAudits[0];
-            return {
-              ...facility,
-              latest_audit: {
-                status: latestAudit.status,
-                scheduled_date: latestAudit.scheduled_date,
-                overall_score: latestAudit.overall_score
-              }
-            };
+    // Handle paginated response
+    if ('results' in response) {
+      return response.results;
+    }
+    
+    // Handle array response
+    if (Array.isArray(response)) {
+      return response;
           }
-          return facility;
-        } catch (error) {
-          console.error(`Error fetching audits for facility ${facility.id}:`, error);
-          return facility;
-        }
-      })
-    );
 
-    return facilitiesWithAudits;
+    console.error('Unexpected response format from facilities API', response);
+    return [];
   } catch (error) {
     console.error('Error fetching facilities:', error);
     throw error;
   }
 };
 
-// Function to fetch a single facility
+// Function to fetch a single facility by ID
 export const getFacility = async (id: number): Promise<Facility> => {
   try {
-    const facility = await api.get<Facility>(`/api/facilities/${id}/`);
-    
-    try {
-      const audits = await api.get<AuditResponse[]>(`/api/facilities/${id}/audits/`);
-      
-      if (audits && audits.length > 0) {
-        // Sort audits by date to get the most recent
-        const sortedAudits = audits.sort((a, b) => 
-          new Date(b.audit_date || b.scheduled_date).getTime() - 
-          new Date(a.audit_date || a.scheduled_date).getTime()
-        );
-        
-        const latestAudit = sortedAudits[0];
-        return {
-          ...facility,
-          latest_audit: {
-            status: latestAudit.status,
-            scheduled_date: latestAudit.scheduled_date,
-            overall_score: latestAudit.overall_score
-          }
-        };
-      }
-    } catch (error) {
-      console.error(`Error fetching audits for facility ${id}:`, error);
-    }
-    
-    return facility;
+    const response = await api.get<Facility>(`/api/facilities/${id}/`);
+    return response;
   } catch (error) {
+    console.error(`Error fetching facility with ID ${id}:`, error);
     throw error;
   }
 };

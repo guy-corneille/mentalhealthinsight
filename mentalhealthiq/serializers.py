@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import (
     User, PendingUser, Facility, StaffMember, StaffQualification,
     AssessmentCriteria, Indicator, Patient, Assessment, IndicatorScore,
-    Audit, AuditCriteria, Report
+    Audit, AuditCriteria, Report, BenchmarkCriteria, BenchmarkComparison, FacilityRanking, MetricSnapshot,
+    FeedbackComment, Feedback
 )
 from django.utils import timezone
 
@@ -154,10 +155,13 @@ class AssessmentSerializer(serializers.ModelSerializer):
             patient_obj = patient
         if patient_obj.facility is None or patient_obj.facility.id != facility.id:
             raise serializers.ValidationError("Patient does not belong to the specified facility.")
+        
         # Validate scheduled_date is not in the past for new assessments
         if not self.instance and 'scheduled_date' in data:
-            if data['scheduled_date'] < timezone.now().date():
+            current_time = timezone.now()
+            if data['scheduled_date'] < current_time:
                 raise serializers.ValidationError("Scheduled date cannot be in the past.")
+        
         # Make criteria and evaluator optional for scheduled assessments
         if data.get('status') == 'scheduled':
             # For scheduled assessments, ensure these fields are not set
@@ -169,9 +173,6 @@ class AssessmentSerializer(serializers.ModelSerializer):
             # For completed assessments, ensure all required fields are provided
             if not data.get('criteria'):
                 raise serializers.ValidationError("Criteria is required for completed assessments.")
-            # Temporarily make evaluator optional until user/auth is implemented
-            # if not data.get('evaluator'):
-            #     raise serializers.ValidationError("Evaluator is required for completed assessments.")
             if not data.get('assessment_date'):
                 raise serializers.ValidationError("Assessment date is required for completed assessments.")
         return data
@@ -212,16 +213,27 @@ class AuditSerializer(serializers.ModelSerializer):
         
     def validate(self, data):
         """
-        Check that the audit makes sense.
+        Validate the audit data.
         """
-        # Ensure facility exists
-        if not Facility.objects.filter(id=data['facility'].id).exists():
-            raise serializers.ValidationError("Facility does not exist.")
+        # For partial updates (PATCH), we only validate fields that are being updated
+        if self.instance:  # This is an update
+            # Only validate facility if it's being updated
+            if 'facility' in data:
+                facility_id = data['facility'].id if hasattr(data['facility'], 'id') else data['facility']
+                if not Facility.objects.filter(id=facility_id).exists():
+                    raise serializers.ValidationError({"facility": "Facility does not exist."})
+        else:  # This is a creation
+            if 'facility' not in data:
+                raise serializers.ValidationError({"facility": "Facility is required when creating an audit."})
+            facility_id = data['facility'].id if hasattr(data['facility'], 'id') else data['facility']
+            if not Facility.objects.filter(id=facility_id).exists():
+                raise serializers.ValidationError({"facility": "Facility does not exist."})
         
         # Validate scheduled_date is not in the past for new audits
         if not self.instance and 'scheduled_date' in data:
-            if data['scheduled_date'] < timezone.now().date():
-                raise serializers.ValidationError("Scheduled date cannot be in the past.")
+            current_time = timezone.now()
+            if data['scheduled_date'] < current_time:
+                raise serializers.ValidationError({"scheduled_date": "Scheduled date cannot be in the past."})
             
         return data
 
@@ -233,3 +245,82 @@ class ReportSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'report_type', 'description', 'generated_by', 
                  'generated_by_name', 'generated_at', 'file_path', 'parameters']
         read_only_fields = ['id', 'generated_at']
+
+class BenchmarkCriteriaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BenchmarkCriteria
+        fields = ['id', 'name', 'description', 'category', 'weight', 'is_active', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+class BenchmarkComparisonSerializer(serializers.ModelSerializer):
+    facility_a_name = serializers.CharField(source='facility_a.name', read_only=True)
+    facility_b_name = serializers.CharField(source='facility_b.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.display_name', read_only=True)
+
+    class Meta:
+        model = BenchmarkComparison
+        fields = [
+            'id', 'facility_a', 'facility_a_name', 'facility_b', 'facility_b_name',
+            'comparison_date', 'overall_score_a', 'overall_score_b', 'detailed_results',
+            'created_by', 'created_by_name', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate(self, data):
+        """
+        Check that the comparison makes sense.
+        """
+        if data['facility_a'] == data['facility_b']:
+            raise serializers.ValidationError("Cannot compare a facility with itself.")
+        return data
+
+class FacilityRankingSerializer(serializers.ModelSerializer):
+    facility_name = serializers.CharField(source='facility.name', read_only=True)
+
+    class Meta:
+        model = FacilityRanking
+        fields = [
+            'id', 'facility', 'facility_name', 'ranking_date',
+            'overall_rank', 'total_facilities', 'audit_score',
+            'previous_rank', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['ranking_date', 'created_at', 'updated_at']
+
+    def validate(self, data):
+        """
+        Validate the ranking data.
+        """
+        if data['overall_rank'] < 1 or data['overall_rank'] > data['total_facilities']:
+            raise serializers.ValidationError("Invalid rank number.")
+        return data
+
+class MetricSnapshotSerializer(serializers.ModelSerializer):
+    facility_name = serializers.CharField(source='facility.name', read_only=True)
+    
+    class Meta:
+        model = MetricSnapshot
+        fields = [
+            'id', 'facility', 'facility_name', 'metric_type', 'timestamp',
+            'active_patients', 'discharged_patients', 'inactive_patients',
+            'capacity_utilization', 'scheduled_assessments', 'completed_assessments',
+            'completion_rate'
+        ]
+        read_only_fields = fields
+
+class FeedbackCommentSerializer(serializers.ModelSerializer):
+    added_by_name = serializers.CharField(source='added_by.username', read_only=True)
+
+    class Meta:
+        model = FeedbackComment
+        fields = ['id', 'comment', 'added_by', 'added_by_name', 'created_at']
+        read_only_fields = ['added_by']
+
+class FeedbackSerializer(serializers.ModelSerializer):
+    comments = FeedbackCommentSerializer(many=True, read_only=True)
+    submitted_by_name = serializers.CharField(source='submitted_by.username', read_only=True)
+
+    class Meta:
+        model = Feedback
+        fields = ['id', 'title', 'description', 'status', 'submitted_by', 
+                 'submitted_by_name', 'created_at', 'updated_at', 'comments']
+        read_only_fields = ['submitted_by']

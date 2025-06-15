@@ -1,56 +1,167 @@
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import axios, { AxiosResponse } from 'axios';
+import api from '@/services/api';
 
-import React, { createContext, useContext } from 'react';
-import { AuthContextType, User, UserRole } from '../types/auth';
+export type UserRole = 'viewer' | 'evaluator' | 'admin' | 'superuser';
 
-// Create a default mock user that will be returned as "authenticated"
-const defaultUser: User = {
-  id: "mock-user-id",
-  username: "demo-user",
-  email: "demo@example.com",
-  role: "admin", // Give admin role to access all features
-  displayName: "Demo User",
-  dateJoined: new Date()
-};
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: UserRole;
+  display_name?: string;
+  phone_number?: string;
+  is_active: boolean;
+  date_joined: string;
+}
 
-// Pre-configured auth context - always returns as authenticated with the mock user
-const defaultAuthContext: AuthContextType = {
-  user: defaultUser,
-  pendingUsers: [],
-  login: async () => defaultUser, // Always succeeds with the mock user
-  logout: () => {}, // No-op function
-  registerUser: async () => ({ 
-    ...defaultUser, 
-    status: 'pending', 
-    requestDate: new Date() 
-  }),
-  approveUser: async () => ({ 
-    ...defaultUser, 
-    status: 'pending', 
-    requestDate: new Date() 
-  }),
-  rejectUser: async () => ({ 
-    ...defaultUser, 
-    status: 'pending', 
-    requestDate: new Date() 
-  }),
-  updateProfile: async () => {}, // No-op function
-  isAuthenticated: true, // Always authenticated
-  isLoading: false // Never loading
-};
+export interface PendingUser {
+  id: number;
+  username: string;
+  email: string;
+  role: UserRole;
+  display_name?: string;
+  phone_number?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  request_date: string;
+}
 
-// Create the context with default values
-const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+interface AuthResponse {
+  user: User;
+  isAuthenticated: boolean;
+}
 
-// Simplified AuthProvider that just provides the default context
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  pendingUsers: PendingUser[];
+  login: (username: string, password: string) => Promise<AuthResponse>;
+  logout: () => Promise<void>;
+  register: (userData: Omit<PendingUser, 'id' | 'status' | 'request_date'>) => Promise<void>;
+  approveUser: (userId: string) => Promise<void>;
+  rejectUser: (userId: string) => Promise<void>;
+  fetchPendingUsers: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Always return the mock authenticated context
-  return <AuthContext.Provider value={defaultAuthContext}>{children}</AuthContext.Provider>;
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+
+  const checkAuth = useCallback(async () => {
+    try {
+      // Always set authenticated state to true and use dummy user
+      setUser({
+        id: 1,
+        username: 'testuser',
+        email: 'test@example.com',
+        role: 'admin',
+        display_name: 'Test User',
+        is_active: true,
+        date_joined: new Date().toISOString()
+      });
+      setIsAuthenticated(true);
+    } catch (error) {
+      // Even on error, keep user authenticated
+      setUser({
+        id: 1,
+        username: 'testuser',
+        email: 'test@example.com',
+        role: 'admin',
+        display_name: 'Test User',
+        is_active: true,
+        date_joined: new Date().toISOString()
+      });
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const login = useCallback(async (username: string, password: string) => {
+    try {
+      const data = await api.post<AuthResponse>('/auth/login/', { username, password });
+      setUser(data.user);
+      setIsAuthenticated(data.isAuthenticated);
+      return data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    await api.post('/auth/logout/');
+    setUser(null);
+    setIsAuthenticated(false);
+  }, []);
+
+  const register = useCallback(async (userData: Omit<PendingUser, 'id' | 'status' | 'request_date'>) => {
+    await api.post('/auth/register/', userData);
+  }, []);
+
+  const fetchPendingUsers = useCallback(async () => {
+    if (user?.role === 'admin' || user?.role === 'superuser') {
+      try {
+        const { data } = await api.get<AxiosResponse<PendingUser[]>>('/auth/pending-users/');
+        setPendingUsers(data);
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          console.error('Error fetching pending users:', error.response?.data);
+        }
+      }
+    }
+  }, [user?.role]);
+
+  const approveUser = useCallback(async (userId: string) => {
+    await api.post(`/auth/approve-user/${userId}/`);
+    await fetchPendingUsers();
+  }, [fetchPendingUsers]);
+
+  const rejectUser = useCallback(async (userId: string) => {
+    await api.post(`/auth/reject-user/${userId}/`);
+    await fetchPendingUsers();
+  }, [fetchPendingUsers]);
+
+  const initAuth = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await checkAuth();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [checkAuth]);
+
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        isLoading,
+        pendingUsers,
+        login,
+        logout,
+        register,
+        approveUser,
+        rejectUser,
+        fetchPendingUsers,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-// Hook to use the auth context
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
-
-// Re-export types from types/auth.ts
-export type { User, UserRole, PendingUser } from '../types/auth';

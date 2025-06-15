@@ -1,20 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuditList } from '@/features/assessments/hooks/useAuditList';
-import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon, MoreVertical, Eye, FileText, ClipboardCheck } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, ArrowUpDownIcon } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from '@/components/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import PaginationControls from '@/components/common/PaginationControls';
 import SearchInput from '@/components/common/SearchInput';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import AuditActions from './AuditActions';
+import RescheduleAuditDialog from './RescheduleAuditDialog';
+import { useToast } from '@/hooks/use-toast';
+import api from '@/services/api';
+import { useNavigate } from 'react-router-dom';
 
 interface SortableHeaderProps {
   column: string;
@@ -44,6 +43,11 @@ const SortableHeader: React.FC<SortableHeaderProps> = ({ column, label, sortBy, 
 };
 
 const AuditList: React.FC = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [isRescheduleDialogOpen, setIsRescheduleDialogOpen] = useState(false);
+  const [selectedAudit, setSelectedAudit] = useState<any>(null);
+
   const {
     audits,
     totalCount,
@@ -60,9 +64,40 @@ const AuditList: React.FC = () => {
     handlePageChange,
     handlePageSizeChange,
     handleSort,
-    handleViewAudit,
-    handlePrintAudit
+    refetch
   } = useAuditList();
+
+  // Action handlers
+  const handleViewAudit = (audit: any) => {
+    navigate(`/audits/view/${audit.id}`);
+  };
+
+  const handleTakeAudit = (audit: any) => {
+    // Navigate to audit form with auditId
+    window.location.href = `/facilities/audit/${audit.facility}?auditId=${audit.id}`;
+  };
+
+  const handleReschedule = (audit: any) => {
+    setSelectedAudit(audit);
+    setIsRescheduleDialogOpen(true);
+  };
+
+  const handleDeleteAudit = async (id: string) => {
+    try {
+      await api.delete(`/api/audits/${id}/`);
+      toast({
+        title: 'Audit Deleted',
+        description: 'The audit has been successfully deleted.',
+      });
+      refetch();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete the audit. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   // Get status badge
   const getStatusBadge = (status: string) => {
@@ -240,33 +275,13 @@ const AuditList: React.FC = () => {
                       </Tooltip>
                   </TableCell>
                   <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                          {audit.status === 'scheduled' ? (
-                            <DropdownMenuItem onClick={() => handleViewAudit(audit)} className="text-blue-600">
-                              <ClipboardCheck className="mr-2 h-4 w-4" />
-                              Continue Audit
-                          </DropdownMenuItem>
-                        ) : (
-                            <>
-                              <DropdownMenuItem onClick={() => handleViewAudit(audit)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handlePrintAudit(audit)}>
-                                <FileText className="mr-2 h-4 w-4" />
-                                Print Report
-                          </DropdownMenuItem>
-                            </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      <AuditActions
+                        audit={audit}
+                        onViewDetails={handleViewAudit}
+                        onTakeAudit={handleTakeAudit}
+                        onReschedule={handleReschedule}
+                        onDeleteAudit={handleDeleteAudit}
+                      />
                   </TableCell>
                 </TableRow>
               ))
@@ -277,16 +292,31 @@ const AuditList: React.FC = () => {
 
       {/* Pagination */}
         {!isLoading && audits.length > 0 && (
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} audits
+            </div>
           <PaginationControls
             currentPage={currentPage}
             totalPages={totalPages}
-            pageSize={pageSize}
-            totalItems={totalCount}
             onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Reschedule Dialog */}
+      {selectedAudit && (
+        <RescheduleAuditDialog
+          open={isRescheduleDialogOpen}
+          onOpenChange={setIsRescheduleDialogOpen}
+          auditId={selectedAudit.id}
+          onAuditRescheduled={() => {
+            refetch();
+            setSelectedAudit(null);
+          }}
           />
       )}
-    </div>
     </TooltipProvider>
   );
 };

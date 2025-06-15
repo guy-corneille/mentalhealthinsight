@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   BuildingIcon,
   MapPinIcon,
@@ -22,12 +22,19 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
-import { useCreateFacility } from '@/services/facilityService';
+import { useCreateFacility, useUpdateFacility, useFacility } from '@/services/facilityService';
 
-const FacilityForm = () => {
+interface FacilityFormProps {
+  isEdit?: boolean;
+}
+
+const FacilityForm: React.FC<FacilityFormProps> = ({ isEdit = false }) => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const { toast } = useToast();
   const createFacility = useCreateFacility();
+  const updateFacility = useUpdateFacility();
+  const { data: facilityData, isLoading: isLoadingFacility } = useFacility(isEdit ? Number(id) : undefined);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -48,6 +55,30 @@ const FacilityForm = () => {
     established_date: '',
     description: ''
   });
+
+  // Load facility data when editing
+  useEffect(() => {
+    if (isEdit && facilityData) {
+      setFormData({
+        name: facilityData.name || '',
+        facility_type: facilityData.facility_type || '',
+        address: facilityData.address || '',
+        city: facilityData.city || '',
+        district: facilityData.district || '',
+        province: facilityData.province || '',
+        country: facilityData.country || 'Rwanda',
+        postal_code: facilityData.postal_code || '',
+        capacity: facilityData.capacity?.toString() || '',
+        status: facilityData.status || 'Active',
+        contact_name: facilityData.contact_name || '',
+        contact_email: facilityData.contact_email || '',
+        contact_phone: facilityData.contact_phone || '',
+        website: facilityData.website || '',
+        established_date: facilityData.established_date || '',
+        description: facilityData.description || ''
+      });
+    }
+  }, [isEdit, facilityData]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -78,18 +109,25 @@ const FacilityForm = () => {
         capacity: formData.capacity ? parseInt(formData.capacity) : 0,
       };
 
+      if (isEdit && id) {
+        await updateFacility.mutateAsync({ id: Number(id), data: payload });
+        toast({
+          title: "Success",
+          description: "Facility updated successfully"
+        });
+      } else {
       await createFacility.mutateAsync(payload);
-
       toast({
         title: "Success",
         description: "Facility created successfully"
       });
+      }
       
       navigate('/facilities');
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create facility. Please try again.",
+        description: isEdit ? "Failed to update facility. Please try again." : "Failed to create facility. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -101,9 +139,17 @@ const FacilityForm = () => {
     field => formData[field as keyof typeof formData]
   );
 
+  if (isEdit && isLoadingFacility) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Add New Facility</h1>
+      <h1 className="text-2xl font-bold mb-6">{isEdit ? 'Edit Facility' : 'Add New Facility'}</h1>
       
       <form onSubmit={handleSubmit}>
         <Card>
@@ -257,6 +303,23 @@ const FacilityForm = () => {
                 </div>
 
                 <div>
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  </div>
+                </div>
+
+                <div>
                   <Label htmlFor="established_date">Established Date</Label>
                   <div className="flex mt-1">
                     <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted">
@@ -270,7 +333,6 @@ const FacilityForm = () => {
                       onChange={handleInputChange}
                       className="rounded-l-none"
                     />
-                  </div>
                 </div>
               </div>
             </div>
@@ -327,12 +389,9 @@ const FacilityForm = () => {
                     value={formData.website}
                     onChange={handleInputChange}
                     className="rounded-l-none"
-                    placeholder="www.example.com"
+                    placeholder="Enter website URL"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Enter without http:// or https:// (e.g., example.com)
-                </p>
               </div>
             </div>
           </CardContent>
@@ -355,12 +414,12 @@ const FacilityForm = () => {
             {isSubmitting ? (
               <div className="flex items-center gap-2">
                 <Spinner size="sm" />
-                <span>Creating...</span>
+                <span>{isEdit ? 'Updating...' : 'Creating...'}</span>
               </div>
             ) : (
               <>
                 <SaveIcon className="h-4 w-4 mr-2" />
-                Create Facility
+                {isEdit ? 'Update Facility' : 'Create Facility'}
               </>
             )}
           </Button>

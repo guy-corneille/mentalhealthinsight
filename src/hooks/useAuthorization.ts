@@ -1,5 +1,13 @@
+import { useAuth, UserRole } from '@/contexts/AuthContext';
 
-import { UserRole } from '../types/auth';
+type Permission = 'view_dashboard' | 'view_analytics' | 'manage_evaluations' | 'manage_data';
+
+const rolePermissions: Record<UserRole, Permission[]> = {
+  viewer: ['view_dashboard', 'view_analytics'],
+  evaluator: ['view_dashboard', 'view_analytics', 'manage_evaluations'],
+  admin: ['view_dashboard', 'view_analytics', 'manage_data'],
+  superuser: ['view_dashboard', 'view_analytics', 'manage_evaluations', 'manage_data'],
+};
 
 /**
  * Hook for handling user authorization
@@ -8,18 +16,35 @@ import { UserRole } from '../types/auth';
  * Will be updated later with proper role-based authorization.
  */
 export const useAuthorization = () => {
-  // Permission checker - currently always returns true
-  // Will be updated with proper role-based checks
-  const hasPermission = (permission: string): boolean => {
-    console.log(`Permission check for: ${permission} - Authorization checks disabled`);
-    return true;
+  const { user } = useAuth();
+
+  const hasPermission = (permission: Permission): boolean => {
+    if (!user) return false;
+    return rolePermissions[user.role]?.includes(permission) ?? false;
   };
 
-  // Route access checker - currently always returns true
-  // Will be updated with proper role-based checks
-  const canAccessRoute = (route: string): boolean => {
-    console.log(`Route access check for: ${route} - Authorization checks disabled`);
-    return true;
+  const hasRole = (role: UserRole): boolean => {
+    return user?.role === role;
+  };
+
+  const canAccessRoute = (path: string): boolean => {
+    if (!user) return false;
+
+    // Always allow these routes
+    if (path === '/dashboard' || path === '/profile') return true;
+
+    // Route-based permissions
+    const routePermissions: Record<string, Permission> = {
+      '/analytics': 'view_analytics',
+      '/evaluation-framework': 'manage_evaluations',
+      '/evaluation-setup': 'manage_evaluations',
+      '/data-setup': 'manage_data',
+    };
+
+    const requiredPermission = routePermissions[path];
+    if (!requiredPermission) return true; // If no permission required, allow access
+
+    return hasPermission(requiredPermission);
   };
 
   // Returns all possible permissions for display purposes
@@ -75,6 +100,7 @@ export const useAuthorization = () => {
 
   return {
     hasPermission,
+    hasRole,
     canAccessRoute,
     role: 'admin' as UserRole, // Always return admin role for now
     getUserPermissions,

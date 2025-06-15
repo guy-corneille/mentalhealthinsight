@@ -24,6 +24,9 @@ import NotFound from './pages/NotFound';
 import Criteria from './pages/Criteria';
 import Benchmarks from '@/pages/Benchmarks';
 import AssessmentEvaluationPage from './pages/AssessmentEvaluationPage';
+import MonitoringPage from './pages/MonitoringPage';
+import FacilityDetailPage from './pages/FacilityDetailPage';
+import FeedbackPage from './pages/FeedbackPage';
 
 // Components
 import { Toaster } from "@/components/ui/toaster";
@@ -51,6 +54,8 @@ function App() {
           <Route path="/register" element={<Register />} />
           
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/monitoring" element={<ProtectedRoute><MonitoringPage /></ProtectedRoute>} />
+          <Route path="/monitoring/facility/:facilityId" element={<ProtectedRoute><FacilityDetailPage /></ProtectedRoute>} />
           <Route path="/facilities" element={<ProtectedRoute><Facilities /></ProtectedRoute>} />
           <Route path="/facilities/:id" element={<ProtectedRoute><FacilityDetails /></ProtectedRoute>} />
           <Route path="/facilities/add" element={<ProtectedRoute><FacilityAdd /></ProtectedRoute>} />
@@ -73,7 +78,7 @@ function App() {
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/audits" element={<ProtectedRoute><Audits /></ProtectedRoute>} />
           <Route path="/audit-trends" element={<ProtectedRoute><AuditTrends /></ProtectedRoute>} />
-          <Route path="/audits/:id" element={<ProtectedRoute><AuditView /></ProtectedRoute>} />
+          <Route path="/audits/view/:id" element={<ProtectedRoute><AuditView /></ProtectedRoute>} />
           <Route path="/assessment/:patientId" element={<ProtectedRoute><AssessmentEvaluationPage /></ProtectedRoute>} />
           
           {/* Add the Criteria routes */}
@@ -83,6 +88,9 @@ function App() {
           
           {/* Add the Benchmarks route */}
           <Route path="/benchmarks" element={<Benchmarks />} />
+          
+          {/* Add the Feedback route */}
+          <Route path="/feedback" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>

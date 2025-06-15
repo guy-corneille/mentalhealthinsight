@@ -1,4 +1,3 @@
-
 import api from './api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -46,8 +45,8 @@ const criteriaService = {
     
     // Use different endpoints for assessment and audit criteria
     const endpoint = type === 'assessment' 
-      ? '/assessment-criteria/'
-      : '/audit-criteria/';
+      ? '/api/assessment-criteria/'
+      : '/api/audit-criteria/';
       
     try {
       const response = await api.get<PaginatedResponse<AssessmentCriteria>>(endpoint);
@@ -69,8 +68,8 @@ const criteriaService = {
     console.log(`Fetching criterion with ID ${id} from API`);
     
     const endpoint = type === 'assessment'
-      ? `/assessment-criteria/${id}/`
-      : `/audit-criteria/${id}/`;
+      ? `/api/assessment-criteria/${id}/`
+      : `/api/audit-criteria/${id}/`;
       
     try {
       const response = await api.get<AssessmentCriteria>(endpoint);
@@ -90,8 +89,8 @@ const criteriaService = {
   createCriterion: async (criterionData: Partial<AssessmentCriteria>): Promise<AssessmentCriteria> => {
     console.log('Creating criterion with data:', criterionData);
     const endpoint = criterionData.purpose === 'Audit' 
-      ? '/audit-criteria/' 
-      : '/assessment-criteria/';
+      ? '/api/audit-criteria/' 
+      : '/api/assessment-criteria/';
       
     try {
       // Create criterion with indicators in a single request
@@ -113,8 +112,8 @@ const criteriaService = {
   updateCriterion: async (id: number, criterionData: Partial<AssessmentCriteria>): Promise<AssessmentCriteria> => {
     console.log('Updating criterion with data:', criterionData);
     const endpoint = criterionData.purpose === 'Audit' 
-      ? `/audit-criteria/${id}/` 
-      : `/assessment-criteria/${id}/`;
+      ? `/api/audit-criteria/${id}/` 
+      : `/api/assessment-criteria/${id}/`;
       
     try {
       // Update criterion with indicators in a single request
@@ -137,8 +136,8 @@ const criteriaService = {
     
     // Use different endpoints based on purpose
     const endpoint = purpose === 'Audit' 
-      ? `/audit-criteria/${id}/` 
-      : `/assessment-criteria/${id}/`;
+      ? `/api/audit-criteria/${id}/` 
+      : `/api/assessment-criteria/${id}/`;
       
     try {
       await api.delete(endpoint);
@@ -160,8 +159,8 @@ const criteriaService = {
     
     // Use different endpoints based on purpose
     const endpoint = purpose === 'Audit' 
-      ? `/audit-criteria/${criterionId}/indicators/` 
-      : `/assessment-criteria/${criterionId}/indicators/`;
+      ? `/api/audit-criteria/${criterionId}/indicators/` 
+      : `/api/assessment-criteria/${criterionId}/indicators/`;
       
     try {
       const response = await api.get<Indicator[]>(endpoint);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -48,11 +47,12 @@ interface Facility {
 interface ScheduleAuditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onAuditScheduled?: () => void;
 }
 
 const formSchema = z.object({
   facilityId: z.string().min(1, "Facility is required"),
-  auditDate: z.date({ required_error: "Audit date is required" }),
+  scheduledDate: z.string().min(1, "Scheduled date and time is required"),
   notes: z.string().optional(),
 });
 
@@ -60,7 +60,8 @@ type FormValues = z.infer<typeof formSchema>;
 
 const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({ 
   open, 
-  onOpenChange
+  onOpenChange,
+  onAuditScheduled
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -71,6 +72,7 @@ const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({
     resolver: zodResolver(formSchema),
     defaultValues: {
       facilityId: "",
+      scheduledDate: "",
       notes: "",
     },
   });
@@ -99,38 +101,38 @@ const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({
     setIsLoading(true);
     
     try {
-      const selectedDate = new Date(data.auditDate);
+      // Convert local datetime string to ISO string and ensure it's a full datetime
+      const scheduledDate = new Date(data.scheduledDate);
+      const isoString = scheduledDate.toISOString();
       
       // Create an audit with status "scheduled"
       const auditData = {
-        facility: parseInt(data.facilityId),
-        audit_date: selectedDate.toISOString(),
-        scheduled_date: selectedDate.toISOString().split('T')[0],
-        overall_score: 0, // Initial score of 0
+        facility: Number(data.facilityId),
+        scheduled_date: isoString,
+        overall_score: 0,
         status: 'scheduled',
         notes: data.notes || '',
       };
       
-      const response = await api.post('/api/audits/', auditData);
+      await api.post('/api/audits/', auditData);
       
       toast({
         title: 'Audit Scheduled',
-        description: `Audit scheduled for ${format(selectedDate, 'MMMM d, yyyy')}`,
+        description: `Audit scheduled for ${format(scheduledDate, 'MMMM d, yyyy h:mm a')}`,
       });
       
-      // Close dialog
+      // Close dialog and reset
       onOpenChange(false);
-      
-      // Reset form
+      if (onAuditScheduled) onAuditScheduled();
       form.reset();
       
-      // Redirect to audits page
-      navigate('/audits');
-    } catch (err) {
+      // window.location.reload();
+    } catch (err: any) {
       console.error('Error scheduling audit:', err);
+      console.error('Error response:', err.response?.data);
       toast({
         title: 'Error',
-        description: 'Failed to schedule audit',
+        description: err.response?.data?.detail || 'Failed to schedule audit',
         variant: 'destructive',
       });
     } finally {
@@ -180,40 +182,19 @@ const ScheduleAuditDialog: React.FC<ScheduleAuditDialogProps> = ({
             
             <FormField
               control={form.control}
-              name="auditDate"
+              name="scheduledDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Audit Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
+                  <FormLabel>Scheduled Date & Time</FormLabel>
                       <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Select a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
+                    <input
+                      type="datetime-local"
+                      min={new Date().toISOString().slice(0, 16)}
+                      className="input input-bordered w-full"
+                      value={field.value || ''}
+                      onChange={field.onChange}
+                    />
                       </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date < new Date()}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
-                    </PopoverContent>
-                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}

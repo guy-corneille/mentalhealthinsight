@@ -1,0 +1,39 @@
+.feedbackContainer {
+  padding: 24px;
+}
+
+.feedbackForm {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.feedbackList {
+  margin-top: 24px;
+}
+
+.commentSection {
+  margin-top: 20px;
+}
+
+.comment {
+  background: #f0f0f0;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+
+.commentMeta {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.statusTag {
+  text-transform: uppercase;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+} 
+ 

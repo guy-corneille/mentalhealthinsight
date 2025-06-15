@@ -1,4 +1,3 @@
-
 /**
  * Benchmark Types
  * 
@@ -72,8 +71,12 @@ export interface PerformanceTrendMetrics {
   benchmarks: number[];
 }
 
+export interface BenchmarkMetricData {
+  value: number;
+  history: number[];
+  labels: string[];
+}
+
 export interface BenchmarkingData {
-  operational: OperationalEfficiencyMetrics;
-  quality: QualityComplianceMetrics;
-  trends: PerformanceTrendMetrics[];
+  [key: string]: BenchmarkMetricData | null;
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import StepProgress from './StepProgress';
@@ -281,8 +280,8 @@ const AuditForm: React.FC<{ facilityId: number; facilityName: string; auditId?: 
         description: `Audit for ${facilityName} has been successfully saved.`,
       });
       
-      // Redirect to the audit review page
-      window.location.href = `/audits/review/${response.id || effectiveAuditId}`;
+      // Redirect to the audits list page
+      window.location.href = '/audits';
       
     } catch (error) {
       console.error("Error submitting audit:", error);

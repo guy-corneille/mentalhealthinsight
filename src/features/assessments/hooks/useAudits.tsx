@@ -1,12 +1,15 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 import api from '@/services/api';
-import { Audit, AuditApiResponse } from '../types';
+import { Assessment } from '../types';
+import { PaginatedResponse } from '@/types/common';
 import { AxiosResponse } from 'axios';
 
 export function useAudits() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,13 +34,7 @@ export function useAudits() {
         params.append('ordering', orderingValue);
       }
 
-      const response: AxiosResponse<AuditApiResponse> = await api.get(`/api/audits/?${params.toString()}`);
-      const data = response.data;
-
-      if (!data || !Array.isArray(data.results)) {
-        throw new Error('Invalid response format from server');
-      }
-
+      const { data } = await api.get<AxiosResponse<PaginatedResponse<Assessment>>>(`/api/audits/?${params.toString()}`);
       return data;
     } catch (error) {
       console.error('Error fetching audits:', error);
@@ -120,13 +117,13 @@ export function useAudits() {
 
   // Handle view audit details
   const handleViewAudit = useCallback((id: string) => {
-    window.location.href = `/audits/${id}`;
-  }, []);
+    navigate(`/audits/view/${id}`);
+  }, [navigate]);
 
   // Handle continue audit
-  const handleContinueAudit = useCallback((audit: Audit) => {
-    window.location.href = `/facilities/audit/${audit.facility}?auditId=${audit.id}`;
-  }, []);
+  const handleContinueAudit = useCallback((audit: Assessment) => {
+    navigate(`/facilities/audit/${audit.facility}?auditId=${audit.id}`);
+  }, [navigate]);
 
   return {
     audits,

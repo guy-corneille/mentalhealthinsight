@@ -101,6 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   
   const secondaryItems = [
     { icon: BookOpenIcon, label: 'Knowledge Base', path: '/knowledge' },
+    { icon: ClipboardIcon, label: 'Feedback', path: '/feedback' },
     { icon: SettingsIcon, label: 'Settings', path: '/settings' },
     { icon: HelpCircleIcon, label: 'Help', path: '/help' },
   ];

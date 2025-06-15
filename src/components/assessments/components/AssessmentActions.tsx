@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   DropdownMenu,
@@ -11,8 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { 
   EyeIcon, 
-  PencilIcon, 
-  PrinterIcon, 
+  ClipboardIcon,
+  CalendarIcon,
   Trash2Icon,
   MoreHorizontalIcon 
 } from 'lucide-react';
@@ -21,21 +20,19 @@ import { Assessment } from '../types';
 interface AssessmentActionsProps {
   assessment: Assessment;
   onViewDetails: (assessment: Assessment) => void;
-  onEditAssessment: (assessment: Assessment) => void;
-  onPrintReport: (assessment: Assessment) => void;
+  onTakeAssessment: (assessment: Assessment) => void;
+  onReschedule: (assessment: Assessment) => void;
   onDeleteAssessment: (id: number | string) => void;
 }
 
 const AssessmentActions: React.FC<AssessmentActionsProps> = ({
   assessment,
   onViewDetails,
-  onEditAssessment,
-  onPrintReport,
+  onTakeAssessment,
+  onReschedule,
   onDeleteAssessment
 }) => {
-  // Pass the ID directly to the delete handler
   const handleDelete = () => {
-    console.log(`Deleting assessment with ID: ${assessment.id} (type: ${typeof assessment.id})`);
     onDeleteAssessment(assessment.id);
   };
 
@@ -49,18 +46,25 @@ const AssessmentActions: React.FC<AssessmentActionsProps> = ({
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuLabel>Assessment Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        
+        {assessment.status === 'scheduled' ? (
+          <>
+            <DropdownMenuItem onClick={() => onTakeAssessment(assessment)}>
+              <ClipboardIcon className="h-4 w-4 mr-2" />
+              Take Assessment
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onReschedule(assessment)}>
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              Reschedule
+            </DropdownMenuItem>
+          </>
+        ) : assessment.status === 'completed' && (
         <DropdownMenuItem onClick={() => onViewDetails(assessment)}>
           <EyeIcon className="h-4 w-4 mr-2" />
           View Details
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onEditAssessment(assessment)}>
-          <PencilIcon className="h-4 w-4 mr-2" />
-          Edit Assessment
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onPrintReport(assessment)}>
-          <PrinterIcon className="h-4 w-4 mr-2" />
-          Print Report
-        </DropdownMenuItem>
+        )}
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           className="text-rose-600"

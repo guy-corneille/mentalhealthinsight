@@ -1,6 +1,8 @@
-
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthorization } from '@/hooks/useAuthorization';
+import { Spinner } from '@/components/ui/spinner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,12 +17,25 @@ interface ProtectedRouteProps {
  */
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const location = useLocation();
-  
-  // Log information about the route access for debugging
-  console.log(`Accessing route: ${location.pathname} - Authorization checks disabled`);
-  
-  // Simply render children without any protection
-  // Will be updated later with proper role-based authentication
+  const { isAuthenticated, isLoading } = useAuth();
+  const { canAccessRoute } = useAuthorization();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!canAccessRoute(location.pathname)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return <>{children}</>;
 };
 

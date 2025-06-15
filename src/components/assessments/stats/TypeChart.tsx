@@ -16,7 +16,7 @@ type TypeChartProps = {
 const TypeChart: React.FC<TypeChartProps> = ({ data, onExport }) => {
   return (
     <>
-      <div className="flex justify-between items-center px-6 py-4 bg-white dark:bg-slate-900 border-b">
+      {/* <div className="flex justify-between items-center px-6 py-4 bg-white dark:bg-slate-900 border-b">
         <div className="flex items-center gap-2">
           <PieChartIcon className="h-5 w-5 text-purple-600" />
           <h3 className="text-lg font-medium">Assessments by Type</h3>
@@ -29,9 +29,9 @@ const TypeChart: React.FC<TypeChartProps> = ({ data, onExport }) => {
         >
           <span className="hidden sm:inline">Export</span>
         </Button>
-      </div>
+      </div> */}
       
-      <div className="p-6">
+      {/* <div className="p-6">
         <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart className="animate-fade-in">
@@ -70,7 +70,7 @@ const TypeChart: React.FC<TypeChartProps> = ({ data, onExport }) => {
         <div className="text-sm text-muted-foreground mt-4">
           Distribution of assessments by type (Initial, Follow-up, Discharge).
         </div>
-      </div>
+      </div> */}
     </>
   );
 };

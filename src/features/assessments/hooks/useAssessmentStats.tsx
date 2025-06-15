@@ -1,4 +1,3 @@
-
 /**
  * Assessment Statistics Hook
  * 
@@ -53,13 +52,13 @@ export function useAssessmentStats() {
     if (!apiData) return null;
     
     // Format assessment counts by period for line/bar chart
-    const countByPeriodData = apiData.countByPeriod.map((item) => ({
+    const countByPeriodData = (apiData.countByPeriod || []).map((item) => ({
       month: format(parseISO(item.period), 'MMM yyyy'),
       'Assessment Count': item.count
     }));
     
     // Format assessment counts by facility for pie/bar chart
-    const facilityData = apiData.countByFacility.map(facility => ({
+    const facilityData = (apiData.countByFacility || []).map(facility => ({
       name: facility.facilityName,
       value: facility.count,
       color: getRandomColor(facility.facilityId)
@@ -67,17 +66,17 @@ export function useAssessmentStats() {
     
     // Format assessment counts by type for pie chart
     const typeData = [
-      { name: 'Initial', value: apiData.countByType.initial, color: '#10b981' },
-      { name: 'Follow-up', value: apiData.countByType.followup, color: '#3b82f6' },
-      { name: 'Discharge', value: apiData.countByType.discharge, color: '#6366f1' }
+      { name: 'Initial', value: apiData.countByType?.initial || 0, color: '#10b981' },
+      { name: 'Follow-up', value: apiData.countByType?.followup || 0, color: '#3b82f6' },
+      { name: 'Discharge', value: apiData.countByType?.discharge || 0, color: '#6366f1' }
     ];
 
     // Format average scores by criteria
-    const scoreByCriteriaData = apiData.scoreByCriteria?.map(item => ({
+    const scoreByCriteriaData = (apiData.scoreByCriteria || []).map(item => ({
       name: item.criteriaName,
       value: item.averageScore,
       color: getRandomColor(item.criteriaId)
-    })) || [];
+    }));
     
     return {
       countByPeriodData,
@@ -85,11 +84,11 @@ export function useAssessmentStats() {
       typeData,
       scoreByCriteriaData,
       summary: {
-        totalCount: apiData.totalCount,
+        totalCount: apiData.totalCount || 0,
         averageScore: apiData.averageScore || 0,
         patientCoverage: apiData.patientCoverage || 0,
-        mostCommonType: getMostCommonType(apiData.countByType),
-        mostActiveLocation: getMostActiveLocation(apiData.countByFacility)
+        mostCommonType: getMostCommonType(apiData.countByType || { initial: 0, followup: 0, discharge: 0 }),
+        mostActiveLocation: getMostActiveLocation(apiData.countByFacility || [])
       }
     };
   }, []);

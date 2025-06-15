@@ -10,8 +10,11 @@ import api from '@/services/api';
 import { useNavigate } from 'react-router-dom';
 
 // Interface for the audit count response
-interface AuditCountResponse {
-  count: number;
+interface AuditStatsResponse {
+  summary: {
+    totalCount: number;
+    averageScore: number;
+  };
 }
 
 interface StaffMember {
@@ -51,7 +54,7 @@ const StatsOverview: React.FC = () => {
         endDate: endDate.toISOString().split('T')[0]
       };
 
-      const response = await api.get<AuditCountResponse>('/api/reports/audits/count', { params: filters });
+      const response = await api.get<AuditStatsResponse>('/api/reports/audit-statistics/', { params: filters });
       return response;
     },
     staleTime: 5 * 60 * 1000,
@@ -68,7 +71,8 @@ const StatsOverview: React.FC = () => {
   
   const patientCount = patients?.count || 0;
   const assessmentCount = assessmentData?.summary?.totalCount || 0;
-  const auditCount = auditData?.count || 0;
+  const auditCount = auditData?.summary?.totalCount || 0;
+  const auditScore = auditData?.summary?.averageScore || 0;
 
   return (
     <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-3">
@@ -115,7 +119,7 @@ const StatsOverview: React.FC = () => {
       {/* Audit Card */}
       <StatCard
         title="Audits"
-        value={auditsLoading ? "Loading..." : (auditError ? "Error" : auditCount)}
+        value={auditsLoading ? "Loading..." : `${auditCount}`}
         icon={<ClipboardCheck className="h-6 w-6 text-healthiq-600" />}
         description="Total facility audits"
         onClick={() => navigate('/audits')}
@@ -128,7 +132,7 @@ const StatsOverview: React.FC = () => {
         value="->"
         icon={<TrendingUp className="h-6 w-6 text-healthiq-600" />}
         description="Facility performance comparisons"
-        onClick={() => navigate('/benchmarking')}
+        onClick={() => navigate('/benchmarks')}
         className="bg-white p-4 rounded shadow-md hover:shadow-lg transition-shadow cursor-pointer"
       />
     </div>

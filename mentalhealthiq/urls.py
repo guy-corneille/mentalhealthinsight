@@ -14,38 +14,35 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import include, path
-from rest_framework import routers
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from django.contrib import admin
-from . import views
+from . import views, auth_views, metrics_views, feedback_views, benchmark_views
 
-# Create a router for our viewsets
-router = routers.DefaultRouter()
-
-# Register all viewsets with the router
-router.register(r'users', views.UserViewSet)
-router.register(r'pending-users', views.PendingUserViewSet)
+# Create a router and register our viewsets with it
+router = DefaultRouter()
 router.register(r'facilities', views.FacilityViewSet)
-router.register(r'staff', views.StaffMemberViewSet)
-router.register(r'assessment-criteria', views.AssessmentCriteriaViewSet, basename='assessmentcriteria')
-router.register(r'audit-criteria', views.AuditCriteriaViewSet, basename='auditcriteria')
 router.register(r'patients', views.PatientViewSet)
 router.register(r'assessments', views.AssessmentViewSet)
 router.register(r'audits', views.AuditViewSet)
-router.register(r'reports', views.ReportViewSet)
+router.register(r'staff', views.StaffViewSet)
+router.register(r'reports', metrics_views.ReportViewSet)
+router.register(r'feedback', feedback_views.FeedbackViewSet)
+router.register(r'benchmark-criteria', benchmark_views.BenchmarkCriteriaViewSet)
+router.register(r'benchmark-comparisons', benchmark_views.BenchmarkComparisonViewSet)
+router.register(r'facility-rankings', benchmark_views.FacilityRankingViewSet)
+router.register(r'assessment-criteria', views.AssessmentCriteriaViewSet, basename='assessment-criteria')
+router.register(r'audit-criteria', views.AuditCriteriaViewSet, basename='audit-criteria')
 
+# The API URLs are now determined automatically by the router
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls)),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     
-    # Authentication endpoints
-    path('api/users/login/', views.login_view, name='api-token-auth'),  # Use our custom login view
-    path('api/users/logout/', views.logout_view, name='api-logout'),
-    path('api/users/register/', views.register_user, name='api-register'),
-]
+    # Dummy auth endpoints
+    path('auth/login/', auth_views.login_view, name='login'),
+    path('auth/logout/', auth_views.logout_view, name='logout'),
+    path('auth/check/', auth_views.check_auth_view, name='check-auth'),
 
-# Optional: Add a nice API root for browsing the API
-urlpatterns += [
-    path('', include(router.urls)),
+    # API endpoints
+    path('api/', include(router.urls)),
 ]

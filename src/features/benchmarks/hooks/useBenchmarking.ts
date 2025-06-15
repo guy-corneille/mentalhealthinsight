@@ -116,12 +116,21 @@ export const useBenchmarking = (categoryId?: string) => {
       // Transform real data into benchmark format
       const transformedData = transformRealDataToBenchmarks(chartData);
 
+      // If transformation failed, return empty data
+      if (!transformedData) {
+        return {
+          categories: benchmarkCategories,
+          benchmarkPerformance: [],
+          benchmarkingData: null
+        };
+      }
+
       // Update categories with actual values
       const updatedCategories = benchmarkCategories.map(category => ({
         ...category,
         metrics: category.metrics.map(metric => ({
           ...metric,
-          currentValue: transformedData[metric.metricId]?.value
+          currentValue: transformedData[metric.metricId]?.value ?? 0
         }))
       }));
 

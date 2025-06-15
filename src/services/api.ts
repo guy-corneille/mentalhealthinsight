@@ -4,7 +4,7 @@
  * This service provides the base API configuration and error handling.
  * It's used by all other services to make API requests.
  */
-import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { toast } from 'sonner';
 
 // Define interface for API error responses
@@ -18,69 +18,24 @@ interface ApiErrorResponse {
 
 // Create a base API instance with common configuration
 const api = axios.create({
-  // Base URL for all API requests
-  baseURL: 'http://localhost:8000',
-  
-  // Default headers for all requests
+  baseURL: 'http://localhost:8000',  // Point directly to Django backend
+  withCredentials: true,  // Important for sending cookies
   headers: {
     'Content-Type': 'application/json',
   },
-  
-  // Set timeout to prevent hanging requests
-  timeout: 30000, // 30 seconds timeout
-  
-  // Enable sending cookies with requests
-  withCredentials: false, // Disable withCredentials since we're handling CSRF manually
 });
 
-// Function to get CSRF token from cookie
-const getCSRFToken = () => {
-  const name = 'csrftoken';
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-};
-
-// Request interceptor for API calls
-api.interceptors.request.use(
-  (config) => {
-    // Add CSRF token to headers for non-GET requests
-    if (config.method !== 'get') {
-      const csrfToken = getCSRFToken();
-      if (csrfToken) {
-        config.headers['X-CSRFToken'] = csrfToken;
-      }
-    }
-
-    // Add mock auth token to headers
-    const token = localStorage.getItem('mentalhealthiq_token');
-    if (token) {
-      config.headers['Authorization'] = `Token ${token}`;
-    }
-
-    console.log(`Making API request to: ${config.url}`, config.method, config.params || {});
+// Add request interceptor for logging
+api.interceptors.request.use((config) => {
+  console.log('Making request:', config.method?.toUpperCase(), config.url);
     return config;
-  },
-  (error) => {
-    console.error('Request interceptor error:', error);
-    return Promise.reject(error);
-  }
-);
+});
 
 // Response interceptor for handling API responses and errors
 api.interceptors.response.use(
   (response) => {
-    console.log(`Successful response from: ${response.config.url}`, response.status);
-    return response.data;  // Return data directly
+    console.log('Response received:', response.config.method?.toUpperCase(), response.config.url, response.status);
+    return response;  // Return full response for more control
   },
   (error: AxiosError) => {
     // Log detailed error information for debugging
@@ -111,21 +66,33 @@ api.interceptors.response.use(
 export default {
   // GET request method - used for retrieving data
   get: <T>(url: string, params?: any) => 
-    api.get<T, T>(url, { params }),
+    api.get<T>(url, { params }).then(response => response.data),
   
   // POST request method - used for creating new resources
   post: <T>(url: string, data?: any, config?: AxiosRequestConfig) => 
-    api.post<T, T>(url, data, config),
+    api.post<T>(url, data, config).then(response => response.data),
   
   // PUT request method - used for updating existing resources
   put: <T>(url: string, data?: any) => 
-    api.put<T, T>(url, data),
+    api.put<T>(url, data).then(response => response.data),
   
   // PATCH request method - used for partial updates
   patch: <T>(url: string, data?: any) => 
-    api.patch<T, T>(url, data),
+    api.patch<T>(url, data).then(response => response.data),
   
   // DELETE request method - used for removing resources
   delete: <T>(url: string) => 
-    api.delete<T, T>(url),
+    api.delete<T>(url).then(response => response.data),
 };
+
+export interface PaginatedResponse<T> {
+  results: T[];
+  count: number;
+  next: string | null;
+  previous: string | null;
+}
+
+export interface ApiResponse<T> {
+  data: T | PaginatedResponse<T>;
+  detail?: string;
+}

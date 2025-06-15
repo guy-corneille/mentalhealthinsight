@@ -1,7 +1,7 @@
-
 import React from 'react';
 import StatsOverview from './StatsOverview';
 import BenchmarkOverview from '@/components/benchmarks/BenchmarkOverview';
+import MonitoringCard from './MonitoringCard';
 import { useBenchmarking } from '@/features/benchmarks/hooks/useBenchmarking';
 import { useNavigate } from 'react-router-dom';
 import BenchmarkSkeleton from '@/components/benchmarks/BenchmarkSkeleton';
@@ -23,9 +23,14 @@ const Dashboard = () => {
         </p>
       </div>
       
-      <StatsOverview />
+      <div className="grid grid-cols-1 gap-6">
+        <h1 className='text-1xl font-bold mb-3 text-left'>Quick Stats</h1>
+        <StatsOverview />
+        <h1 className='text-1xl font-bold mb-3 text-left'>Monitoring</h1>
+        <MonitoringCard />
+      </div>
       
-      <div>
+      {/* <div>
         <h3 className="text-xl font-semibold mb-4">Performance Benchmarks</h3>
         {isLoading ? (
           <BenchmarkSkeleton />
@@ -36,7 +41,7 @@ const Dashboard = () => {
             onCategorySelect={handleCategorySelect}
           />
         )}
-      </div>
+      </div> */}
     </div>
   );
 };

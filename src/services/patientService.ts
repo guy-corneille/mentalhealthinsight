@@ -66,7 +66,7 @@ const patientService = {
     };
 
     try {
-      const response = await api.get<PaginatedResponse<Patient>>('/patients/', { params });
+      const response = await api.get<PaginatedResponse<Patient>>('/api/patients/', { params });
       return response;
     } catch (error) {
       throw error;
