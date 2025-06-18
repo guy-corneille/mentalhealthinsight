@@ -8,7 +8,7 @@ export interface MetricSnapshot {
     discharged_patients: number;
     inactive_patients: number;
     capacity_utilization: number;
-    total_assessments: number;
+    scheduled_assessments: number;
     completed_assessments: number;
     completion_rate: number;
     ninety_day_total_assessments: number;

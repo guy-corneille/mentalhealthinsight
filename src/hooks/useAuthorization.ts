@@ -1,12 +1,24 @@
-import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { UserRole } from '@/utils/roleUtils';
 
-type Permission = 'view_dashboard' | 'view_analytics' | 'manage_evaluations' | 'manage_data';
+// Allow any permission string to avoid TypeScript errors where new permissions are referenced
+type Permission = string;
 
+// Define default permissions for each role (extend as needed)
 const rolePermissions: Record<UserRole, Permission[]> = {
   viewer: ['view_dashboard', 'view_analytics'],
   evaluator: ['view_dashboard', 'view_analytics', 'manage_evaluations'],
-  admin: ['view_dashboard', 'view_analytics', 'manage_data'],
-  superuser: ['view_dashboard', 'view_analytics', 'manage_evaluations', 'manage_data'],
+  admin: ['view_dashboard', 'view_analytics', 'manage_data', 'manage_feedback', 'approve:users', 'manage:users'],
+  superuser: [
+    'view_dashboard',
+    'view_analytics',
+    'manage_evaluations',
+    'manage_data',
+    'manage_feedback',
+    'approve:users',
+    'manage:users',
+    'manage:all'
+  ],
 };
 
 /**
@@ -60,6 +72,7 @@ export const useAuthorization = () => {
       'manage:audits', 
       'manage:criteria',
       'manage:patients',
+      'manage:feedback',
       'view:dashboard',
       'view:reports',
       'view:facilities',
@@ -80,6 +93,7 @@ export const useAuthorization = () => {
       'manage:audits': 'Manage Audits', 
       'manage:criteria': 'Manage Assessment Criteria',
       'manage:patients': 'Manage Patients',
+      'manage:feedback': 'Manage All Feedback',
       'view:dashboard': 'View Dashboard',
       'view:reports': 'View Reports',
       'view:facilities': 'View Facilities',

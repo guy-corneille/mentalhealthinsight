@@ -27,17 +27,17 @@ import AssessmentEvaluationPage from './pages/AssessmentEvaluationPage';
 import MonitoringPage from './pages/MonitoringPage';
 import FacilityDetailPage from './pages/FacilityDetailPage';
 import FeedbackPage from './pages/FeedbackPage';
+import FeedbackManagementPage from './pages/FeedbackManagement';
 
 // Components
 import { Toaster } from "@/components/ui/toaster";
-import ProtectedRoute from './components/auth/ProtectedRoute';
-
-// Context
-import { AuthProvider } from './contexts/AuthContext';
 import StaffForm from './components/staff/StaffForm';
 import PatientForm from './pages/PatientForm';
 import AssessmentList from './components/assessments/AssessmentList';
 import AssessmentView from './pages/assessments/AssessmentView';
+
+// Context
+import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
   const handleStartAssessment = (patientId: string, facilityId: string) => {
@@ -53,44 +53,45 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/monitoring" element={<ProtectedRoute><MonitoringPage /></ProtectedRoute>} />
-          <Route path="/monitoring/facility/:facilityId" element={<ProtectedRoute><FacilityDetailPage /></ProtectedRoute>} />
-          <Route path="/facilities" element={<ProtectedRoute><Facilities /></ProtectedRoute>} />
-          <Route path="/facilities/:id" element={<ProtectedRoute><FacilityDetails /></ProtectedRoute>} />
-          <Route path="/facilities/add" element={<ProtectedRoute><FacilityAdd /></ProtectedRoute>} />
-          <Route path="/facilities/edit/:id" element={<ProtectedRoute><FacilityEdit /></ProtectedRoute>} />
-          <Route path="/facilities/audit/:id" element={<ProtectedRoute><FacilityAudit /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/monitoring" element={<MonitoringPage />} />
+          <Route path="/monitoring/facility/:facilityId" element={<FacilityDetailPage />} />
+          <Route path="/facilities" element={<Facilities />} />
+          <Route path="/facilities/:id" element={<FacilityDetails />} />
+          <Route path="/facilities/add" element={<FacilityAdd />} />
+          <Route path="/facilities/edit/:id" element={<FacilityEdit />} />
+          <Route path="/facilities/audit/:id" element={<FacilityAudit />} />
           
           {/* Staff routes */}
-          <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
-          <Route path="/staff/add" element={<ProtectedRoute><StaffForm /></ProtectedRoute>} />
-          <Route path="/staff/edit/:id" element={<ProtectedRoute><StaffForm isEdit /></ProtectedRoute>} />
+          <Route path="/staff" element={<Staff />} />
+          <Route path="/staff/add" element={<StaffForm />} />
+          <Route path="/staff/edit/:id" element={<StaffForm isEdit />} />
           
           {/* Patient routes */}
-          <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
-          <Route path="/patients/add" element={<ProtectedRoute><PatientForm isEdit={false} /></ProtectedRoute>} />
-          <Route path="/patients/edit/:id" element={<ProtectedRoute><PatientForm isEdit={true} /></ProtectedRoute>} />
+          <Route path="/patients" element={<Patients />} />
+          <Route path="/patients/add" element={<PatientForm isEdit={false} />} />
+          <Route path="/patients/edit/:id" element={<PatientForm isEdit={true} />} />
           
-          <Route path="/assessments" element={<ProtectedRoute><AssessmentList onStartAssessment={handleStartAssessment} /></ProtectedRoute>} />
-          <Route path="/assessments/view/:id" element={<ProtectedRoute><AssessmentView /></ProtectedRoute>} />
-          <Route path="/assessment-trends" element={<ProtectedRoute><AssessmentTrends /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-          <Route path="/audits" element={<ProtectedRoute><Audits /></ProtectedRoute>} />
-          <Route path="/audit-trends" element={<ProtectedRoute><AuditTrends /></ProtectedRoute>} />
-          <Route path="/audits/view/:id" element={<ProtectedRoute><AuditView /></ProtectedRoute>} />
-          <Route path="/assessment/:patientId" element={<ProtectedRoute><AssessmentEvaluationPage /></ProtectedRoute>} />
+          <Route path="/assessments" element={<AssessmentList onStartAssessment={handleStartAssessment} />} />
+          <Route path="/assessments/view/:id" element={<AssessmentView />} />
+          <Route path="/assessment-trends" element={<AssessmentTrends />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/audits" element={<Audits />} />
+          <Route path="/audit-trends" element={<AuditTrends />} />
+          <Route path="/audits/view/:id" element={<AuditView />} />
+          <Route path="/assessment/:patientId" element={<AssessmentEvaluationPage />} />
           
           {/* Add the Criteria routes */}
-          <Route path="/criteria" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
-          <Route path="/criteria/add" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
-          <Route path="/criteria/edit/:id" element={<ProtectedRoute><Criteria /></ProtectedRoute>} />
+          <Route path="/criteria" element={<Criteria />} />
+          <Route path="/criteria/add" element={<Criteria />} />
+          <Route path="/criteria/edit/:id" element={<Criteria />} />
           
           {/* Add the Benchmarks route */}
           <Route path="/benchmarks" element={<Benchmarks />} />
           
-          {/* Add the Feedback route */}
-          <Route path="/feedback" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
+          {/* Feedback routes */}
+          <Route path="/feedback" element={<FeedbackPage />} />
+          <Route path="/feedback-management" element={<FeedbackManagementPage />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>

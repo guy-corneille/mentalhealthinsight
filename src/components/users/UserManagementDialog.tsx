@@ -1,24 +1,13 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { CheckIcon, XIcon } from 'lucide-react';
-import { useAuth, UserRole } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { UserRole } from '@/utils/roleUtils';
 import { Spinner } from '@/components/ui/spinner';
 import { useNotifications } from '@/contexts/NotificationContext';
-
-interface UserRequest {
-  id: string;
-  username: string;
-  email: string;
-  role: UserRole;
-  status: 'pending';
-  phoneNumber: string;
-  displayName: string;
-  requestDate: Date;
-}
 
 const UserManagementDialog: React.FC<{
   open: boolean;
@@ -111,47 +100,45 @@ const UserManagementDialog: React.FC<{
             <TableBody>
               {pendingUsers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell>{user.displayName}</TableCell>
+                  <TableCell>{user.displayName || '-'}</TableCell>
                   <TableCell>{user.username}</TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.phoneNumber}</TableCell>
+                  <TableCell>{user.phoneNumber || '-'}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
                       {user.role}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {new Date(user.requestDate).toLocaleDateString()}
+                    {new Date(user.createdAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
+                    <div className="flex items-center gap-2">
                       <Button 
+                        size="sm"
                         variant="outline" 
-                        size="sm" 
-                        className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100 hover:text-green-700"
+                        className="h-8 w-8 p-0"
                         onClick={() => handleApproveUser(user.id)}
                         disabled={processingUsers[user.id]}
                       >
                         {processingUsers[user.id] ? (
-                          <Spinner className="h-4 w-4 mr-1" />
+                          <Spinner className="h-4 w-4" />
                         ) : (
-                          <CheckIcon className="h-4 w-4 mr-1" />
+                          <CheckIcon className="h-4 w-4" />
                         )} 
-                        Approve
                       </Button>
                       <Button 
+                        size="sm"
                         variant="outline" 
-                        size="sm" 
-                        className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:text-red-700"
+                        className="h-8 w-8 p-0"
                         onClick={() => handleRejectUser(user.id)}
                         disabled={processingUsers[user.id]}
                       >
                         {processingUsers[user.id] ? (
-                          <Spinner className="h-4 w-4 mr-1" />
+                          <Spinner className="h-4 w-4" />
                         ) : (
-                          <XIcon className="h-4 w-4 mr-1" />
+                          <XIcon className="h-4 w-4" />
                         )} 
-                        Reject
                       </Button>
                     </div>
                   </TableCell>

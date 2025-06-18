@@ -1,43 +1,67 @@
-import React, { useState } from 'react';
-import { Tabs } from 'antd';
-import FeedbackForm from '../components/feedback/FeedbackForm';
-import FeedbackList from '../components/feedback/FeedbackList';
-import styles from '../components/feedback/Feedback.module.css';
-import MainLayout from '../components/common/layout/MainLayout';
+import React from 'react';
+import Layout from '@/components/layout/Layout';
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import FeedbackForm from '@/components/feedback/FeedbackForm';
+import FeedbackList from '@/components/feedback/FeedbackList';
+import { MessageSquarePlus, ListIcon } from 'lucide-react';
 
 const FeedbackPage: React.FC = () => {
-  const [activeKey, setActiveKey] = useState('list');
-  const [listKey, setListKey] = useState(0); // Used to force re-render of FeedbackList
-
-  const handleFeedbackSubmitted = () => {
-    setActiveKey('list');
-    setListKey(prev => prev + 1); // Force re-render of FeedbackList
-  };
+  // This page is intended for all users to submit and view their own feedback.
+  const canManageFeedback = false;
 
   return (
-    <MainLayout>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Feedback</h1>
-        <div className={styles.feedbackContainer}>
-          <Tabs
-            activeKey={activeKey}
-            onChange={setActiveKey}
-            items={[
-              {
-                key: 'list',
-                label: 'Feedback List',
-                children: <FeedbackList key={listKey} />
-              },
-              {
-                key: 'submit',
-                label: 'Submit Feedback',
-                children: <FeedbackForm onSuccess={handleFeedbackSubmitted} />
-              }
-            ]}
-          />
+    <Layout>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Feedback</h1>
+          <p className="text-muted-foreground">
+            {canManageFeedback 
+              ? "Manage and respond to user feedback requests." 
+              : "Submit and track your feedback requests."}
+          </p>
         </div>
+
+        <Card className="p-6">
+          <Tabs defaultValue={canManageFeedback ? "all" : "submit"} className="space-y-6">
+            <TabsList>
+              {!canManageFeedback && (
+                <TabsTrigger value="submit" className="flex items-center gap-2">
+                  <MessageSquarePlus className="h-4 w-4" />
+                  Submit Feedback
+                </TabsTrigger>
+              )}
+              {canManageFeedback ? (
+                <TabsTrigger value="all" className="flex items-center gap-2">
+                  All Feedback
+                </TabsTrigger>
+              ) : (
+                <TabsTrigger value="list" className="flex items-center gap-2">
+                  <ListIcon className="h-4 w-4" />
+                  Your Feedback
+                </TabsTrigger>
+              )}
+            </TabsList>
+
+            {!canManageFeedback && (
+              <TabsContent value="submit" className="space-y-4">
+                <FeedbackForm />
+              </TabsContent>
+            )}
+
+            {canManageFeedback ? (
+              <TabsContent value="all">
+                <FeedbackList isAdminView />
+              </TabsContent>
+            ) : (
+              <TabsContent value="list">
+                <FeedbackList />
+              </TabsContent>
+            )}
+          </Tabs>
+        </Card>
       </div>
-    </MainLayout>
+    </Layout>
   );
 };
 

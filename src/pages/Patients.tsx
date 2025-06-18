@@ -1,9 +1,12 @@
-
 import React from 'react';
 import Layout from '@/components/layout/Layout';
 import PatientList from '@/components/patients/PatientList';
+import { usePageAuth } from '@/hooks/usePageAuth';
 
 const Patients: React.FC = () => {
+  // Protect at admin level
+  usePageAuth('admin');
+
   return (
     <Layout>
       <div className="space-y-6">

@@ -105,14 +105,14 @@ class MetricsViewSet(viewsets.ReadOnlyModelViewSet):
                     'active_patients': latest_metrics.active_patients,
                     'capacity_utilization': latest_metrics.capacity_utilization,
                     'today': {
-                        'total_assessments': latest_metrics.total_assessments,
+                        'total_assessments': latest_metrics.scheduled_assessments,
                         'completed_assessments': latest_metrics.completed_assessments,
                         'completion_rate': latest_metrics.completion_rate,
                     },
                     'ninety_days': {
-                        'total_assessments': latest_metrics.ninety_day_total_assessments,
-                        'completed_assessments': latest_metrics.ninety_day_completed_assessments,
-                        'completion_rate': latest_metrics.ninety_day_completion_rate,
+                        'total_assessments': getattr(latest_metrics, 'ninety_day_total_assessments', 0),
+                        'completed_assessments': getattr(latest_metrics, 'ninety_day_completed_assessments', 0),
+                        'completion_rate': getattr(latest_metrics, 'ninety_day_completion_rate', 0.0),
                     }
                 },
                 'assessment_breakdown': {

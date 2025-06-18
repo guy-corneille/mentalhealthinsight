@@ -1,12 +1,15 @@
-
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Layout from '@/components/layout/Layout';
 import CriteriaList from '@/components/assessments/CriteriaList';
 import CriteriaForm from '@/components/assessments/CriteriaForm';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePageAuth } from '@/hooks/usePageAuth';
 
 const Criteria: React.FC = () => {
+  // Protect at evaluator level
+  usePageAuth('evaluator');
+
   const location = useLocation();
   const navigate = useNavigate();
   const [criteriaType, setCriteriaType] = useState<'assessment' | 'audit'>('assessment');

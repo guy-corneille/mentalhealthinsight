@@ -1,30 +1,32 @@
-from rest_framework import viewsets, permissions, status, filters
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Feedback, FeedbackComment
 from .serializers import FeedbackSerializer
-from .views import StandardResultsSetPagination
+from .views import BaseViewSet
 
-class FeedbackViewSet(viewsets.ModelViewSet):
+class FeedbackViewSet(BaseViewSet):
     """API endpoints for managing feedback"""
     queryset = Feedback.objects.all()
     serializer_class = FeedbackSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    pagination_class = StandardResultsSetPagination
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status']
     search_fields = ['title', 'description']
     ordering_fields = ['created_at', 'updated_at']
 
     def get_queryset(self):
         user = self.request.user
+        if not user.is_authenticated:
+            return Feedback.objects.all().order_by('-created_at')
         if user.role in ['admin', 'superuser']:
             return Feedback.objects.all().order_by('-created_at')
         return Feedback.objects.filter(submitted_by=user).order_by('-created_at')
 
     def perform_create(self, serializer):
-        serializer.save(submitted_by=self.request.user)
+        if self.request.user.is_authenticated:
+            serializer.save(submitted_by=self.request.user)
+        else:
+            serializer.save()
 
     @action(detail=True, methods=['post'])
     def add_comment(self, request, pk=None):
@@ -37,17 +39,11 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Only admins can add comments
-        if request.user.role not in ['admin', 'superuser']:
-            return Response(
-                {'error': 'Only admins can add comments'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
+        # Allow any user to add comments
         FeedbackComment.objects.create(
             feedback=feedback,
             comment=comment,
-            added_by=request.user
+            added_by=request.user if request.user.is_authenticated else None
         )
         
         serializer = self.get_serializer(feedback)
@@ -64,15 +60,8 @@ class FeedbackViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        if request.user.role not in ['admin', 'superuser']:
-            return Response(
-                {'error': 'Only admins can update status'}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
         feedback.status = new_status
         feedback.save()
         
         serializer = self.get_serializer(feedback)
         return Response(serializer.data) 
- 

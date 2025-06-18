@@ -418,10 +418,15 @@ class MetricSnapshot(models.Model):
     inactive_patients = models.IntegerField()
     capacity_utilization = models.FloatField()  # Percentage
     
-    # Assessment Metrics
+    # Assessment Metrics (Daily)
     scheduled_assessments = models.IntegerField()
     completed_assessments = models.IntegerField()
     completion_rate = models.FloatField()  # Percentage
+    
+    # 90-day Assessment Metrics (Added back to prevent crashes)
+    ninety_day_total_assessments = models.IntegerField(default=0)
+    ninety_day_completed_assessments = models.IntegerField(default=0)
+    ninety_day_completion_rate = models.FloatField(default=0.0)  # Percentage
 
     def __str__(self):
         return f"{self.facility.name} - {self.metric_type} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
@@ -441,7 +446,7 @@ class Feedback(models.Model):
     
     title = models.CharField(max_length=200)
     description = models.TextField()
-    submitted_by = models.ForeignKey('User', on_delete=models.CASCADE, related_name='submitted_feedback')
+    submitted_by = models.ForeignKey('User', on_delete=models.CASCADE, related_name='submitted_feedback', null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -452,8 +457,8 @@ class Feedback(models.Model):
 class FeedbackComment(models.Model):
     feedback = models.ForeignKey(Feedback, on_delete=models.CASCADE, related_name='comments')
     comment = models.TextField()
-    added_by = models.ForeignKey('User', on_delete=models.CASCADE)
+    added_by = models.ForeignKey('User', on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Comment on {self.feedback.title} by {self.added_by.username}"
+        return f"Comment on {self.feedback.title} by {self.added_by.username if self.added_by else 'Anonymous'}"

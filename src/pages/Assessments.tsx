@@ -8,8 +8,12 @@ import NewAssessmentDialog from '@/components/assessments/NewAssessmentDialog';
 import ScheduleAssessmentDialog from '@/components/assessments/components/ScheduleAssessmentDialog';
 import { useAssessments } from '@/features/assessments/hooks/useAssessments';
 import { useNavigate } from 'react-router-dom';
+import { usePageAuth } from '@/hooks/usePageAuth';
 
 const Assessments: React.FC = () => {
+  // Protect at evaluator level
+  usePageAuth('evaluator');
+
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<string>('');
   const [selectedFacilityId, setSelectedFacilityId] = useState<string>('');

@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { SearchIcon, UserIcon, LogOutIcon, UsersIcon, UserCogIcon, SettingsIcon } from 'lucide-react';
+import { SearchIcon, UserIcon, LogOutIcon, UsersIcon, UserCogIcon, SettingsIcon, MessageCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,7 +18,7 @@ import { useAuthorization } from '@/hooks/useAuthorization';
 import NotificationBell from '../notifications/NotificationBell';
 
 const Header: React.FC = () => {
-  const { user, logout, isAuthenticated, pendingUsers } = useAuth();
+  const { user, logout, isAuthenticated, pendingUsers, isAdmin } = useAuth();
   const { hasPermission } = useAuthorization();
   const navigate = useNavigate();
   const [userManagementOpen, setUserManagementOpen] = useState(false);
@@ -29,7 +28,7 @@ const Header: React.FC = () => {
     navigate('/login');
   };
 
-  const hasManagementAccess = hasPermission('approve:users') || hasPermission('manage:users');
+  const hasManagementAccess = hasPermission('approve:users') || hasPermission('manage:users') || hasPermission('manage_feedback') || isAdmin;
   const pendingCount = hasManagementAccess ? pendingUsers.length : 0;
 
   return (
@@ -68,14 +67,14 @@ const Header: React.FC = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                {/* <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <UserIcon className="h-4 w-4 mr-2" />
                   My Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/account-settings')}>
+                </DropdownMenuItem> */}
+                {/* <DropdownMenuItem onClick={() => navigate('/account-settings')}>
                   <SettingsIcon className="h-4 w-4 mr-2" />
                   Account Settings
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 
                 {hasManagementAccess && (
                   <>
@@ -89,7 +88,7 @@ const Header: React.FC = () => {
                         </Badge>
                       )}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setUserManagementOpen(true)}>
+                    {/* <DropdownMenuItem onClick={() => setUserManagementOpen(true)}>
                       <UsersIcon className="h-4 w-4 mr-2" />
                       Quick Approvals
                       {pendingCount > 0 && (
@@ -97,6 +96,10 @@ const Header: React.FC = () => {
                           {pendingCount}
                         </Badge>
                       )}
+                    </DropdownMenuItem> */}
+                    <DropdownMenuItem onClick={() => navigate('/feedback-management')}>
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Feedback Management
                     </DropdownMenuItem>
                   </>
                 )}

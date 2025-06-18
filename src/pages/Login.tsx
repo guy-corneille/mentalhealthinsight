@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -13,6 +12,7 @@ import { useNotifications } from '@/contexts/NotificationContext';
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
   const { addNotification } = useNotifications();
@@ -20,6 +20,7 @@ const Login: React.FC = () => {
   // Handle login form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
     try {
       // Attempt to login with provided credentials
@@ -35,42 +36,47 @@ const Login: React.FC = () => {
       // Navigate to dashboard on successful login
       navigate('/dashboard');
     } catch (error) {
-      // Error handling is simplified - just navigate to dashboard anyway
-      // for testing purposes, but the UI still shows a proper login form
-      console.log('Login bypassed for testing');
-      navigate('/dashboard');
+      // Error notification
+      addNotification(
+        "Login failed",
+        error instanceof Error ? error.message : "Invalid credentials",
+        "error"
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <div className="flex items-center justify-center space-x-3 mb-2">
-            <BrainIcon className="h-8 w-8 text-primary" />
-            <HeartPulseIcon className="h-8 w-8 text-primary" />
+        <CardHeader className="text-center space-y-4">
+          <div className="flex justify-center space-x-2">
+            <BrainIcon className="h-8 w-8 text-blue-600" />
+            <HeartPulseIcon className="h-8 w-8 text-red-600" />
           </div>
-          
-          <CardTitle className="text-2xl font-bold">
-            MentalHealthIQ
+          <div>
+            <CardTitle className="text-2xl font-bold text-gray-900">
+              Mental Health Insight
           </CardTitle>
-          <CardDescription>
-            Login to access the platform
+            <CardDescription className="text-gray-600">
+              Sign in to your account
           </CardDescription>
+          </div>
         </CardHeader>
         
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
                 type="text"
+                placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                autoComplete="username"
                 required
+                disabled={isLoading}
               />
             </div>
             
@@ -79,31 +85,36 @@ const Login: React.FC = () => {
               <Input
                 id="password"
                 type="password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                autoComplete="current-password"
                 required
+                disabled={isLoading}
               />
             </div>
-          </CardContent>
-          
-          <CardFooter className="flex flex-col space-y-3">
-            <Button type="submit" className="w-full">
-              Log In
-            </Button>
             
             <Button 
-              type="button" 
-              variant="outline" 
+              type="submit" 
               className="w-full" 
+              disabled={isLoading}
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
+        </CardContent>
+        
+        <CardFooter className="flex justify-center">
+          <div className="text-sm text-gray-600">
+            Don't have an account?{' '}
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-blue-600 hover:text-blue-800"
               onClick={() => navigate('/register')}
             >
-              <UserPlusIcon className="mr-2 h-4 w-4" />
-              New User? Register
+              Register here
             </Button>
+          </div>
           </CardFooter>
-        </form>
       </Card>
     </div>
   );

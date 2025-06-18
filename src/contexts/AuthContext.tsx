@@ -1,46 +1,60 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import axios, { AxiosResponse } from 'axios';
 import api from '@/services/api';
-
-export type UserRole = 'viewer' | 'evaluator' | 'admin' | 'superuser';
+import { UserRole } from '@/utils/roleUtils';
 
 export interface User {
-  id: number;
+  id: string;
   username: string;
   email: string;
   role: UserRole;
   display_name?: string;
+  displayName?: string;
   phone_number?: string;
+  phoneNumber?: string;
   is_active: boolean;
+  isActive?: boolean;
   date_joined: string;
+  dateJoined?: string;
 }
 
 export interface PendingUser {
-  id: number;
+  id: string;
   username: string;
   email: string;
   role: UserRole;
   display_name?: string;
+  displayName?: string;
   phone_number?: string;
+  phoneNumber?: string;
+  password: string;
   status: 'pending' | 'approved' | 'rejected';
   request_date: string;
+  requestDate?: string;
+  created_at?: string;
+  createdAt?: string;
 }
 
-interface AuthResponse {
+interface LoginResponse {
   user: User;
   isAuthenticated: boolean;
+}
+
+interface ApprovalResponse {
+  user: PendingUser;
+  message: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
   pendingUsers: PendingUser[];
-  login: (username: string, password: string) => Promise<AuthResponse>;
-  logout: () => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => void;
   register: (userData: Omit<PendingUser, 'id' | 'status' | 'request_date'>) => Promise<void>;
-  approveUser: (userId: string) => Promise<void>;
-  rejectUser: (userId: string) => Promise<void>;
+  approveUser: (userId: string) => Promise<PendingUser>;
+  rejectUser: (userId: string) => Promise<PendingUser>;
   fetchPendingUsers: () => Promise<void>;
 }
 
@@ -52,97 +66,120 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
 
+  // Check for existing user session on app load
   const checkAuth = useCallback(async () => {
     try {
-      // Always set authenticated state to true and use dummy user
-      setUser({
-        id: 1,
-        username: 'testuser',
-        email: 'test@example.com',
-        role: 'admin',
-        display_name: 'Test User',
-        is_active: true,
-        date_joined: new Date().toISOString()
-      });
+      const storedUser = localStorage.getItem('mentalhealthiq_user');
+      if (storedUser) {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
       setIsAuthenticated(true);
+      }
     } catch (error) {
-      // Even on error, keep user authenticated
-      setUser({
-        id: 1,
-        username: 'testuser',
-        email: 'test@example.com',
-        role: 'admin',
-        display_name: 'Test User',
-        is_active: true,
-        date_joined: new Date().toISOString()
-      });
-      setIsAuthenticated(true);
+      console.error('Error checking auth:', error);
+      localStorage.removeItem('mentalhealthiq_user');
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
+  // Simple login function - calls real API
   const login = useCallback(async (username: string, password: string) => {
     try {
-      const data = await api.post<AuthResponse>('/auth/login/', { username, password });
-      setUser(data.user);
-      setIsAuthenticated(data.isAuthenticated);
-      return data;
+      const response = await api.post<LoginResponse>('/auth/simple-login/', { username, password });
+      
+      if (response.user && response.isAuthenticated) {
+        setUser(response.user);
+        setIsAuthenticated(true);
+        localStorage.setItem('mentalhealthiq_user', JSON.stringify(response.user));
+      } else {
+        throw new Error('Invalid credentials');
+      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
     }
   }, []);
 
-  const logout = useCallback(async () => {
-    await api.post('/auth/logout/');
+  // Simple logout function - just clear local state
+  const logout = useCallback(() => {
     setUser(null);
     setIsAuthenticated(false);
+    localStorage.removeItem('mentalhealthiq_user');
   }, []);
 
+  // Register function
   const register = useCallback(async (userData: Omit<PendingUser, 'id' | 'status' | 'request_date'>) => {
+    try {
     await api.post('/auth/register/', userData);
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   }, []);
 
+  // Fetch pending users (admin only)
   const fetchPendingUsers = useCallback(async () => {
     if (user?.role === 'admin' || user?.role === 'superuser') {
       try {
-        const { data } = await api.get<AxiosResponse<PendingUser[]>>('/auth/pending-users/');
-        setPendingUsers(data);
+        const response = await api.get<PendingUser[]>('/auth/pending-users/');
+        // Convert snake_case keys to camelCase for UI convenience
+        const mapped = response.map(u => ({
+          ...u,
+          displayName: (u as any).display_name ?? u.displayName,
+          phoneNumber: (u as any).phone_number ?? u.phoneNumber,
+          requestDate: (u as any).request_date ?? u.requestDate,
+          createdAt: (u as any).created_at ?? u.createdAt,
+        }));
+        setPendingUsers(mapped as PendingUser[]);
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          console.error('Error fetching pending users:', error.response?.data);
-        }
+        console.error('Error fetching pending users:', error);
       }
     }
   }, [user?.role]);
 
+  // Approve user
   const approveUser = useCallback(async (userId: string) => {
-    await api.post(`/auth/approve-user/${userId}/`);
-    await fetchPendingUsers();
-  }, [fetchPendingUsers]);
-
-  const rejectUser = useCallback(async (userId: string) => {
-    await api.post(`/auth/reject-user/${userId}/`);
-    await fetchPendingUsers();
-  }, [fetchPendingUsers]);
-
-  const initAuth = useCallback(async () => {
-    setIsLoading(true);
     try {
-      await checkAuth();
-    } finally {
-      setIsLoading(false);
+      const user = await api.post<PendingUser>(`/auth/approve-user/${userId}/`);
+      await fetchPendingUsers();
+      return user;
+    } catch (error) {
+      console.error('Error approving user:', error);
+      throw error;
     }
+  }, [fetchPendingUsers]);
+
+  // Reject user
+  const rejectUser = useCallback(async (userId: string) => {
+    try {
+      const user = await api.post<PendingUser>(`/auth/reject-user/${userId}/`);
+      await fetchPendingUsers();
+      return user;
+    } catch (error) {
+      console.error('Error rejecting user:', error);
+      throw error;
+    }
+  }, [fetchPendingUsers]);
+
+  // Initialize auth on app load
+  useEffect(() => {
+    checkAuth();
   }, [checkAuth]);
 
+  // Fetch pending users when user changes
   useEffect(() => {
-    initAuth();
-  }, [initAuth]);
+    if (user?.role === 'admin' || user?.role === 'superuser') {
+      fetchPendingUsers();
+    }
+  }, [user?.role, fetchPendingUsers]);
 
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated,
+        isAdmin: user?.role === 'admin' || user?.role === 'superuser',
         isLoading,
         pendingUsers,
         login,

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import AuditList from '@/components/assessments/audits/AuditList';
@@ -7,8 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Plus, Calendar } from 'lucide-react';
 import NewAuditDialog from '@/components/assessments/audits/NewAuditDialog';
 import ScheduleAuditDialog from '@/components/assessments/audits/ScheduleAuditDialog';
+import { usePageAuth } from '@/hooks/usePageAuth';
 
 const Audits: React.FC = () => {
+  // Protect at evaluator level
+  usePageAuth('evaluator');
+
   const navigate = useNavigate();
   const [isNewAuditDialogOpen, setIsNewAuditDialogOpen] = useState(false);
   const [isScheduleAuditDialogOpen, setIsScheduleAuditDialogOpen] = useState(false);

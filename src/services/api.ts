@@ -19,7 +19,6 @@ interface ApiErrorResponse {
 // Create a base API instance with common configuration
 const api = axios.create({
   baseURL: 'http://localhost:8000',  // Point directly to Django backend
-  withCredentials: true,  // Important for sending cookies
   headers: {
     'Content-Type': 'application/json',
   },

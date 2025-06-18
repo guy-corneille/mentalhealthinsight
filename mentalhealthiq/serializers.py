@@ -16,8 +16,11 @@ class UserSerializer(serializers.ModelSerializer):
 class PendingUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = PendingUser
-        fields = ['id', 'username', 'email', 'role', 'display_name', 'phone_number', 'status', 'request_date']
+        fields = ['id', 'username', 'email', 'role', 'display_name', 'phone_number', 'password', 'status', 'request_date']
         read_only_fields = ['id', 'request_date']
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
 class FacilitySerializer(serializers.ModelSerializer):
     class Meta:
@@ -303,7 +306,8 @@ class MetricSnapshotSerializer(serializers.ModelSerializer):
             'id', 'facility', 'facility_name', 'metric_type', 'timestamp',
             'active_patients', 'discharged_patients', 'inactive_patients',
             'capacity_utilization', 'scheduled_assessments', 'completed_assessments',
-            'completion_rate'
+            'completion_rate', 'ninety_day_total_assessments', 'ninety_day_completed_assessments',
+            'ninety_day_completion_rate'
         ]
         read_only_fields = fields
 
@@ -317,10 +321,14 @@ class FeedbackCommentSerializer(serializers.ModelSerializer):
 
 class FeedbackSerializer(serializers.ModelSerializer):
     comments = FeedbackCommentSerializer(many=True, read_only=True)
-    submitted_by_name = serializers.CharField(source='submitted_by.username', read_only=True)
+    submitted_by_name = serializers.CharField(source='submitted_by.username', read_only=True, required=False)
 
     class Meta:
         model = Feedback
         fields = ['id', 'title', 'description', 'status', 'submitted_by', 
                  'submitted_by_name', 'created_at', 'updated_at', 'comments']
-        read_only_fields = ['submitted_by']
+        read_only_fields = ['created_at', 'updated_at']
+        extra_kwargs = {
+            'submitted_by': {'required': False},
+            'submitted_by_name': {'required': False}
+        }

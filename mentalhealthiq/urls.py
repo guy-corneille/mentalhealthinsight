@@ -38,7 +38,14 @@ router.register(r'audit-criteria', views.AuditCriteriaViewSet, basename='audit-c
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # Dummy auth endpoints
+    # Simple auth endpoints (no tokens, no CSRF)
+    path('auth/simple-login/', auth_views.simple_login_view, name='simple-login'),
+    path('auth/register/', auth_views.register_user, name='register'),
+    path('auth/pending-users/', auth_views.pending_users_view, name='pending-users'),
+    path('auth/approve-user/<str:user_id>/', auth_views.approve_user_view, name='approve-user'),
+    path('auth/reject-user/<str:user_id>/', auth_views.reject_user_view, name='reject-user'),
+    
+    # Legacy dummy auth endpoints (keeping for compatibility)
     path('auth/login/', auth_views.login_view, name='login'),
     path('auth/logout/', auth_views.logout_view, name='logout'),
     path('auth/check/', auth_views.check_auth_view, name='check-auth'),

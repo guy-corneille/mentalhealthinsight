@@ -1,9 +1,12 @@
-
 import React from 'react';
 import Layout from '@/components/layout/Layout';
 import AuditTrends from '@/components/assessments/audits/AuditTrends';
+import { usePageAuth } from '@/hooks/usePageAuth';
 
 const AuditTrendsPage: React.FC = () => {
+  // Protect at viewer level - all authenticated users can access
+  usePageAuth('viewer');
+
   return (
     <Layout>
       <div className="space-y-6">

@@ -1,25 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { BrainIcon, HeartPulseIcon, AlertCircleIcon, ArrowLeftIcon } from 'lucide-react';
+import { BrainIcon, HeartPulseIcon, ArrowLeftIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { UserRole } from '@/contexts/AuthContext';
+import { UserRole } from '@/utils/roleUtils';
 import { useNotifications } from '@/contexts/NotificationContext';
 
 const registerSchema = z.object({
-  displayName: z.string().min(2, "Full name must be at least 2 characters"),
+  display_name: z.string().min(2, "Full name must be at least 2 characters"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.string().email("Please enter a valid email address"),
-  phoneNumber: z.string().min(10, "Please enter a valid phone number"),
+  phone_number: z.string().min(10, "Please enter a valid phone number"),
   role: z.enum(["admin", "evaluator", "viewer"] as const),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string()
@@ -32,17 +30,17 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const Register: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { registerUser } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
   const { addNotification } = useNotifications();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      displayName: '',
+      display_name: '',
       username: '',
       email: '',
-      phoneNumber: '',
+      phone_number: '',
       role: 'viewer',
       password: '',
       confirmPassword: ''
@@ -52,11 +50,11 @@ const Register: React.FC = () => {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsSubmitting(true);
     try {
-      const newUser = await registerUser({
-        displayName: data.displayName,
+      await register({
+        display_name: data.display_name,
         username: data.username,
         email: data.email,
-        phoneNumber: data.phoneNumber,
+        phone_number: data.phone_number,
         role: data.role as UserRole,
         password: data.password
       });
@@ -84,15 +82,15 @@ const Register: React.FC = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-2 text-center">
           <div className="flex items-center justify-center space-x-3 mb-2">
-            <BrainIcon className="h-8 w-8 text-healthiq-600" />
-            <HeartPulseIcon className="h-8 w-8 text-healthiq-700" />
+            <BrainIcon className="h-8 w-8 text-blue-600" />
+            <HeartPulseIcon className="h-8 w-8 text-red-600" />
           </div>
           
-          <CardTitle className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-healthiq-600 to-healthiq-800">
+          <CardTitle className="text-2xl font-bold text-gray-900">
             Create Account
           </CardTitle>
-          <CardDescription>
-            Sign up for MentalHealthIQ platform
+          <CardDescription className="text-gray-600">
+            Sign up for Mental Health Insight platform
           </CardDescription>
         </CardHeader>
         
@@ -101,7 +99,7 @@ const Register: React.FC = () => {
             <CardContent className="space-y-4">
               <FormField
                 control={form.control}
-                name="displayName"
+                name="display_name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Full Name</FormLabel>
@@ -143,7 +141,7 @@ const Register: React.FC = () => {
               
               <FormField
                 control={form.control}
-                name="phoneNumber"
+                name="phone_number"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>

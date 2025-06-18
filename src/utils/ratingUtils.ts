@@ -1,4 +1,4 @@
-import { UserRole } from '@/contexts/AuthContext';
+import { UserRole } from '@/utils/roleUtils';
 
 export type Rating = "pass" | "high-partial" | "partial" | "low-partial" | "fail" | "not-applicable" | "not-rated";
 

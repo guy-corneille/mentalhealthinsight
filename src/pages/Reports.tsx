@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,10 +7,14 @@ import AuditReports from '@/components/reports/AuditReports';
 import { useQuery } from '@tanstack/react-query';
 import reportService from '@/services/reportService';
 import { useToast } from '@/hooks/use-toast';
+import { usePageAuth } from '@/hooks/usePageAuth';
 
 const Reports: React.FC = () => {
   const [activeTab, setActiveTab] = useState("assessments");
   const { toast } = useToast();
+
+  // Check authorization - viewers can access reports
+  usePageAuth('viewer');
 
   // Pre-fetch both data sets to make switching tabs faster
   const { isLoading: isLoadingAssessments } = useQuery({
