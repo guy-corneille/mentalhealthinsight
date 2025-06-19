@@ -10,13 +10,13 @@ from django.utils import timezone
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'role', 'display_name', 'phone_number', 'date_joined']
+        fields = ['id', 'username', 'email', 'role', 'display_name', 'phone_number', 'status', 'date_joined']
         read_only_fields = ['id', 'date_joined']
 
 class PendingUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = PendingUser
-        fields = ['id', 'username', 'email', 'role', 'display_name', 'phone_number', 'password', 'status', 'request_date']
+        fields = ['id', 'username', 'email', 'role', 'display_name', 'phone_number', 'position', 'password', 'status', 'request_date']
         read_only_fields = ['id', 'request_date']
         extra_kwargs = {
             'password': {'write_only': True}

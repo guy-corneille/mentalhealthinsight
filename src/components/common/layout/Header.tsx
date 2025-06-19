@@ -10,7 +10,7 @@ export const Header: React.FC = () => {
               <img
                 className="h-8 w-auto"
                 src="/logo.svg"
-                alt="Mental Health Insight"
+                alt="Mental Health IQ"
               />
             </div>
             <nav className="hidden md:flex space-x-8 ml-10">

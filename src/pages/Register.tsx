@@ -90,7 +90,7 @@ const Register: React.FC = () => {
             Create Account
           </CardTitle>
           <CardDescription className="text-gray-600">
-            Sign up for Mental Health Insight platform
+            Sign up for  platform
           </CardDescription>
         </CardHeader>
         

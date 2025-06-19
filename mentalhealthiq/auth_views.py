@@ -173,7 +173,8 @@ def approve_user_view(request, user_id):
             password=None,  # We'll set it manually since it's already hashed
             role=pending_user.role,
             display_name=pending_user.display_name,
-            phone_number=pending_user.phone_number
+            phone_number=pending_user.phone_number,
+            status='active'
         )
         # Set the already-hashed password
         user.password = pending_user.password
@@ -218,4 +219,27 @@ def register_view(request):
             'message': 'User registered successfully',
             'user': UserSerializer(user).data
         }, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def system_users_view(request):
+    """Return list of all system users."""
+    users = User.objects.all()
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def toggle_user_status_view(request, user_id):
+    """Toggle a user's active status (activate/deactivate)."""
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    user.is_active = not user.is_active
+    user.status = 'active' if user.is_active else 'inactive'
+    user.save()
+
+    return Response({'detail': 'User status updated', 'user': UserSerializer(user).data}) 

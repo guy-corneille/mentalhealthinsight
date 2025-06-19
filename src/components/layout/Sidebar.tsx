@@ -20,6 +20,7 @@ import {
   LineChart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import SettingsDialog from '@/components/settings/SettingsDialog';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -40,6 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
     'evaluationFramework': false,
     'analytics': false
   });
+  const [settingsOpen, setSettingsOpen] = useState(false);
   
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -75,7 +77,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
       label: 'Evaluation Setup', 
       path: '#', 
       children: [
-        { icon: BarChartIcon, label: 'Criteria', path: '/criteria' }
+        { icon: BarChartIcon, label: 'Criteria', path: '/criteria' },
+        { icon: BarChartIcon, label: 'Add Criterion', path: '/criteria/add' }
       ]
     },
     { 
@@ -100,10 +103,10 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
   ];
   
   const secondaryItems = [
-    { icon: BookOpenIcon, label: 'Knowledge Base', path: '/knowledge' },
+    // { icon: BookOpenIcon, label: 'Knowledge Base', path: '/knowledge' },
     { icon: ClipboardIcon, label: 'Feedback', path: '/feedback' },
     { icon: SettingsIcon, label: 'Settings', path: '/settings' },
-    { icon: HelpCircleIcon, label: 'Help', path: '/help' },
+    // { icon: HelpCircleIcon, label: 'Help', path: '/help' },
   ];
 
   const renderMenuItem = (item: MenuItem, index: number) => {
@@ -196,30 +199,57 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
         </nav>
         
         <nav className="space-y-2 px-4 mt-auto">
-          {secondaryItems.map((item, index) => (
-            <Link
-              key={index}
-              to={item.path}
-              className={cn(
-                "flex items-center py-3 px-4 rounded-lg transition-all",
-                isActive(item.path) 
-                  ? "bg-healthiq-50 text-healthiq-600" 
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                collapsed && "justify-center px-2"
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-              {!collapsed && (
-                <span className={cn("ml-3 font-medium text-sm", { 
-                  'opacity-0 w-0': collapsed,
-                })}>
-                  {item.label}
-                </span>
-              )}
-            </Link>
-          ))}
+          {secondaryItems.map((item, index) => {
+            if (item.label === 'Settings') {
+              return (
+                <button
+                  key={index}
+                  onClick={() => setSettingsOpen(true)}
+                  className={cn(
+                    "flex items-center py-3 px-4 rounded-lg transition-all",
+                    isActive(item.path) 
+                      ? "bg-healthiq-50 text-healthiq-600" 
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    collapsed && "justify-center px-2"
+                  )}
+                >
+                  <item.icon className={cn("h-5 w-5", isActive(item.path) ? "text-healthiq-600" : "text-muted-foreground")} />
+                  {!collapsed && (
+                    <span className={cn("ml-3 font-medium text-sm", { 
+                      'opacity-0 w-0': collapsed,
+                    })}>
+                      {item.label}
+                    </span>
+                  )}
+                </button>
+              );
+            }
+            return (
+              <Link
+                key={index}
+                to={item.path}
+                className={cn(
+                  "flex items-center py-3 px-4 rounded-lg transition-all",
+                  isActive(item.path) 
+                    ? "bg-healthiq-50 text-healthiq-600" 
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  collapsed && "justify-center px-2"
+                )}
+              >
+                <item.icon className={cn("h-5 w-5", isActive(item.path) ? "text-healthiq-600" : "text-muted-foreground")} />
+                {!collapsed && (
+                  <span className={cn("ml-3 font-medium text-sm", { 
+                    'opacity-0 w-0': collapsed,
+                  })}>
+                    {item.label}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
       </div>
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </aside>
   );
 };

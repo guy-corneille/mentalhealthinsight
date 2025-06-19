@@ -15,21 +15,21 @@ const MonitoringCard = () => {
   const metrics: MetricHighlight[] = [
     {
       label: 'Patient Load',
-      value: '85%',
+      value: '',
       icon: <Users className="h-4 w-4 text-blue-500" />,
-      description: 'Current facility utilization'
+      description: ''
     },
     {
       label: 'Assessment Rate',
-      value: '92%',
+      value: '',
       icon: <Activity className="h-4 w-4 text-green-500" />,
-      description: 'Completed vs scheduled'
+      description: ''
     },
     {
       label: 'Active Facilities',
-      value: '12',
+      value: '',
       icon: <Building className="h-4 w-4 text-purple-500" />,
-      description: 'Facilities reporting data'
+      description: ''
     }
   ];
 

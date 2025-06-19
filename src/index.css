@@ -47,11 +47,12 @@
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    /* Dark theme balanced for forms/cards */
+    --background: 222 47% 10%; /* very dark navy */
+    --foreground: 210 38% 96%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 224 20% 15%; /* slightly lighter for cards */
+    --card-foreground: 210 38% 96%;
 
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
@@ -71,8 +72,8 @@
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
+    --border: 224 15% 25%;
+    --input: 224 15% 25%;
     --ring: 212 27% 84%;
     
     --sidebar-background: 222 47% 11%;

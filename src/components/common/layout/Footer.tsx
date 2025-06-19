@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center">
           <div className="text-sm text-gray-600">
-            © {new Date().getFullYear()} Mental Health Insight. All rights reserved.
+            © {new Date().getFullYear()} Mental Health IQ. All rights reserved.
           </div>
           <div className="flex space-x-4">
             <a href="/privacy" className="text-sm text-gray-600 hover:text-gray-900">Privacy Policy</a>

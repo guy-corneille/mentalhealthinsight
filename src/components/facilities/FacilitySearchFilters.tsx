@@ -74,10 +74,10 @@ const FacilitySearchFilters: React.FC<FacilitySearchFiltersProps> = ({
           </ToggleGroupItem>
         </ToggleGroup>
         
-        <Button className="bg-healthiq-600 hover:bg-healthiq-700" onClick={() => navigate('/facilities/add')}>
+        {/* <Button className="bg-healthiq-600 hover:bg-healthiq-700" onClick={() => navigate('/facilities/add')}>
           <PlusIcon className="h-4 w-4 mr-2" />
           Add Facility
-        </Button>
+        </Button> */}
       </div>
     </div>
   );

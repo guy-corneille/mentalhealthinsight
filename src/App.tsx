@@ -28,6 +28,7 @@ import MonitoringPage from './pages/MonitoringPage';
 import FacilityDetailPage from './pages/FacilityDetailPage';
 import FeedbackPage from './pages/FeedbackPage';
 import FeedbackManagementPage from './pages/FeedbackManagement';
+import UserManagement from './pages/UserManagement';
 
 // Components
 import { Toaster } from "@/components/ui/toaster";
@@ -92,6 +93,8 @@ function App() {
           {/* Feedback routes */}
           <Route path="/feedback" element={<FeedbackPage />} />
           <Route path="/feedback-management" element={<FeedbackManagementPage />} />
+          
+          <Route path="/user-management" element={<UserManagement />} />
           
           <Route path="*" element={<NotFound />} />
         </Routes>

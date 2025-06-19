@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -11,17 +11,43 @@ import { Spinner } from '@/components/ui/spinner';
 import { CheckIcon, XIcon, UserPlus, Users } from 'lucide-react';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { usePageAuth } from '@/hooks/usePageAuth';
+import Register from './Register';
+import SearchInput from '@/components/common/SearchInput';
 
 const UserManagement: React.FC = () => {
   // Protect at admin level
   usePageAuth('admin');
 
-  const { pendingUsers, approveUser, rejectUser } = useAuth();
+  const { pendingUsers, approveUser, rejectUser, systemUsers, fetchSystemUsers, toggleUserStatus } = useAuth();
   const { hasPermission } = useAuthorization();
   const [processingUsers, setProcessingUsers] = useState<Record<string, boolean>>({});
   const { addNotification } = useNotifications();
   
   const canApprove = hasPermission('approve:users') || hasPermission('manage:users');
+
+  /* ------------------------------------------------------------------
+   * Search state
+   * ------------------------------------------------------------------ */
+  const [pendingSearch, setPendingSearch] = useState('');
+  const [userSearch, setUserSearch] = useState('');
+
+  const filteredPending = useMemo(() => {
+    const term = pendingSearch.toLowerCase();
+    return pendingUsers.filter(u =>
+      u.username.toLowerCase().includes(term) ||
+      u.email.toLowerCase().includes(term) ||
+      (u.displayName || '').toLowerCase().includes(term)
+    );
+  }, [pendingSearch, pendingUsers]);
+
+  const filteredUsers = useMemo(() => {
+    const term = userSearch.toLowerCase();
+    return systemUsers.filter(u =>
+      u.username.toLowerCase().includes(term) ||
+      u.email.toLowerCase().includes(term) ||
+      ((u as any).display_name || u.displayName || '').toLowerCase().includes(term)
+    );
+  }, [userSearch, systemUsers]);
 
   const handleApproveUser = async (userId: string) => {
     try {
@@ -65,6 +91,19 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const handleToggleStatus = async (userId: string) => {
+    try {
+      setProcessingUsers(prev => ({ ...prev, [userId]: true }));
+      await toggleUserStatus(userId);
+      addNotification('User status updated', 'The user\'s status has been updated.', 'success');
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      addNotification('Update failed', error instanceof Error ? error.message : 'Failed to update user', 'error');
+    } finally {
+      setProcessingUsers(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
   return (
     <Layout>
       <div className="container py-6">
@@ -74,10 +113,11 @@ const UserManagement: React.FC = () => {
           <TabsList className="mb-6">
             <TabsTrigger value="pending">Pending Approvals</TabsTrigger>
             <TabsTrigger value="all">All Users</TabsTrigger>
-            <TabsTrigger value="system">System Access</TabsTrigger>
+            <TabsTrigger value="register">Register User</TabsTrigger>
           </TabsList>
           
           <TabsContent value="pending">
+            <SearchInput value={pendingSearch} onChange={setPendingSearch} placeholder="Search pending users..." className="mb-4 max-w-sm" />
             <Card>
               <CardHeader>
                 <CardTitle>Pending User Approvals</CardTitle>
@@ -86,7 +126,7 @@ const UserManagement: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {pendingUsers.length === 0 ? (
+                {filteredPending.length === 0 ? (
                   <div className="py-12 flex flex-col items-center justify-center text-center">
                     <UserPlus className="h-12 w-12 text-muted-foreground mb-4" />
                     <h3 className="text-lg font-medium">No Pending Requests</h3>
@@ -109,7 +149,7 @@ const UserManagement: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {pendingUsers.map((user) => (
+                        {filteredPending.map((user) => (
                           <TableRow key={user.id}>
                             <TableCell>{user.displayName}</TableCell>
                             <TableCell>{user.username}</TableCell>
@@ -170,40 +210,69 @@ const UserManagement: React.FC = () => {
           </TabsContent>
           
           <TabsContent value="all">
+            <SearchInput value={userSearch} onChange={setUserSearch} placeholder="Search users..." className="mb-4 max-w-sm" />
             <Card>
               <CardHeader>
-                <CardTitle>All Users</CardTitle>
+                <CardTitle>System Users</CardTitle>
                 <CardDescription>
-                  Complete list of system users and their roles
+                  Activate or deactivate user accounts
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="py-12 flex flex-col items-center justify-center text-center">
-                  <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">User Management</h3>
-                  <p className="text-muted-foreground mt-1">
-                    This feature will be implemented in the next phase.
-                  </p>
-                </div>
+                {filteredUsers.length === 0 ? (
+                  <div className="py-12 text-center text-muted-foreground">No users found.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Username</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredUsers.map(u => {
+                          const inactive = (u as any).status === 'inactive' || (u as any).is_active === false || u.isActive === false;
+                          const badgeClasses = inactive ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700';
+                          const statusLabel = (u as any).status ?? (inactive ? 'inactive' : 'active');
+                          return (
+                            <TableRow key={u.id}>
+                              <TableCell>{(u as any).display_name ?? u.displayName ?? u.username}</TableCell>
+                              <TableCell>{u.username}</TableCell>
+                              <TableCell>{u.email}</TableCell>
+                              <TableCell>{u.role}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`capitalize ${badgeClasses}`}>{statusLabel}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Button size="sm" variant="outline" onClick={() => handleToggleStatus(u.id)}>
+                                  {inactive ? 'Activate' : 'Deactivate'}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
           
-          <TabsContent value="system">
+          <TabsContent value="register">
             <Card>
               <CardHeader>
-                <CardTitle>System Access & Permissions</CardTitle>
-                <CardDescription>
-                  Configure system-wide access controls and role permissions
-                </CardDescription>
+                <CardTitle>Register New User</CardTitle>
+                <CardDescription>Create a user registration request.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="py-12 flex flex-col items-center justify-center text-center">
-                  <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">Permission Management</h3>
-                  <p className="text-muted-foreground mt-1">
-                    This feature will be implemented in the next phase.
-                  </p>
+                <div className="max-w-md mx-auto">
+                  <Register />
                 </div>
               </CardContent>
             </Card>

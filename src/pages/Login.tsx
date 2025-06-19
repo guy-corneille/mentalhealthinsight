@@ -57,7 +57,7 @@ const Login: React.FC = () => {
           </div>
           <div>
             <CardTitle className="text-2xl font-bold text-gray-900">
-              Mental Health Insight
+              Mental Health IQ
           </CardTitle>
             <CardDescription className="text-gray-600">
               Sign in to your account

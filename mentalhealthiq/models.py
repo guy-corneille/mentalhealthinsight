@@ -34,9 +34,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     display_name = models.CharField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
+    first_name = models.CharField(max_length=150, blank=True, default='')
+    last_name = models.CharField(max_length=150, blank=True, default='')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
+    STATUS_CHOICES = (
+        ('active', 'Active'),
+        ('inactive', 'Inactive'),
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
     
     objects = UserManager()
     
@@ -60,6 +67,7 @@ class PendingUser(models.Model):
     role = models.CharField(max_length=20, choices=User.ROLE_CHOICES)
     display_name = models.CharField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
+    position = models.CharField(max_length=100, blank=True, default='')
     password = models.CharField(max_length=128)  # Temporary storage until approved
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     request_date = models.DateTimeField(default=timezone.now)

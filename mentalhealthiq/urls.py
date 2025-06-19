@@ -44,6 +44,8 @@ urlpatterns = [
     path('auth/pending-users/', auth_views.pending_users_view, name='pending-users'),
     path('auth/approve-user/<str:user_id>/', auth_views.approve_user_view, name='approve-user'),
     path('auth/reject-user/<str:user_id>/', auth_views.reject_user_view, name='reject-user'),
+    path('auth/system-users/', auth_views.system_users_view, name='system-users'),
+    path('auth/toggle-user/<str:user_id>/', auth_views.toggle_user_status_view, name='toggle-user'),
     
     # Legacy dummy auth endpoints (keeping for compatibility)
     path('auth/login/', auth_views.login_view, name='login'),

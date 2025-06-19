@@ -15,7 +15,7 @@ const AssessmentExport: React.FC<AssessmentExportProps> = ({ data, filename = 'a
     const wb = XLSX.utils.book_new();
     
     // Add title and metadata
-    const title = 'Mental Health Insight - Assessment Report';
+    const title = 'Mental Health IQ - Assessment Report';
     const metadata = [
       ['Generated on:', format(new Date(), 'PPP p')],
       ['Total Records:', data.length.toString()],
