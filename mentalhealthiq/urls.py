@@ -26,13 +26,16 @@ router.register(r'patients', views.PatientViewSet)
 router.register(r'assessments', views.AssessmentViewSet)
 router.register(r'audits', views.AuditViewSet)
 router.register(r'staff', views.StaffViewSet)
+router.register(r'metrics', metrics_views.MetricsViewSet)
 router.register(r'reports', metrics_views.ReportViewSet)
+router.register(r'assessment-criteria', views.AssessmentCriteriaViewSet, basename='assessment-criteria')
+router.register(r'audit-criteria', views.AuditCriteriaViewSet, basename='audit-criteria')
+
 router.register(r'feedback', feedback_views.FeedbackViewSet)
 router.register(r'benchmark-criteria', benchmark_views.BenchmarkCriteriaViewSet)
 router.register(r'benchmark-comparisons', benchmark_views.BenchmarkComparisonViewSet)
 router.register(r'facility-rankings', benchmark_views.FacilityRankingViewSet)
-router.register(r'assessment-criteria', views.AssessmentCriteriaViewSet, basename='assessment-criteria')
-router.register(r'audit-criteria', views.AuditCriteriaViewSet, basename='audit-criteria')
+
 
 # The API URLs are now determined automatically by the router
 urlpatterns = [
@@ -47,7 +50,6 @@ urlpatterns = [
     path('auth/system-users/', auth_views.system_users_view, name='system-users'),
     path('auth/toggle-user/<str:user_id>/', auth_views.toggle_user_status_view, name='toggle-user'),
     
-    # Legacy dummy auth endpoints (keeping for compatibility)
     path('auth/login/', auth_views.login_view, name='login'),
     path('auth/logout/', auth_views.logout_view, name='logout'),
     path('auth/check/', auth_views.check_auth_view, name='check-auth'),

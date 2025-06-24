@@ -71,10 +71,10 @@ const AuditList: React.FC = () => {
   const handleViewAudit = (audit: any) => {
     navigate(`/audits/view/${audit.id}`);
   };
-
+  // ?auditId=${audit.id}
   const handleTakeAudit = (audit: any) => {
     // Navigate to audit form with auditId
-    window.location.href = `/facilities/audit/${audit.facility}?auditId=${audit.id}`;
+    window.location.href = `/facilities/audit/${audit.facility}`;
   };
 
   const handleReschedule = (audit: any) => {

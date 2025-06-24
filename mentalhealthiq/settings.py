@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'django_filters',
     'mentalhealthiq',  # Add the app to installed apps
-    # 'django_celery_beat',  # Add celery beat to installed apps - temporarily disabled
+     'django_celery_beat',  # Add celery beat to installed apps - temporarily disabled
 ]
 
 MIDDLEWARE = [

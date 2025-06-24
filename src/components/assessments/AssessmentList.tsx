@@ -188,6 +188,14 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
       <TooltipProvider>
         <div className="space-y-6 animate-fade-in w-[90%] mx-auto">
           {/* Header with Actions */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Patient Assessments</h1>
+              <p className="text-muted-foreground mt-1">
+                Create, view, and manage individual patient assessments and evaluation results.
+              </p>
+            </div>
+          </div>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="relative flex-1 max-w-md">
               <SearchInput
@@ -237,7 +245,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                       onSort={handleSort}
                     />
                   </TableHead>
-                  <TableHead>
+                  <TableHead className="py-4 px-4">
                     <SortableHeader
                       column="patient_name"
                       label="Patient"
@@ -273,7 +281,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                       onSort={handleSort}
                     />
                   </TableHead>
-                  <TableHead>
+                  {/* <TableHead>
                     <SortableHeader
                       column="evaluator_name"
                       label="Evaluator"
@@ -281,7 +289,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                       sortDirection={sortDirection}
                       onSort={handleSort}
                     />
-                  </TableHead>
+                  </TableHead> */}
                   <TableHead>Notes</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -318,8 +326,8 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                       : assessment.assessment_date;
                     return (
                       <TableRow key={assessment.id}>
-                        <TableCell>{assessment.patient}</TableCell>
-                        <TableCell>{assessment.patient_name || 'Unknown'}</TableCell>
+                        <TableCell className="py-4 px-4 h-20">{assessment.patient}</TableCell>
+                        <TableCell className="py-4 px-4 h-20">{assessment.patient_name || 'Unknown'}</TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(assessment.status)}`}>
@@ -341,7 +349,7 @@ const AssessmentList: React.FC<AssessmentListProps> = ({ onStartAssessment }) =>
                           </div>
                         </TableCell>
                         <TableCell>{assessment.facility_name || assessment.facility}</TableCell>
-                        <TableCell>{assessment.evaluator_name || assessment.evaluator || 'Unknown'}</TableCell>
+                        {/* <TableCell>{assessment.evaluator_name || assessment.evaluator || 'Unknown'}</TableCell> */}
                         <TableCell className="max-w-xs truncate">
                           {assessment.notes || '-'}
                         </TableCell>

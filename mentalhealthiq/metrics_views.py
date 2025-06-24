@@ -18,7 +18,7 @@ class MetricsViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = MetricSnapshot.objects.all()
     serializer_class = MetricSnapshotSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         queryset = super().get_queryset()

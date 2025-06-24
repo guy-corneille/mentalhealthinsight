@@ -21,6 +21,6 @@ app.conf.beat_schedule = {
     },
     'update-facility-metrics': {
         'task': 'mentalhealthiq.tasks.update_facility_metrics',
-        'schedule': crontab(minute='*/15'),  
+        'schedule': crontab(minute='*/30'),  
     },
 } 

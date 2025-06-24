@@ -263,7 +263,7 @@ const MonitoringPage: React.FC = () => {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="metrics">Metrics</TabsTrigger>
             <TabsTrigger value="alerts">Alerts</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
+            {/* <TabsTrigger value="reports">Reports</TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">

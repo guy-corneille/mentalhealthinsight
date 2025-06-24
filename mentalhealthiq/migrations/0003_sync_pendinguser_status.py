@@ -13,7 +13,7 @@ def add_status_column(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('mentalhealthiq', '0002_sync_pendinguser_display_name'),
+        ('mentalhealthiq', '0001_initial'),
     ]
 
     operations = [

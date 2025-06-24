@@ -13,7 +13,7 @@ from .models import (
     AssessmentCriteria,
     Indicator,
     StaffMember,
-    IndicatorScore
+    IndicatorScore,MetricSnapshot
 )
 from .serializers import (
     FacilitySerializer,
@@ -27,6 +27,9 @@ from .serializers import (
     IndicatorScoreSerializer
 )
 from .pagination import StandardResultsSetPagination
+from django.http import JsonResponse
+from .tasks import update_facility_metrics  # make sure tasks.py is in the same Django app
+
 
 class BaseViewSet(viewsets.ModelViewSet):
     """Base ViewSet with common configuration"""
@@ -49,6 +52,7 @@ class FacilityViewSet(BaseViewSet):
         staff = StaffMember.objects.filter(facility=facility)
         serializer = StaffMemberSerializer(staff, many=True)
         return Response(serializer.data)
+    
     
     @action(detail=True, methods=['get'])
     def patients(self, request, pk=None):

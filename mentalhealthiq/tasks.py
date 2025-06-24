@@ -1,9 +1,9 @@
-# from celery import shared_task
+from celery import shared_task
 from django.utils import timezone
 from django.db.models import Count, Q
 from .models import Audit, Facility, Patient, Assessment, MetricSnapshot
 
-# @shared_task
+@shared_task
 def check_missed_audits():
     """
     Check for audits that are past their scheduled date and mark them as missed.
@@ -25,7 +25,7 @@ def check_missed_audits():
     
     return f"Updated {overdue_audits.count()} overdue audits to missed status" 
 
-# @shared_task
+@shared_task
 def update_facility_metrics():
     """
     Update metrics for all facilities.

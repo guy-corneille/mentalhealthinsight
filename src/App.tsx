@@ -39,11 +39,12 @@ import AssessmentView from './pages/assessments/AssessmentView';
 
 // Context
 import { AuthProvider } from './contexts/AuthContext';
+import CriteriaForm from './components/assessments/CriteriaForm';
 
 function App() {
   const handleStartAssessment = (patientId: string, facilityId: string) => {
     // Navigate to the assessment page
-    window.location.href = `/assessment/${patientId}?facility=${facilityId}`;
+    window.location.href = `/assessment/${patientId}`;
   };
 
   return (
@@ -74,6 +75,7 @@ function App() {
           <Route path="/patients/edit/:id" element={<PatientForm isEdit={true} />} />
           
           <Route path="/assessments" element={<AssessmentList onStartAssessment={handleStartAssessment} />} />
+
           <Route path="/assessments/view/:id" element={<AssessmentView />} />
           <Route path="/assessment-trends" element={<AssessmentTrends />} />
           <Route path="/reports" element={<Reports />} />
@@ -84,8 +86,8 @@ function App() {
           
           {/* Add the Criteria routes */}
           <Route path="/criteria" element={<Criteria />} />
-          <Route path="/criteria/add" element={<Criteria />} />
-          <Route path="/criteria/edit/:id" element={<Criteria />} />
+          <Route path="/criteria/add" element={<CriteriaForm />} />
+          <Route path="/criteria/edit/:id" element={<CriteriaForm />} />
           
           {/* Add the Benchmarks route */}
           <Route path="/benchmarks" element={<Benchmarks />} />
