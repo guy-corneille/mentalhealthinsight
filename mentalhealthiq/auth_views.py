@@ -13,7 +13,6 @@ from django.http import JsonResponse
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def simple_login_view(request):
-    """Simple login endpoint - no tokens, just authenticate and return user data"""
     username = request.data.get('username')
     password = request.data.get('password')
     
@@ -65,7 +64,7 @@ def login_view(request):
     return Response({
         'user': {
             'id': '1',
-            'username': 'dummy_user',
+            'username': 'x',
             'email': 'dummy@example.com',
             'role': 'admin',
             'display_name': 'Dummy User',
@@ -75,6 +74,38 @@ def login_view(request):
         'isAuthenticated': True
     })
 
+# @api_view(['POST'])
+# @permission_classes([AllowAny])
+# # def simple_login_view(request):
+#     username = request.data.get('username')
+#     password = request.data.get('password')
+
+#     if not username or not password:
+#         return Response({'error': 'Username and password are required'}, status=400)
+
+#     try:
+#         user = User.objects.get(username=username, is_active=True)
+#         if user.check_password(password):
+#             # 🔑 Get or create token
+#             token, created = Token.objects.get_or_create(user=user)
+#             return Response({
+#                 'token': token.key,
+#                 'user': {
+#                     'id': str(user.id),
+#                     'username': user.username,
+#                     'email': user.email,
+#                     'role': user.role,
+#                     'display_name': user.display_name,
+#                     'phone_number': user.phone_number,
+#                     'is_active': user.is_active,
+#                     'date_joined': user.date_joined.isoformat()
+#                 },
+#                 'isAuthenticated': True
+#             })
+#         else:
+#             return Response({'error': 'Invalid credentials'}, status=401)
+#     except User.DoesNotExist:
+#         return Response({'error': 'Invalid credentials'}, status=401)
 @csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])

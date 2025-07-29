@@ -25,6 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Spinner } from '@/components/ui/spinner';
 import { useFacilities } from '@/services/facilityService';
 import { useStaffMember, useCreateStaffMember, useUpdateStaffMember, StaffMember, StaffQualification } from '@/services/staffService';
+import Layout from '../layout/Layout';
 
 interface StaffFormProps {
   isEdit?: boolean;
@@ -143,8 +144,9 @@ const StaffForm: React.FC<StaffFormProps> = ({ isEdit = false }) => {
       });
     }
   };
-
   return (
+    <Layout>
+
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Button 
@@ -208,7 +210,6 @@ const StaffForm: React.FC<StaffFormProps> = ({ isEdit = false }) => {
                       />
                     </div>
                   </div>
-
                   <div>
                     <Label htmlFor="department" className="text-base">
                       Department <span className="text-red-500">*</span>
@@ -352,6 +353,8 @@ const StaffForm: React.FC<StaffFormProps> = ({ isEdit = false }) => {
         </form>
       )}
     </div>
+    </Layout>
+
   );
 };
 

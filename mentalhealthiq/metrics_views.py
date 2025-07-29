@@ -13,9 +13,7 @@ from .views import BaseViewSet
 from django.db.models.functions import TruncMonth
 
 class MetricsViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    ViewSet for viewing facility metrics.
-    """
+
     queryset = MetricSnapshot.objects.all()
     serializer_class = MetricSnapshotSerializer
     permission_classes = [AllowAny]
@@ -27,7 +25,6 @@ class MetricsViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'])
     def facility(self, request):
-        """Get metrics for all facilities"""
         # Get all active facilities
         facilities = Facility.objects.filter(status='Active')
         facility_metrics = []
@@ -46,7 +43,6 @@ class MetricsViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=True, methods=['get'])
     def history(self, request, pk=None):
-        """Get historical metrics for a specific facility"""
         # Get date range from query params
         start_date = request.query_params.get('start_date')
         end_date = request.query_params.get('end_date')

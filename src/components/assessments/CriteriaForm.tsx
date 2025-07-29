@@ -8,6 +8,7 @@ import CriteriaFormFields from './CriteriaFormFields';
 import IndicatorsList from './IndicatorsList';
 import { useAssessmentCriterion, useCreateAssessmentCriteria, useUpdateAssessmentCriteria } from '@/services/criteriaService';
 import { useToast } from '@/hooks/use-toast';
+import Layout from '../layout/Layout';
 
 interface CriteriaFormProps {
   criteriaType?: 'assessment' | 'audit';
@@ -150,6 +151,7 @@ const CriteriaForm: React.FC<CriteriaFormProps> = ({ criteriaType }) => {
   };
 
   return (
+    <Layout>
     <Card className="w-full">
       <CardHeader>
         <CardTitle>
@@ -203,6 +205,7 @@ const CriteriaForm: React.FC<CriteriaFormProps> = ({ criteriaType }) => {
         )}
       </CardContent>
     </Card>
+    </Layout>
   );
 };
 

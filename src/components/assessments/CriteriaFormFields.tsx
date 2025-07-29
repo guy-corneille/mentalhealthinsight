@@ -3,6 +3,7 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Layout from '../layout/Layout';
 
 type CriteriaCategory = 'Clinical' | 'Facility' | 'Administrative' | 'Ethical' | 'Quality Improvement';
 type CriteriaPurpose = 'Assessment' | 'Audit';
@@ -23,8 +24,8 @@ const CriteriaFormFields: React.FC<CriteriaFormFieldsProps> = ({
   onInputChange,
 }) => {
   return (
-    <div className="space-y-4">
-      <div>
+    <div className="space-y-6">
+    <div>
         <label htmlFor="name" className="block text-sm font-medium mb-1">
           Criteria Name *
         </label>
@@ -85,6 +86,7 @@ const CriteriaFormFields: React.FC<CriteriaFormFieldsProps> = ({
         />
       </div>
     </div>
+
   );
 };
 

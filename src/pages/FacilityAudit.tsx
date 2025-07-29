@@ -62,7 +62,7 @@ const FacilityAudit: React.FC = () => {
           <Button 
             variant="ghost" 
             size="icon"
-            onClick={() => navigate(`/facilities/${id}`)}
+            onClick={() => navigate(`/audits`)}
           >
             <ArrowLeftIcon className="h-5 w-5" />
           </Button>

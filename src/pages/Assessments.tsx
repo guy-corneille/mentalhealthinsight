@@ -27,7 +27,7 @@ const Assessments: React.FC = () => {
     setSelectedPatientId(patientId);
     setSelectedFacilityId(facilityId);
     setIsEvaluating(true);
-    navigate(`/assessment/${patientId}`);
+    navigate(`/mhq/assessment/${patientId}`);
   };
 
   const handleCompleteEvaluation = () => {

@@ -20,7 +20,8 @@ import {
   MinusCircleIcon,
   StarIcon,
   StarHalfIcon,
-  BanIcon
+  BanIcon,
+  ArrowLeftIcon
 } from 'lucide-react';
 import { 
   type Rating, 
@@ -239,6 +240,13 @@ const AssessmentEvaluation: React.FC<AssessmentEvaluationProps> = ({
   return (
     <Card className="w-full">
       <CardHeader>
+      <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => navigate(`/assessments`)}
+          >
+            <ArrowLeftIcon className="h-5 w-5" />
+          </Button>
         <CardTitle>Patient Assessment</CardTitle>
         <CardDescription>
           Evaluate patient {patientId} {patient && `(${patient.first_name} ${patient.last_name})`}

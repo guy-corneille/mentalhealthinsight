@@ -44,7 +44,7 @@ import CriteriaForm from './components/assessments/CriteriaForm';
 function App() {
   const handleStartAssessment = (patientId: string, facilityId: string) => {
     // Navigate to the assessment page
-    window.location.href = `/assessment/${patientId}`;
+    window.location.href = `/mhq/assessment/${patientId}`;
   };
 
   return (
